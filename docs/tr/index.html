@@ -227,7 +227,6 @@ code{
   padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
 .navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
 .navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
-@media (max-width:900px){.navlinks{display:none}}
 .topbar{
   position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -578,14 +577,102 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
   *,*::before,*::after{transition:none!important;animation:none!important}
   .sticky-dl{transition:none!important}
 }
+.secmore{margin:30px 0 0;text-align:center}
+.secmore .btn{font-size:15px}
+
+
+
+/* ── Mobil gezinme ─────────────────────────────────────────
+   Tek sayfadan çok sayfaya geçince menüyü dar ekranda gizlemek gezinmeyi
+   tümden kapatıyordu. ≤900px'te bağlantılar hamburger düğmesinin açtığı bir
+   panele taşınıyor; panel çubuğun üstüne bindiği için --bar-h değişmiyor. */
+.navtoggle{display:none;width:40px;height:38px;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;padding:0;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid var(--line-soft);border-radius:10px}
+.navtoggle span{display:block;width:17px;height:2px;border-radius:2px;background:var(--fg);
+  transition:transform .2s ease,opacity .2s ease}
+.navtoggle[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.navtoggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.navtoggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+@media (max-width:1024px){
+  .navtoggle{display:flex}
+  .navlinks{display:none;position:absolute;top:100%;left:0;right:0;z-index:79;
+    flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;
+    overflow:visible;pointer-events:auto;
+    background:rgba(11,21,38,.98);
+    -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
+    border-bottom:1px solid var(--line-soft);
+    padding:8px max(14px,var(--pad)) 12px}
+  .navlinks.open{display:flex}
+  .navlinks a{font-size:15px;padding:11px 12px;border-radius:9px}
+}
+.navlinks a{white-space:nowrap}
+/* Site CSS'i satır içi <code> için white-space:nowrap veriyor; bu, uzun bir
+   komut satırının ("mysqldump --single-transaction …") dar ekranda sayfayı
+   kendi genişliğine zorlamasına yol açıyordu. Metin içindeki kod sarılabilsin,
+   <pre> içindeki kod bloğu ise biçimini korusun. */
+code{white-space:normal;overflow-wrap:anywhere}
+pre code{white-space:pre;overflow-wrap:normal}
+/* Mobil üst çubuk düzeni: solda logo + marka adı, sağda dil seçimi ve menü
+   düğmesi. İndirme düğmesi dar ekranda çıkarıldı — hem yer kaplıyordu hem de
+   indirme zaten her sayfanın gövdesinde duruyor. */
+@media (max-width:1024px){
+  .topbar .pill-dl{display:none}
+  .brandmark b{display:inline !important}
+  .barcta{gap:6px}
+}
+@media (max-width:380px){
+  .brandmark b{font-size:15.5px}
+  .pill{font-size:12px;padding:8px 10px}
+}
+/* ── Dil kutusu ────────────────────────────────────────────
+   Düğme bulunduğunuz dili gösterir; liste iki seçeneği sunar. Panel sağ kenara
+   hizalı çünkü kutu her zaman çubuğun/footer'ın sağ ucunda duruyor. */
+.langsel{position:relative;flex:0 0 auto}
+.langbtn{cursor:pointer;font-family:inherit}
+.langbtn .chev{font-size:10px;opacity:.7;margin-left:1px}
+.langmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:90;
+  min-width:158px;padding:6px;border-radius:12px;
+  background:rgba(13,24,42,.98);border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.85)}
+.langmenu.open{display:block}
+.langmenu a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;
+  text-decoration:none;color:var(--muted);font-size:14px;font-weight:500;white-space:nowrap}
+.langmenu a:hover{background:rgba(255,255,255,.07);color:var(--fg)}
+.langmenu a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+
+/* ── Site footer'ı ─────────────────────────────────────────
+   Alt sayfalarda ana sayfadaki kısa footer yerine sütunlu sürüm kullanılıyor;
+   her sayfadan diğer sayfalara ve rehberlere çıkış olsun diye. */
+.sitefoot{border-top:1px solid var(--line-soft);margin-top:80px;padding:44px 0 40px;
+  background:rgba(6,13,26,.5)}
+.footgrid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.footgrid h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);margin:0 0 12px}
+.footgrid a{display:block;color:var(--muted);text-decoration:none;font-size:14.5px;
+  line-height:1.5;margin:0 0 8px}
+.footgrid a:hover{color:var(--amber-hi)}
+.footlang .langmenu{right:auto;left:0;top:auto;bottom:calc(100% + 6px)}
+.footbase{margin-top:34px;padding-top:22px;border-top:1px solid var(--line-soft);
+  color:var(--muted);font-size:14.5px;line-height:1.7}
+.footbase p{margin:0 0 6px}
+.footbase a{color:var(--muted);text-decoration:none}
+.footbase a:hover{color:var(--amber-hi)}
+.footbase .fine{font-size:13px;color:#8ea3bd;margin-top:12px}
+@media (max-width:1024px){
+  /* Dil kutusu menü ikonunun hemen soluna yapışsın — ortada asılı kalmasın. */
+  .topbar .barcta{margin-left:auto}
+}
 </style>
 </head>
 <body>
 
 <nav class="topbar" aria-label="Site">
   <a class="brandmark" href="./" aria-label="BRAMPP"><img src="../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks"><a href="#why">Neden</a><a href="#compare">Karşılaştırma</a><a href="#features">Özellikler</a><a href="#screenshots">Ekranlar</a><a href="#install">Kurulum</a><a href="#mcp">MCP</a><a href="guides/">Rehberler</a><a href="#faq">SSS</a></div>
-  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="BRAMPP.dmg indir">⬇ <span class="hide-sm">İndir </span>DMG</a><a class="pill" href="../" hreflang="en" lang="en" aria-label="View this page in English">🇬🇧 English</a></div>
+  <div class="navlinks" id="sitenav"><a href="features/">Özellikler</a><a href="install/">Kurulum</a><a href="mcp/">MCP</a><a href="compare/">Karşılaştırma</a><a href="guides/">Rehberler</a><a href="#faq">SSS</a></div>
+  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="BRAMPP.dmg indir">⬇ <span class="hide-sm">İndir </span>DMG</a><div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div></div>
+  <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
 
 <main>
@@ -646,7 +733,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     <div class="shead">
       <span class="eyebrow">Karşılaştırma</span>
       <h2>Nerede duruyor?</h2>
-      <p class="lede">İki tablo, yıldızlı dipnot yok. Aşağıdaki her satır BRAMPP'in ne yaptığını anlatır — başkasının yol haritası hakkında hüküm vermez.</p>
+      <p class="lede">Paketlenmiş ikililer mi, kendi Homebrew servisleriniz mi — kısa hâli.</p>
     </div>
     <h3 class="sub-h" id="cmp-xampp">XAMPP / MAMP karşısında</h3>
     <div class="tscroll">
@@ -665,19 +752,8 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
         </tbody>
       </table>
     </div>
-    <h3 class="sub-h" id="cmp-native">macOS'a özgü diğer araçlar karşısında</h3>
-    <div class="tscroll">
-      <table class="cmp" aria-labelledby="cmp-native">
-        <thead><tr><th scope="col"><span class="vh">Ölçüt</span></th><th scope="col">Laravel Herd</th><th scope="col">Laravel Valet</th><th scope="col">Docker yığınları</th><th scope="col">BRAMPP</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Kapsam</th><td>Önce PHP</td><td>Yalnızca PHP, terminal</td><td>Her şey, konteynerde</td><td class="win">PHP + Node + Python + .NET + statik</td></tr>
-          <tr><th scope="row">Servisler nerede çalışır</th><td>Gömülü çalışma zamanı</td><td>Kendi Homebrew PHP'niz</td><td>Konteyner</td><td class="win">Kendi Homebrew servisleriniz</td></tr>
-          <tr><th scope="row">Arayüz</th><td>Var (Pro özellikleri ücretli)</td><td>Yok</td><td>Üçüncü parti</td><td class="win">Var, ücretsiz</td></tr>
-          <tr><th scope="row">Nginx ve Apache</th><td>Nginx</td><td>Nginx</td><td>Size kalmış</td><td class="win">İkisi de, alan adı başına</td></tr>
-          <tr><th scope="row">Ücret</th><td>Ücretsiz katman + Pro</td><td>Ücretsiz</td><td>Ücretsiz</td><td class="win">Ücretsiz, MIT</td></tr>
-        </tbody>
-      </table>
-    </div>
+    
+    <p class="secmore"><a class="btn btn-ghost" href="compare/">Karşılaştırmanın tamamı →</a></p>
   </div>
 </section>
 
@@ -687,7 +763,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     <div class="shead">
       <span class="eyebrow">Özellikler</span>
       <h2>Neler yapıyor</h2>
-      <p class="lede">Aksi hâlde gece bir'de, elle, config dosyalarında yapacağınız on iki iş.</p>
+      <p class="lede">On ikinin altısı. Her biri, yoksa gece bir'de bir yapılandırma dosyasında elle yapacağınız bir iş.</p>
     </div>
     <div class="grid">
       <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Servis kontrolü</h3><p>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL ve Redis'i başlatın, durdurun, yeniden başlatın. Port kontrollü canlı durum, çökme bildirimleri, son çalışan servisleri açılışta başlatma.</p></div>
@@ -695,14 +771,9 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
       <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Her platform, tek uygulama</h3><p>Alan adı başına sürümüyle PHP, Node.js, Python (venv ile FastAPI, Django, Flask), ASP.NET Core, statik siteler ve history-mode yönlendirmeli SPA'lar.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Gerçek yerel HTTPS</h3><p>Tek tıkla mkcert entegrasyonu: yerel sertifika otoritesi, alan adı başına sertifika ve HTTP→HTTPS yönlendirme. Yeşil kilit, artık evinizde.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Terminalsiz veritabanı</h3><p>Veritabanı oluşturma ve silme, yedekleme ve geri yükleme, phpMyAdmin / pgAdmin / Adminer kurucuları, ayrıca güvenli yazmalı <code>my.cnf</code>, <code>postgresql.conf</code> ve <code>redis.conf</code> panelleri.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP eklenti yöneticisi</h3><p>PHP sürümü başına 50'den fazla eklenti — xdebug, redis, imagick ve arkadaşları — tek tıkla aç/kapat, PECL kurulumu ve <code>php.ini</code> hızlı ayarları.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>Uygulama süpervizörü</h3><p>Node, Python ve .NET uygulamaları sıfır bağımlılıklı bir süpervizörle çalışır: otomatik yeniden başlatma, birleşik loglar ve sinyal göndermeden önce portun sahibini doğrulayan güvenli durdurma.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Kurulum sihirbazı</h3><p>Apache portlarını, PHP-FPM'i, mkcert CA'sını, localhost SSL'ini, MariaDB root erişimini ve phpMyAdmin'i denetleyip yapılandırır. Tek bir config dosyası açmadan <code>https://localhost</code>.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Dürüst yedekler</h3><p>Tek tık; alan adları, ayarlar, vhost'lar, SSL sertifikaları ve php.ini dosyaları yedeklenir. Eksik yedekler tespit edilip işaretlenir, asla eksiksizmiş gibi sessizce geri yüklenmez.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>Yapay zekâ için MCP sunucusu</h3><p>Yerleşik Model Context Protocol uç noktası; yalnızca loopback ve varsayılan olarak kapalı. Asistanınız alan bazlı izinlerin arkasındaki 19 araca kavuşur — yaptığı her değişiklik pencerede anında görünür.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menü çubuğu uygulaması</h3><p>Tüm ortamınız menü çubuğunuzda: servisleri başlatıp durdurun, açılışta çalıştırın, çökme bildirimlerini görün. Türkçe ve İngilizce arayüz, çalışırken değiştirilebilir.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Uçtan uca native arm64</h3><p>BRAMPP.app, macOS 14+ üzerinde native bir Apple Silicon ikilisidir; yönettiği servisler de öyle: <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> ve <code>redis-server</code> Homebrew'un arm64 bottle'larından gelir. Uygulama da yığın da baştan sona native — Rosetta yok, emülasyon katmanı yok.</p></div>
     </div>
+    <p class="secmore"><a class="btn btn-ghost" href="features/">12 özelliğin tamamı →</a></p>
   </div>
 </section>
 
@@ -757,47 +828,26 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
       <li><b>Kurulum sihirbazını çalıştırın.</b> Apache portlarını, PHP-FPM'i, mkcert CA'sını, localhost SSL'ini, MariaDB root erişimini ve phpMyAdmin'i yapılandırır — yalnızca onayladığınızı kurar, çalıştırdığı her komutu konsolda gösterir.</li>
       <li><b>İlk alan adınızı oluşturun.</b> <i>+ Yeni Alan Adı</i> → bir ad ve platform seçin → tarayıcıda <code>https://projem.local</code> adresini açın.</li>
     </ol>
-
-    <div class="gate">
-        <h3 class="gate-h" id="gate-title"><span aria-hidden="true">🔏</span> İmzalı ve noter onaylı</h3>
-        <div class="gate-b">
-          <p>Her sürüm <b>Developer ID Application</b> sertifikasıyla imzalanır ve <b>Apple noter onayından</b> geçer. Noter bileti hem DMG'ye <i>hem de</i> uygulamanın kendisine zımbalanır; böylece ilk açılış çevrimdışı olsa bile Gatekeeper doğrulayabilir. Aranacak bir "Yine de Aç" adımı yok.</p>
-          <p>Kurduktan sonra kendiniz doğrulayabilirsiniz:</p>
-          <div class="pretop"><pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
-# accepted
-# source=Notarized Developer ID</code></pre></div>
-          <p class="note">Kaynaktan derlerseniz imzasız yerel bir derleme elde edersiniz — bu beklenen durumdur ve yerelde derlenen uygulama karantinaya alınmaz.</p>
-        </div>
-      </div>
-    </div>
+    <p class="secmore"><a class="btn btn-ghost" href="install/">Gereksinimler ve sorun giderme →</a></p>
+  </div>
 </section>
 
 <!-- 8 · MCP -->
 <section id="mcp">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Yapay zekâ ve MCP</span>
+      <span class="eyebrow">Yapay zekâ &amp; MCP</span>
       <h2>Asistanınız ortamı sizin için yönetsin</h2>
-      <p class="lede">Ayarlar'da tek bir anahtarı açın, BRAMPP bir <b>Model Context Protocol</b> sunucusuna dönüşsün. Asistanınız alan adı oluşturabilir, ihtiyaç duyduğu servisleri başlatabilir ve logları okuyabilir — siz pencerenin canlı güncellenmesini izlersiniz.</p>
+      <p class="lede">Ayarlar'daki tek bir anahtarı açın, BRAMPP bir <b>Model Context Protocol</b> sunucusuna dönüşsün. Asistanınız alan adı oluşturabilir, gereken servisleri başlatabilir ve günlüklere bakabilir — siz pencerenin canlı güncellenmesini izlerken.</p>
     </div>
     <div class="stats">
       <div class="stat"><span class="num">8</span><span class="lbl">Alan adı aracı</span></div>
       <div class="stat"><span class="num">4</span><span class="lbl">Servis aracı</span></div>
-      <div class="stat"><span class="num">3</span><span class="lbl">Veritabanı aracı</span></div>
-      <div class="stat"><span class="num">2</span><span class="lbl">Log aracı</span></div>
+      <div class="stat"><span class="num">5</span><span class="lbl">Veritabanı aracı</span></div>
+      <div class="stat"><span class="num">2</span><span class="lbl">Günlük aracı</span></div>
     </div>
-    <div class="perms">
-      <span>Alan bazlı izinler: <b>İzin yok</b></span>
-      <span><b>Okuma</b></span>
-      <span><b>Okuma + yazma</b></span>
-      <span>İzin vermediğiniz araçlar istemcide <b>hiç görünmez</b></span>
-    </div>
-    <div class="clients">
-      <div class="client">Claude Code<small>tek CLI komutu</small></div>
-      <div class="client">Claude Desktop<small>tek tıkla yapılandırma</small></div>
-      <div class="client">ChatGPT Codex<small>tek tıkla yapılandırma</small></div>
-    </div>
-    <p class="endpoint">Uç nokta: <code>http://127.0.0.1:8765/mcp</code> — yalnızca loopback'e bağlanır, varsayılan olarak kapalıdır ve siz açıkça izin vermedikçe SQL salt okunurdur.</p>
+    <p class="endpoint">Uç nokta: <code>http://127.0.0.1:8765/mcp</code> — yalnızca loopback'e bağlı, öntanımlı kapalı; siz açıkça izin vermedikçe SQL salt okunur.</p>
+    <p class="secmore"><a class="btn btn-ghost" href="mcp/">MCP sunucusu nasıl çalışıyor →</a></p>
   </div>
 </section>
 
@@ -827,10 +877,38 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
 </main>
 
 <!-- 10 · ALT BİLGİ -->
-<footer class="wrap">
-  <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Teknoloji</b></a> bünyesinde geliştirildi</p>
-  <p><a href="https://github.com/macitkaraca/brampp">GitHub</a> · <a href="../" hreflang="en" lang="en">English</a> · MIT © 2023–2026 Karaca Teknoloji</p>
-  <p class="fine">Okunuşu "bremp". Dahili kod adı: Demlik 🫖 — işlerin usulünce demlendiği yer.</p>
+<footer class="sitefoot">
+  <div class="wrap footgrid">
+    <div>
+      <h2>Sayfalar</h2>
+      <a href="../tr/">Ana sayfa</a>
+      <a href="../tr/features/">Özellikler</a>
+      <a href="../tr/install/">Kurulum</a>
+      <a href="../tr/mcp/">MCP</a>
+      <a href="../tr/compare/">Karşılaştırma</a>
+    </div>
+    <div>
+      <h2>Rehberler</h2>
+      <a href="../tr/guides/">Rehberler</a>
+      <a href="../tr/guides/local-https/">Yerel HTTPS</a>
+      <a href="../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
+      <a href="../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
+    </div>
+    <div>
+      <h2>Proje</h2>
+      <a href="https://github.com/macitkaraca/brampp">Depo</a>
+      <a href="https://github.com/macitkaraca/brampp/releases/latest">Son sürüm</a>
+      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">Lisans</a>
+    </div>
+    <div class="footlang">
+      <h2>Dil</h2>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    </div>
+  </div>
+  <div class="wrap footbase">
+    <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> bünyesinde geliştirildi · MIT © 2023–2026 Karaca Teknoloji</p>
+    <p class="fine">"bremp" diye okunur. Ücretsiz ve açık kaynak, MIT lisanslı.</p>
+  </div>
 </footer>
 
 <script>
@@ -853,5 +931,33 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
   })();
   </script>
 
+<script>
+(function () {
+  // Açılır her şey (menü paneli + dil kutuları) tek bir listeden yönetiliyor:
+  // biri açılırken diğerleri kapanmalı, sayfa boşluğuna tıklamak hepsini kapatmalı.
+  var groups = [];
+  var btn = document.querySelector('.navtoggle'), nav = document.getElementById('sitenav');
+  if (btn && nav) groups.push([btn, nav]);
+  document.querySelectorAll('.langsel').forEach(function (sel) {
+    var b = sel.querySelector('.langbtn'), m = sel.querySelector('.langmenu');
+    if (b && m) groups.push([b, m]);
+  });
+  function closeAll() {
+    groups.forEach(function (g) { g[1].classList.remove('open'); g[0].setAttribute('aria-expanded', 'false'); });
+  }
+  groups.forEach(function (g) {
+    g[0].addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = g[1].classList.contains('open');
+      closeAll();
+      if (!wasOpen) { g[1].classList.add('open'); g[0].setAttribute('aria-expanded', 'true'); }
+    });
+    g[1].addEventListener('click', function (e) { if (e.target.closest('a')) closeAll(); });
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+  addEventListener('resize', function () { if (innerWidth > 1024) closeAll(); });
+})();
+</script>
 </body>
 </html>

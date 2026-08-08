@@ -1,0 +1,91 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Karşılaştırma</p>
+  <span class="eyebrow">Karşılaştırma</span>
+  <h1>BRAMPP nerede duruyor</h1>
+  <p class="lede">İki tablo, dipnot yok. Buradaki her şey BRAMPP'ın ne yaptığıyla ilgili — başkasının yol haritası hakkında bir hüküm değil ve diğer araçların kötü seçimler olduğu iddiası hiç değil. Birkaçı, yapmak için yola çıktıkları işte gerçekten çok iyi.</p>
+</div>
+
+<section id="premise">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Çıkış noktası</span>
+      <h2>Mac'inizde zaten bir sunucu var</h2>
+    </div>
+    <p class="para">Homebrew size Apache, Nginx, beş PHP sürümü, MariaDB, PostgreSQL ve Redis veriyor; hepsi Apple Silicon için derlenmiş ve hepsi tek bir <code>brew upgrade</code> uzağınızda. Parçalar hâlihazırda orada ve hâlihazırda iyi. Eksik olan, onların bir kopyası daha değil — sizinle çalışan bir yerel site arasında duran yirmi dakikalık sanal sunucu düzenlemesi, <code>/etc/hosts</code> satırları, sertifika uğraşı ve port arkeolojisi.</p>
+    <p class="para">BRAMPP, yanınızda yaşayan ikinci ve özel bir yığın değil, zaten sahip olduğunuz servislerin üzerine geçirilmiş bir arayüz. Aşağıdaki farkların çoğunu bu tek karar açıklıyor. Aynı karar dürüst sınırı da çiziyor: makinenizde Homebrew istemiyorsanız BRAMPP size göre değil.</p>
+  </div>
+</section>
+
+<section class="band" id="bundled">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Paketlenmiş yığınlara karşı</span>
+      <h2>Paketlenmiş ikililer mi, kendi servisleriniz mi</h2>
+      <p class="lede">Klasik hepsi-bir-arada paketler kendi Apache'lerini, kendi PHP'lerini ve kendi MySQL'lerini kurulum dizini içinde yalıtılmış olarak getirir.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp" aria-label="Paketlenmiş yığınlarla BRAMPP karşılaştırması">
+        <thead><tr><th scope="col"><span class="vh">Ölçüt</span></th><th scope="col">Paketlenmiş yığınlar (XAMPP / MAMP)</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Sunucu ikilileri</th><td>Paketlenmiş, yalıtılmış, tekrarlanmış</td><td class="win">Kendi Homebrew servisleriniz</td></tr>
+          <tr><th scope="row">Desteklenen platformlar</th><td>Çoğunlukla PHP</td><td class="win">PHP, Node.js, Python, ASP.NET Core, statik</td></tr>
+          <tr><th scope="row">Web sunucuları</th><td>Apache</td><td class="win">Apache ve Nginx, hatta yan yana</td></tr>
+          <tr><th scope="row">Veritabanları</th><td>MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
+          <tr><th scope="row">Yerel HTTPS</th><td>Elle uğraş</td><td class="win">mkcert ile otomatik</td></tr>
+          <tr><th scope="row"><code>brew upgrade</code> uyumu</th><td>Pek değil</td><td class="win">Bütün mesele bu</td></tr>
+          <tr><th scope="row">Yapay zekâ erişimi</th><td>—</td><td class="win">Gömülü MCP sunucusu, 19 araç</td></tr>
+          <tr><th scope="row">Baştan sona arm64</th><td>Ürüne ve kuruluma göre değişir</td><td class="win">Uygulama <i>ve</i> yönettiği her servis, yerel olarak</td></tr>
+          <tr><th scope="row">Ücret</th><td>Ücretsiz sürüm; bazı ücretli paketler</td><td class="win">Ücretsiz, MIT, açık kaynak</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="para">Sonradan bedelini ödediğiniz kısım, bu tekrarlanma. Paketlenmiş bir yığın demek, tek makinede iki Apache, iki PHP ve iki MySQL demek — terminalinizin, editörünüzün ve CI betiklerinizin haberdar olduğu yalnızca bir tanesi. "Arayüzün çalıştırdığı sürüm" ile "<code>php -v</code> çıktısındaki sürüm" arasındaki kayma, gerçekten sık kaybedilen bir öğleden sonradır.</p>
+  </div>
+</section>
+
+<section id="native">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Yerel araçlara karşı</span>
+      <h2>Tek dile odaklı araçlar ve konteynerlar</h2>
+      <p class="lede">Mac'e özel araçlar tersi bir takas yaptı: sistemin kendi servislerini kullan, ama kapsamı daralt.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp" aria-label="Yerel araçlar ve konteynerlarla BRAMPP karşılaştırması">
+        <thead><tr><th scope="col"><span class="vh">Ölçüt</span></th><th scope="col">PHP öncelikli arayüzlü araçlar</th><th scope="col">Yalnızca terminal PHP araçları</th><th scope="col">Konteyner yığınları</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Kapsam</th><td>PHP öncelikli</td><td>Yalnızca PHP, terminal</td><td>Her şey, konteyner içinde</td><td class="win">PHP + Node + Python + .NET + statik</td></tr>
+          <tr><th scope="row">Servisler nerede çalışır</th><td>Paketlenmiş çalışma zamanı</td><td>Sizin Homebrew PHP'niz</td><td>Konteynerlar</td><td class="win">Sizin Homebrew servisleriniz</td></tr>
+          <tr><th scope="row">Arayüz</th><td>Var, bazı özellikler ücretli</td><td>Yok</td><td>Üçüncü taraf</td><td class="win">Var, ücretsiz</td></tr>
+          <tr><th scope="row">Nginx ve Apache</th><td>Nginx</td><td>Nginx</td><td>Size kalmış</td><td class="win">İkisi de, alan adı başına</td></tr>
+          <tr><th scope="row">Başlangıç maliyeti</th><td>Düşük</td><td>Düşük</td><td>Bir arka plan servisi ve imaj indirme</td><td class="win">Yerel süreçler, fazladan hiçbir şey</td></tr>
+          <tr><th scope="row">Ücret</th><td>Ücretsiz + ücretli</td><td>Ücretsiz</td><td>Ücretsiz</td><td class="win">Ücretsiz, MIT</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h">Konteynerların daha doğru yanıt olduğu durum</h3>
+    <p class="para">Üretim ortamınız konteynerlıysa ve yerelin ona bayt bayt uyması gerekiyorsa, yerelde de konteyner kullanın. Onlar tam olarak bunun için var ve hiçbir arayüz kolaylığı "aynı imaj her iki yerde de çalışıyor" cümlesini yenemez. BRAMPP diğer duruma bakıyor: bir Mac, birkaç dilde birkaç proje ve gece birde yapılandırma dosyası düzenlemeyi bırakma isteği.</p>
+    <h3 class="sub-h">Yalnızca PHP aracının daha doğru yanıt olduğu durum</h3>
+    <p class="para">Geliştirdiğiniz her şey PHP ise ve terminalde rahatsanız, tek işe odaklanmış bir PHP aracı daha hafiftir ve yolunuza çıkmaz. BRAMPP asıl yerini üçüncü proje bir FastAPI servisi, dördüncüsü bir Next.js uygulaması, beşincisi de özellikle Apache isteyen bir şey olduğunda kazanıyor — hepsini gerçek HTTPS arkasında çalıştıran tek bir pencere işte o noktada anlam kazanıyor.</p>
+  </div>
+</section>
+
+<section class="band" id="honest">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Açık konuşalım</span>
+      <h2>BRAMPP ne değildir</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>Bir üretim aracı değil.</b> Geliştirme makinesini yapılandırır. Yazdığı hiçbir şey dağıtılmak üzere tasarlanmadı.</li>
+      <li><b>Homebrew'un yerine geçmez.</b> Homebrew'u sürer; paketleri kendi içine kopyalamaz, arkanızdan sürüm sabitlemez.</li>
+      <li><b>Intel ya da eski macOS için değil.</b> Yalnızca Apple Silicon ve macOS 14+, ve bunun değişmesi beklenmiyor.</li>
+      <li><b>Bir rekabet sunumu değil.</b> BRAMPP ücretsiz ve MIT lisanslı. Sizi yönlendirecek ücretli bir paket yok; bu sayfanın başka bir şeyin daha iyi oturduğu durumları söyleyebilmesinin sebebi de bu.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}features/"><small>Sırada</small><b>BRAMPP neleri yönetiyor →</b></a>
+  <a href="{{UP}}install/"><small>Hazır mısınız?</small><b>Kurun →</b></a>
+</div>

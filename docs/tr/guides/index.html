@@ -21,7 +21,7 @@
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
- "@type": "TechArticle",
+ "@type": "CollectionPage",
  "headline": "Rehberler — macOS'ta yerel geliştirme",
  "description": "macOS'ta yerel geliştirme ortamı üzerine pratik rehberler: mkcert ile HTTPS, Apache ve Nginx birlikte, yapay zekâ asistanları için MCP.",
  "inLanguage": "tr",
@@ -99,7 +99,6 @@ code{
   padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
 .navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
 .navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
-@media (max-width:900px){.navlinks{display:none}}
 .topbar{
   position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -450,9 +449,97 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
   *,*::before,*::after{transition:none!important;animation:none!important}
   .sticky-dl{transition:none!important}
 }
+.secmore{margin:30px 0 0;text-align:center}
+.secmore .btn{font-size:15px}
+
+
+
+/* ── Mobil gezinme ─────────────────────────────────────────
+   Tek sayfadan çok sayfaya geçince menüyü dar ekranda gizlemek gezinmeyi
+   tümden kapatıyordu. ≤900px'te bağlantılar hamburger düğmesinin açtığı bir
+   panele taşınıyor; panel çubuğun üstüne bindiği için --bar-h değişmiyor. */
+.navtoggle{display:none;width:40px;height:38px;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;padding:0;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid var(--line-soft);border-radius:10px}
+.navtoggle span{display:block;width:17px;height:2px;border-radius:2px;background:var(--fg);
+  transition:transform .2s ease,opacity .2s ease}
+.navtoggle[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.navtoggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.navtoggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+@media (max-width:1024px){
+  .navtoggle{display:flex}
+  .navlinks{display:none;position:absolute;top:100%;left:0;right:0;z-index:79;
+    flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;
+    overflow:visible;pointer-events:auto;
+    background:rgba(11,21,38,.98);
+    -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
+    border-bottom:1px solid var(--line-soft);
+    padding:8px max(14px,var(--pad)) 12px}
+  .navlinks.open{display:flex}
+  .navlinks a{font-size:15px;padding:11px 12px;border-radius:9px}
+}
+.navlinks a{white-space:nowrap}
+/* Site CSS'i satır içi <code> için white-space:nowrap veriyor; bu, uzun bir
+   komut satırının ("mysqldump --single-transaction …") dar ekranda sayfayı
+   kendi genişliğine zorlamasına yol açıyordu. Metin içindeki kod sarılabilsin,
+   <pre> içindeki kod bloğu ise biçimini korusun. */
+code{white-space:normal;overflow-wrap:anywhere}
+pre code{white-space:pre;overflow-wrap:normal}
+/* Mobil üst çubuk düzeni: solda logo + marka adı, sağda dil seçimi ve menü
+   düğmesi. İndirme düğmesi dar ekranda çıkarıldı — hem yer kaplıyordu hem de
+   indirme zaten her sayfanın gövdesinde duruyor. */
+@media (max-width:1024px){
+  .topbar .pill-dl{display:none}
+  .brandmark b{display:inline !important}
+  .barcta{gap:6px}
+}
+@media (max-width:380px){
+  .brandmark b{font-size:15.5px}
+  .pill{font-size:12px;padding:8px 10px}
+}
+/* ── Dil kutusu ────────────────────────────────────────────
+   Düğme bulunduğunuz dili gösterir; liste iki seçeneği sunar. Panel sağ kenara
+   hizalı çünkü kutu her zaman çubuğun/footer'ın sağ ucunda duruyor. */
+.langsel{position:relative;flex:0 0 auto}
+.langbtn{cursor:pointer;font-family:inherit}
+.langbtn .chev{font-size:10px;opacity:.7;margin-left:1px}
+.langmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:90;
+  min-width:158px;padding:6px;border-radius:12px;
+  background:rgba(13,24,42,.98);border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.85)}
+.langmenu.open{display:block}
+.langmenu a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;
+  text-decoration:none;color:var(--muted);font-size:14px;font-weight:500;white-space:nowrap}
+.langmenu a:hover{background:rgba(255,255,255,.07);color:var(--fg)}
+.langmenu a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+
+/* ── Site footer'ı ─────────────────────────────────────────
+   Alt sayfalarda ana sayfadaki kısa footer yerine sütunlu sürüm kullanılıyor;
+   her sayfadan diğer sayfalara ve rehberlere çıkış olsun diye. */
+.sitefoot{border-top:1px solid var(--line-soft);margin-top:80px;padding:44px 0 40px;
+  background:rgba(6,13,26,.5)}
+.footgrid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.footgrid h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);margin:0 0 12px}
+.footgrid a{display:block;color:var(--muted);text-decoration:none;font-size:14.5px;
+  line-height:1.5;margin:0 0 8px}
+.footgrid a:hover{color:var(--amber-hi)}
+.footlang .langmenu{right:auto;left:0;top:auto;bottom:calc(100% + 6px)}
+.footbase{margin-top:34px;padding-top:22px;border-top:1px solid var(--line-soft);
+  color:var(--muted);font-size:14.5px;line-height:1.7}
+.footbase p{margin:0 0 6px}
+.footbase a{color:var(--muted);text-decoration:none}
+.footbase a:hover{color:var(--amber-hi)}
+.footbase .fine{font-size:13px;color:#8ea3bd;margin-top:12px}
+@media (max-width:1024px){
+  /* Dil kutusu menü ikonunun hemen soluna yapışsın — ortada asılı kalmasın. */
+  .topbar .barcta{margin-left:auto}
+}
 
 main.guide{max-width:760px;margin:0 auto;padding:calc(var(--bar-h) + 48px) var(--pad) 96px}
-.guide h1{font-size:clamp(30px,4.4vw,42px);line-height:1.15;letter-spacing:-.8px;margin:0 0 14px}
+main.page{padding-top:calc(var(--bar-h) + 40px)}
+.guide h1,.page h1{font-size:clamp(30px,4.4vw,42px);line-height:1.15;letter-spacing:-.8px;margin:0 0 14px}
 .guide .lede{font-size:19px;color:var(--muted);line-height:1.65;margin:0 0 12px}
 .guide .meta{font-size:13px;color:var(--dim);margin:0 0 40px}
 .guide h2{font-size:25px;letter-spacing:-.3px;margin:44px 0 12px;scroll-margin-top:90px}
@@ -474,15 +561,49 @@ main.guide{max-width:760px;margin:0 auto;padding:calc(var(--bar-h) + 48px) var(-
 .guide th{background:rgba(255,255,255,.04);font-weight:600}
 .backlink{display:inline-block;margin-top:48px;color:var(--muted);text-decoration:none;font-size:15px}
 .backlink:hover{color:var(--amber-hi)}
+.pagehead{max-width:820px;margin:0 auto 8px;padding:0 var(--pad);text-align:center}
+.pagehead .lede{font-size:19px;color:var(--muted);line-height:1.65;margin:12px auto 0;max-width:660px}
+.crumb{font-size:13px;color:var(--dim);margin:0 0 16px}
+.crumb a{color:var(--muted);text-decoration:none}
+.crumb a:hover{color:var(--amber-hi)}
+.nextprev{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));max-width:900px;margin:56px auto 0;padding:0 var(--pad)}
+.nextprev a{display:block;border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;background:var(--card)}
+.nextprev a:hover{border-color:var(--amber);background:rgba(245,158,11,.05)}
+.nextprev small{display:block;color:var(--dim);font-size:12px;margin-bottom:3px}
+.nextprev b{color:var(--fg);font-size:15.5px}
+/* Tanıtım sayfaları: başlıklar ortalı (.shead ana sayfayla aynı), gövde metni ise
+   ortalanmış 780px'lik bir sütunda sola dayalı — uzun paragraflar böyle okunuyor. */
+.page .para,.page .bullets,.page .callout,.page .sub-h,.page pre{max-width:780px;margin-left:auto;margin-right:auto}
+.page .para{font-size:17px;line-height:1.72;color:#cfdcec;margin-top:0;margin-bottom:17px}
+.page .bullets{margin-top:14px;margin-bottom:14px;padding-left:22px}
+.page .bullets li{font-size:17px;line-height:1.72;color:#cfdcec;margin:8px 0}
+.page .para b,.page .bullets b{color:var(--fg)}
+.page .note{max-width:780px;margin-left:auto;margin-right:auto}
+/* Uzun satır içi kod ("mysqldump --single-transaction …") bölünemediği için dar
+   ekranda sayfayı kendi genişliğine zorluyordu. Site CSS'i <code> için
+   white-space:nowrap veriyor — onu geçmeden overflow-wrap tek başına işe
+   yaramıyor. <pre> içindeki blok kod biçimini korur. */
+.page code,.guide code{white-space:normal;overflow-wrap:anywhere}
+.page pre code,.guide pre code{white-space:pre;overflow-wrap:normal}
+.page section:first-of-type{padding-top:8px}
+.page pre{background:#0a1424;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;margin-top:16px;margin-bottom:16px}
+.page pre code{background:none;border:0;padding:0;font-size:13.5px;line-height:1.6;color:#d7e5f7}
+.page kbd{background:rgba(255,255,255,.07);border:1px solid var(--line-soft);border-radius:5px;padding:1px 6px;font-size:14px}
+/* Ana sayfadaki .sub-h tablo etiketi olarak tasarlandı (13px, büyük harf, ortalı).
+   Uzun metin sayfalarında ara başlık gibi okunması gerekiyor. */
+.page .sub-h{font-size:21px;font-weight:650;letter-spacing:-.2px;text-transform:none;
+  color:var(--fg);text-align:left;margin-top:38px;margin-bottom:10px}
 </style>
 </head>
 <body>
 <nav class="topbar is-scrolled" aria-label="Site">
   <a class="brandmark" href="../../" aria-label="BRAMPP"><img src="../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks" id="sitenav"><a href="../../features/">Özellikler</a><a href="../../install/">Kurulum</a><a href="../../mcp/">MCP</a><a href="../../compare/">Karşılaştırma</a><a href="../../guides/" aria-current="true">Rehberler</a><a href="../../#faq">SSS</a></div>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <a class="pill" href="../../guides/" hreflang="en" lang="en">🇬🇧 English</a>
+    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../../guides/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/guides/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
   </div>
+  <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
 <main class="guide">
 <h1>Rehberler</h1>
@@ -501,5 +622,66 @@ main.guide{max-width:760px;margin:0 auto;padding:calc(var(--bar-h) + 48px) var(-
 <a class="backlink" href="../../">← BRAMPP'e dön</a>
 
 </main>
+<footer class="sitefoot">
+  <div class="wrap footgrid">
+    <div>
+      <h2>Sayfalar</h2>
+      <a href="../../tr/">Ana sayfa</a>
+      <a href="../../tr/features/">Özellikler</a>
+      <a href="../../tr/install/">Kurulum</a>
+      <a href="../../tr/mcp/">MCP</a>
+      <a href="../../tr/compare/">Karşılaştırma</a>
+    </div>
+    <div>
+      <h2>Rehberler</h2>
+      <a href="../../tr/guides/">Rehberler</a>
+      <a href="../../tr/guides/local-https/">Yerel HTTPS</a>
+      <a href="../../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
+      <a href="../../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
+    </div>
+    <div>
+      <h2>Proje</h2>
+      <a href="https://github.com/macitkaraca/brampp">Depo</a>
+      <a href="https://github.com/macitkaraca/brampp/releases/latest">Son sürüm</a>
+      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">Lisans</a>
+    </div>
+    <div class="footlang">
+      <h2>Dil</h2>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../../guides/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/guides/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    </div>
+  </div>
+  <div class="wrap footbase">
+    <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> bünyesinde geliştirildi · MIT © 2023–2026 Karaca Teknoloji</p>
+    <p class="fine">"bremp" diye okunur. Ücretsiz ve açık kaynak, MIT lisanslı.</p>
+  </div>
+</footer>
+<script>
+(function () {
+  // Açılır her şey (menü paneli + dil kutuları) tek bir listeden yönetiliyor:
+  // biri açılırken diğerleri kapanmalı, sayfa boşluğuna tıklamak hepsini kapatmalı.
+  var groups = [];
+  var btn = document.querySelector('.navtoggle'), nav = document.getElementById('sitenav');
+  if (btn && nav) groups.push([btn, nav]);
+  document.querySelectorAll('.langsel').forEach(function (sel) {
+    var b = sel.querySelector('.langbtn'), m = sel.querySelector('.langmenu');
+    if (b && m) groups.push([b, m]);
+  });
+  function closeAll() {
+    groups.forEach(function (g) { g[1].classList.remove('open'); g[0].setAttribute('aria-expanded', 'false'); });
+  }
+  groups.forEach(function (g) {
+    g[0].addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = g[1].classList.contains('open');
+      closeAll();
+      if (!wasOpen) { g[1].classList.add('open'); g[0].setAttribute('aria-expanded', 'true'); }
+    });
+    g[1].addEventListener('click', function (e) { if (e.target.closest('a')) closeAll(); });
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+  addEventListener('resize', function () { if (innerWidth > 1024) closeAll(); });
+})();
+</script>
 </body>
 </html>

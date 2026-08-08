@@ -1,0 +1,8 @@
+{"published": "2026-08-08",
+ "path": "install",
+ "nav": "install/",
+ "type": "WebPage",
+ "en": {"title": "Install BRAMPP on macOS — requirements and first run",
+        "desc": "Download the DMG, drag it to Applications and run the setup wizard. Requirements, what the wizard configures, how to verify the signature, building from source, and fixes for the errors people hit."},
+ "tr": {"title": "macOS'ta BRAMPP kurulumu — gereksinimler ve ilk çalıştırma",
+        "desc": "DMG'yi indirin, Uygulamalar'a sürükleyin ve kurulum sihirbazını çalıştırın. Gereksinimler, sihirbazın yapılandırdıkları, imza doğrulaması, kaynaktan derleme ve sık karşılaşılan hataların çözümü."}}

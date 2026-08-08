@@ -1,5 +1,0 @@
-{"published":"2026-08-08",
- "en":{"title":"An MCP server for your local development environment",
-       "desc":"What Model Context Protocol changes for local development, why scoped permissions matter more than tool count, and how to expose a dev environment to an assistant safely."},
- "tr":{"title":"Yerel geliştirme ortamınız için MCP sunucusu",
-       "desc":"Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu."}}

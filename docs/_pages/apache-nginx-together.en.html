@@ -69,6 +69,6 @@ nginx: master process /opt/homebrew/opt/nginx/bin/nginx -g daemon off;</code></p
 <p>Either the reload was skipped (see above) or you edited a file that is not included. Confirm with the server itself: <code>apachectl -S</code> lists the vhosts Apache actually loaded, and <code>nginx -T</code> prints the entire effective configuration.</p>
 
 <h2>How BRAMPP handles it</h2>
-<p><a href="../../">BRAMPP</a> runs both servers with this split by default and lets you choose, per domain, which one serves it. It writes the vhost, issues the certificate, adds the hosts entry and reloads the correct server — and because it starts a domain's bound web server before the app behind it, the reverse-proxy ordering above is handled rather than left to chance.</p>
+<p><a href="{{UP}}">BRAMPP</a> runs both servers with this split by default and lets you choose, per domain, which one serves it. It writes the vhost, issues the certificate, adds the hosts entry and reloads the correct server — and because it starts a domain's bound web server before the app behind it, the reverse-proxy ordering above is handled rather than left to chance.</p>
 <p>Free and open source under the MIT license. It does not bundle its own Apache or Nginx: it drives the Homebrew formulas already installed on your machine.</p>
-<a class="backlink" href="../../">← Back to BRAMPP</a>
+<a class="backlink" href="{{UP}}">← Back to BRAMPP</a>

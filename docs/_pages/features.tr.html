@@ -1,0 +1,108 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Özellikler</p>
+  <span class="eyebrow">Özellikler</span>
+  <h1>BRAMPP neleri yönetiyor</h1>
+  <p class="lede">Yerel geliştirme ortamı, her biri on dakika süren ve hiç kısalmayan bir düzine küçük işten ibarettir. Bu sayfa, BRAMPP'ın devraldığı işlerin tam listesi — ve önemli olduğu yerde, nasıl devraldığı.</p>
+</div>
+
+<section id="services">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Servisler</span>
+      <h2>Başlat, durdur, durumu gerçekten bil</h2>
+      <p class="lede">Altı servis, tek liste, canlı durum. En çok uğraştıran kısım servisleri başlatmak değildi; durumları hakkında doğruyu söylemekti.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp">
+        <thead><tr><th scope="col">Servis</th><th scope="col">Sürüm</th><th scope="col">BRAMPP ne yapıyor</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Apache <code>httpd</code></th><td>Homebrew güncel</td><td>Portlar, sanal sunucular, modüller, alan adı başına belge kökü, kesintisiz yeniden yükleme</td></tr>
+          <tr><th scope="row">Nginx</th><td>Homebrew güncel</td><td>Server blokları, alan adı başına SSL, uygulama sunucularına ters vekil</td></tr>
+          <tr><th scope="row">PHP-FPM</th><td>8.1 – 8.5, yan yana</td><td>Her sürüm için ayrı havuz; bir alan adı kendi sürümünü seçer, diğerleri etkilenmez</td></tr>
+          <tr><th scope="row">MariaDB / MySQL</th><td>Homebrew güncel</td><td>Başlat/durdur, root erişimi, <code>my.cnf</code> düzenleme, yedek alma ve geri yükleme</td></tr>
+          <tr><th scope="row">PostgreSQL</th><td>Birden çok ana sürüm</td><td>Çalışan örnek tahmin edilmez, tespit edilir — yanlış port sürprizi yok</td></tr>
+          <tr><th scope="row">Redis</th><td>Homebrew güncel</td><td>Başlat/durdur, <code>redis.conf</code> ve uygulamanın içine gömülü canlı istatistik paneli</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h">Güvenebileceğiniz durum bilgisi</h3>
+    <p class="para">Her durum satırı üç denetimi birleştirir: süreç yaşıyor mu, port yanıt veriyor mu ve o porttaki PID gerçekten o servise mi ait. Üçüncüsü kulağa geldiğinden daha önemli — bayat bir PID dosyası ya da 80 numaralı portu işgal eden başka bir süreç, tam olarak naif denetimin "çalışıyor" dediği, tarayıcının ise aksini söylediği durumdur.</p>
+    <p class="para">Durdurma da aynı özenle yapılır: BRAMPP sinyal göndermeden önce portun sahibini doğrular, yani yalnızca sizinkine benzeyen bir süreci asla öldürmez. Bir servis kendiliğinden çökerse, bunu başarısız bir istekten değil bildirimden öğrenirsiniz.</p>
+    <div class="callout"><p><b>Bağımlılıklar sizin yerinize çözülür.</b> Node, Python veya .NET tabanlı bir alan adını başlatmak, önündeki web sunucusunu da başlatır — o sunucu Nginx ise ve alan adının bir Apache eşlikçisi varsa o da başlatılır. Kurulu olmayan servisler sessizce başarısız olmak yerine "kurulu değil" diye bildirilir.</p></div>
+  </div>
+</section>
+
+<section class="band" id="domains">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Alan adları</span>
+      <h2>Tek pencerede çalışan bir site</h2>
+      <p class="lede">Adını yazın, platformu seçin, bitti. Bu tek adımın arkasında BRAMPP sanal sunucuyu yazar, <code>/etc/hosts</code> kaydını ekler, site klasörünü oluşturur, başlangıç projesini üretir ve SSL sertifikasını hazırlar.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🐘</span><h3>PHP</h3><p>PHP sürümünü <i>alan adı başına</i> seçin. Eski proje 8.1'de kalır, yenisi 8.4 ile çalışır, ikisi de diğerinden habersizdir.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🟩</span><h3>Node.js</h3><p>Express, Next.js ya da bir portu dinleyen herhangi bir şey. BRAMPP önüne ters vekil koyar ve süreci gözetir.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🐍</span><h3>Python</h3><p>FastAPI, Django ve Flask şablonları; her biri alan adı oluşturulurken kendi sanal ortamıyla gelir.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🟪</span><h3>ASP.NET Core</h3><p>Apache ya da Nginx arkasında Kestrel; vekil başlıkları doğru ayarlanır, uygulama gerçek şemayı ve konağı görür.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📄</span><h3>Statik &amp; SPA</h3><p>Düz statik siteler ya da history modunda geri düşüşlü tek sayfa uygulamalar — derin bağlantılar 404 yerine sayfayı açar.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔀</span><h3>Alan adı başına Apache ya da Nginx</h3><p>Genel bir ayar değil. Bir proje Apache'de, diğeri Nginx'te, ikisi aynı anda — <a href="{{UP}}guides/apache-nginx-together/">birlikte çalıştırma rehberine</a> bakın.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="https">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">HTTPS</span>
+      <h2>Sarı uyarılar olmadan, yerelde asma kilit</h2>
+      <p class="lede">Kendinden imzalı sertifika, sunucuyu ne kadar dikkatli yapılandırırsanız yapılandırın reddedilir. BRAMPP diğer yolu seçer: yerel bir sertifika otoritesi.</p>
+    </div>
+    <p class="para">Tek tıklama <code>mkcert</code>'i kurar, otoritesini macOS sistem güven deposuna ekler — göreceğiniz tek parola istemi budur — ve oluşturduğunuz her alan adı için sertifika üretir. Tarayıcılar bu sertifikalara, halka açık bir sertifikaya güvendikleri gibi güvenir; çünkü onları imzalayan otorite makinenizde gerçekten güvenilirdir.</p>
+    <p class="para">Her alan adı ayrıca HTTP→HTTPS yönlendirmesi alır; böylece <code>http://projem.local</code> güvenli adrese düşer, sitenizin ikinci ve az farklı bir sürümünü sunmaz. Hikâyenin tamamı — macOS'ta <code>.local</code> uzantısının neden tuzak olduğu ve yerine ne kullanılacağı dâhil — <a href="{{UP}}guides/local-https/">yerel HTTPS rehberinde</a>.</p>
+  </div>
+</section>
+
+<section class="band" id="databases">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Veritabanları</span>
+      <h2>Oluştur, yedekle, geri yükle — terminal olmadan</h2>
+      <p class="lede">Terminali istediğinizde ise BRAMPP sizin kullanacağınız araçların aynısını kullanır: <code>mysqldump</code>, <code>mysql</code>, <code>pg_dump</code>. Ürettiği dosyalar her yerde geri yüklenen sıradan yedeklerdir.</p>
+    </div>
+    <ul class="bullets">
+      <li><b>Oluşturma ve silme</b> — MariaDB/MySQL ve PostgreSQL üzerinde, ad doğrulaması sınırda yapılır.</li>
+      <li><b>Dışa aktarma</b> — <code>mysqldump --single-transaction --routines --triggers</code> ile: InnoDB tablolarını kilitlemeyen tutarlı bir anlık görüntü, saklı yordamlar ve tetikleyiciler korunur.</li>
+      <li><b>İçe aktarma</b> — bir <code>.sql</code> dosyasını hedef veritabanına uygular, yoksa önce oluşturur.</li>
+      <li><b>Yarım yedek asla bırakılmaz.</b> Dışa aktarma başarısız olursa eksik dosya silinir — bozuk bir yedek, yedeğin hiç olmamasından kötüdür; çünkü bunu ancak ihtiyacınız olduğunda fark edersiniz.</li>
+      <li><b>Web istemcileri</b> — phpMyAdmin, pgAdmin ve Adminer isterseniz uygulama içinden kurulur.</li>
+      <li><b>Yapılandırma düzenleyicileri</b> — <code>my.cnf</code>, <code>postgresql.conf</code> ve <code>redis.conf</code> için; her kayıttan önce yedek yazılır.</li>
+    </ul>
+    <h3 class="sub-h">Redis, sayılarla</h3>
+    <p class="para">Redis sekmesi <code>INFO</code> çıktısını okur; çalışma süresini, bağlı istemcileri, zirveye göre kullanılan belleği, toplam komut sayısını ve veritabanı başına isabet oranını gösterir. Henüz hiç istek gelmediyse yanıltıcı bir "%0 isabet" yerine bunu açıkça söyler — 0 aramada 0 isabet, önbellek ıskası değil, verinin yokluğudur.</p>
+  </div>
+</section>
+
+<section id="tooling">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Araçlar</span>
+      <h2>Geri kalanı</h2>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP eklenti yöneticisi</h3><p>Her PHP sürümü için 50'den fazla eklenti — xdebug, redis, imagick ve diğerleri — tek tıkla açılıp kapanır, PECL ile kurulur; ayrıca <code>php.ini</code> içinde gerçekten değiştirdiğiniz değerler için hızlı ayarlar.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>Uygulama sunucusu gözetmeni</h3><p>Node, Python ve .NET uygulamaları bağımlılıksız bir gözetmen altında çalışır: çöktüğünde otomatik yeniden başlatma, birleşik günlükler ve sinyalden önce port sahipliğini denetleyen bir durdurma.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Kurulum sihirbazı</h3><p>Apache portları, PHP-FPM, mkcert otoritesi, localhost SSL, MariaDB root erişimi ve phpMyAdmin — sırayla yapılandırılır, yalnızca onayladığınız kurulur, çalıştırılan her komut konsola yazılır.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📜</span><h3>Uygulama içinde günlükler</h3><p>Apache, Nginx, PHP-FPM ve alan adı başına erişim/hata günlükleri; <code>/opt/homebrew/var/log</code> içinde arama yapmadan okunur.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Dürüst yedekler</h3><p>Tek tıkla alan adları, ayarlar, sanal sunucular, SSL sertifikaları ve php.ini dosyaları yedeklenir. Eksik yedekler tespit edilip işaretlenir — tammış gibi sessizce geri yüklenmez.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menü çubuğu</h3><p>Ortamınız menü çubuğunda: servisleri başlatın ve durdurun, ana pencereyi açın, girişte başlatın, çökme bildirimleri alın. Türkçe ve İngilizce, çalışırken değiştirilebilir.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>MCP sunucusu</h3><p>Alan bazlı izinlerin arkasında 19 araç sunan yerel bir Model Context Protocol uç noktası; öntanımlı olarak kapalı. Ayrıntılar <a href="{{UP}}mcp/">MCP sayfasında</a>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔄</span><h3>Sürüm denetimi</h3><p>BRAMPP yeni bir sürüm var mı diye GitHub'a sorar ve size söyler. Arkanızdan hiçbir şey kurmaz.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Baştan sona yerel arm64</h3><p>Uygulama macOS 14+ üzerinde yerel bir Apple Silicon ikilisidir; yönettiği her şey de öyle — <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> ve <code>redis-server</code> hepsi Homebrew'un arm64 paketlerinden gelir. Hiçbir katmanda Rosetta ya da öykünme yok.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}install/"><small>Sırada</small><b>BRAMPP'ı kurun →</b></a>
+  <a href="{{UP}}compare/"><small>Ayrıca</small><b>Nerede duruyor? →</b></a>
+</div>

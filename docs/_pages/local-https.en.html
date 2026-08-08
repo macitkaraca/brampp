@@ -77,6 +77,6 @@ sudo sh -c 'echo "127.0.0.1 myapp.test" >> /etc/hosts'</code></pre>
 <p>Then point the vhost at the two files and reload the server. The friction is not in doing it once — it is in doing it for the eleventh project, remembering which certificate belongs to which vhost, and keeping the hosts file honest when projects come and go.</p>
 
 <h2>How BRAMPP handles it</h2>
-<p><a href="../../">BRAMPP</a> runs those same steps for you when you add a domain: it creates the vhost, issues the certificate through mkcert, adds the hosts entry, and reloads the right web server. Nothing is hidden — every command it runs is printed in the console as it runs, and the certificates are ordinary mkcert files you can inspect or reuse.</p>
+<p><a href="{{UP}}">BRAMPP</a> runs those same steps for you when you add a domain: it creates the vhost, issues the certificate through mkcert, adds the hosts entry, and reloads the right web server. Nothing is hidden — every command it runs is printed in the console as it runs, and the certificates are ordinary mkcert files you can inspect or reuse.</p>
 <p>It is free and open source under the MIT license, and it does not bundle its own Apache, PHP or MySQL: it drives the Homebrew services already on your machine.</p>
-<a class="backlink" href="../../">← Back to BRAMPP</a>
+<a class="backlink" href="{{UP}}">← Back to BRAMPP</a>

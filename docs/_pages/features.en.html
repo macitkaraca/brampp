@@ -1,0 +1,108 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Features</p>
+  <span class="eyebrow">Features</span>
+  <h1>Everything BRAMPP manages</h1>
+  <p class="lede">A local development stack is a dozen small chores that each take ten minutes and never get faster. This page is the full list of the ones BRAMPP takes over — and, where it matters, how.</p>
+</div>
+
+<section id="services">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Services</span>
+      <h2>Start, stop, and actually know the state</h2>
+      <p class="lede">Six services, one list, live status. The part that took the longest to get right is not starting them — it is reporting the truth about them.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp">
+        <thead><tr><th scope="col">Service</th><th scope="col">Versions</th><th scope="col">What BRAMPP does with it</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Apache <code>httpd</code></th><td>Homebrew current</td><td>Ports, vhosts, modules, per-domain document roots, graceful reloads</td></tr>
+          <tr><th scope="row">Nginx</th><td>Homebrew current</td><td>Server blocks, per-domain SSL, reverse proxies to app servers</td></tr>
+          <tr><th scope="row">PHP-FPM</th><td>8.1 – 8.5, side by side</td><td>A pool per version; a domain picks its own version without touching the others</td></tr>
+          <tr><th scope="row">MariaDB / MySQL</th><td>Homebrew current</td><td>Start/stop, root access, <code>my.cnf</code> editing, dump and restore</td></tr>
+          <tr><th scope="row">PostgreSQL</th><td>Several majors</td><td>The running instance is detected, not guessed — no wrong-port surprises</td></tr>
+          <tr><th scope="row">Redis</th><td>Homebrew current</td><td>Start/stop, <code>redis.conf</code>, and a live stats panel built into the app</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h">Status you can trust</h3>
+    <p class="para">Every status line combines three checks: is the process alive, is the port answering, and does the PID on that port actually belong to the service. That third one matters more than it sounds — a stale PID file or a different process squatting on port 80 is exactly the situation where a naive check says "running" and your browser says otherwise.</p>
+    <p class="para">Stopping is equally careful: BRAMPP verifies port ownership before it signals anything, so it will never kill a process that merely looks like yours. If a service dies on its own, you get a notification instead of finding out from a failed request.</p>
+    <div class="callout"><p><b>Dependencies are resolved for you.</b> Starting a Node, Python or .NET domain also starts the web server in front of it — and if that server is Nginx running a domain with an Apache companion, that gets started too. Services that are not installed are reported as such rather than silently failing.</p></div>
+  </div>
+</section>
+
+<section class="band" id="domains">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Domains</span>
+      <h2>A working site in one dialog</h2>
+      <p class="lede">Name it, pick a platform, done. Behind that single step BRAMPP writes a virtual host, adds the <code>/etc/hosts</code> entry, creates the site folder, generates a starter project and issues an SSL certificate.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🐘</span><h3>PHP</h3><p>Pick the PHP version <i>per domain</i>. A legacy project stays on 8.1 while the new one runs 8.4, and neither knows the other exists.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🟩</span><h3>Node.js</h3><p>Express, Next.js or anything that listens on a port. BRAMPP puts a reverse proxy in front and supervises the process.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🐍</span><h3>Python</h3><p>FastAPI, Django and Flask templates, each with its own virtual environment created at domain-creation time.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🟪</span><h3>ASP.NET Core</h3><p>Kestrel behind Apache or Nginx, with the proxy headers set correctly so the app sees the real scheme and host.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📄</span><h3>Static &amp; SPA</h3><p>Plain static sites, or single-page apps with history-mode fallback so deep links resolve instead of 404ing.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔀</span><h3>Apache or Nginx, per domain</h3><p>Not a global setting. One project on Apache, the next on Nginx, both running at once — see the <a href="{{UP}}guides/apache-nginx-together/">guide on running them together</a>.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="https">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">HTTPS</span>
+      <h2>The padlock, locally, without the yellow warnings</h2>
+      <p class="lede">A self-signed certificate is rejected no matter how carefully you configure the server. BRAMPP takes the other route: a local certificate authority.</p>
+    </div>
+    <p class="para">One click sets up <code>mkcert</code>, installs its CA into the macOS system trust store — that is the single password prompt you will see — and issues a certificate for each domain you create. Browsers then trust those certificates the way they trust a public one, because the authority that signed them is genuinely trusted on your machine.</p>
+    <p class="para">Each domain also gets an HTTP→HTTPS redirect, so <code>http://myproject.local</code> lands on the secure address rather than serving a second, subtly different version of your site. The full story — including why <code>.local</code> is a trap on macOS and what to use instead — is in the <a href="{{UP}}guides/local-https/">local HTTPS guide</a>.</p>
+</div>
+</section>
+
+<section class="band" id="databases">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Databases</span>
+      <h2>Create, dump, restore — without the CLI</h2>
+      <p class="lede">And when you do want the CLI, BRAMPP uses the same tools you would: <code>mysqldump</code>, <code>mysql</code>, <code>pg_dump</code>. The files it produces are ordinary dumps that restore anywhere.</p>
+    </div>
+    <ul class="bullets">
+      <li><b>Create and drop</b> databases on MariaDB/MySQL and PostgreSQL, with name validation at the boundary.</li>
+      <li><b>Export</b> with <code>mysqldump --single-transaction --routines --triggers</code> — a consistent snapshot that does not lock InnoDB tables, keeping stored routines and triggers.</li>
+      <li><b>Import</b> a <code>.sql</code> file into a target database, creating it first if it does not exist.</li>
+      <li><b>A partial dump is never left behind.</b> If an export fails the incomplete file is deleted — a corrupt backup is worse than no backup, because you only discover it when you need it.</li>
+      <li><b>Web clients</b> — phpMyAdmin, pgAdmin and Adminer install from inside the app if you want them.</li>
+      <li><b>Config editors</b> for <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code>, with a backup written before every save.</li>
+    </ul>
+    <h3 class="sub-h">Redis, with numbers</h3>
+    <p class="para">The Redis tab reads <code>INFO</code> and shows uptime, connected clients, memory used against peak, total commands, and the keyspace hit rate per database. When nothing has been requested yet it says so rather than reporting a misleading "0% hit rate" — 0 hits out of 0 lookups is not a cache miss, it is an absence of data.</p>
+  </div>
+</section>
+
+<section id="tooling">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Tooling</span>
+      <h2>The rest of it</h2>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP extension manager</h3><p>50+ extensions per PHP version — xdebug, redis, imagick and the rest — toggled with one click, installed through PECL, plus quick settings for the values in <code>php.ini</code> you actually change.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>App server supervisor</h3><p>Node, Python and .NET apps run under a zero-dependency supervisor: automatic restart on crash, combined logs, and a stop that checks port ownership before signalling.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Setup wizard</h3><p>Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin — configured in order, installing only what you approve, printing every command it runs to the console.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📜</span><h3>Logs in the app</h3><p>Apache, Nginx, PHP-FPM and per-domain access and error logs, readable without hunting through <code>/opt/homebrew/var/log</code>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Honest backups</h3><p>One click backs up domains, settings, vhosts, SSL certificates and php.ini files. Incomplete backups are detected and flagged — never silently restored as though they were whole.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menu bar</h3><p>The stack in your menu bar: start and stop services, open the main window, launch at login, crash notifications. Turkish and English, switchable while running.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>MCP server</h3><p>A local Model Context Protocol endpoint with 19 tools behind per-area permissions, off by default. Details on the <a href="{{UP}}mcp/">MCP page</a>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔄</span><h3>Update check</h3><p>BRAMPP asks GitHub whether a newer release exists and tells you. It does not install anything behind your back.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Native arm64, end to end</h3><p>The app is a native Apple Silicon binary on macOS 14+, and so is everything it manages — <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> and <code>redis-server</code> all come from Homebrew's arm64 bottles. No Rosetta, no emulation layer, at any level.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}install/"><small>Next</small><b>Install BRAMPP →</b></a>
+  <a href="{{UP}}compare/"><small>Also</small><b>How it compares →</b></a>
+</div>

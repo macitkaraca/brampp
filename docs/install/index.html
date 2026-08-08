@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Yerel geliştirme ortamınız için MCP sunucusu</title>
-<meta name="description" content="Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.">
-<link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/">
-<link rel="icon" type="image/png" href="../../../assets/icon-256.png">
+<title>Install BRAMPP on macOS — requirements and first run</title>
+<meta name="description" content="Download the DMG, drag it to Applications and run the setup wizard. Requirements, what the wizard configures, how to verify the signature, building from source, and fixes for the errors people hit.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/install/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/install/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/install/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/install/">
+<link rel="icon" type="image/png" href="../assets/icon-256.png">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Yerel geliştirme ortamınız için MCP sunucusu">
-<meta property="og:description" content="Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.">
-<meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
+<meta property="og:title" content="Install BRAMPP on macOS — requirements and first run">
+<meta property="og:description" content="Download the DMG, drag it to Applications and run the setup wizard. Requirements, what the wizard configures, how to verify the signature, building from source, and fixes for the errors people hit.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/install/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,10 +21,10 @@
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
- "@type": "TechArticle",
- "headline": "Yerel geliştirme ortamınız için MCP sunucusu",
- "description": "Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.",
- "inLanguage": "tr",
+ "@type": "WebPage",
+ "name": "Install BRAMPP on macOS — requirements and first run",
+ "description": "Download the DMG, drag it to Applications and run the setup wizard. Requirements, what the wizard configures, how to verify the signature, building from source, and fixes for the errors people hit.",
+ "inLanguage": "en",
  "datePublished": "2026-08-08",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
  "author": {
@@ -36,7 +36,7 @@
   "@type": "Organization",
   "name": "Karaca Teknoloji"
  },
- "mainEntityOfPage": "https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/"
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/install/"
 }
 </script>
 <style>
@@ -597,113 +597,142 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
 </head>
 <body>
 <nav class="topbar is-scrolled" aria-label="Site">
-  <a class="brandmark" href="../../../" aria-label="BRAMPP"><img src="../../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks" id="sitenav"><a href="../../../features/">Özellikler</a><a href="../../../install/">Kurulum</a><a href="../../../mcp/">MCP</a><a href="../../../compare/">Karşılaştırma</a><a href="../../../guides/" aria-current="true">Rehberler</a><a href="../../../#faq">SSS</a></div>
+  <a class="brandmark" href="../" aria-label="BRAMPP"><img src="../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks" id="sitenav"><a href="../features/">Features</a><a href="../install/" aria-current="true">Install</a><a href="../mcp/">MCP</a><a href="../compare/">Compare</a><a href="../guides/">Guides</a><a href="../#faq">FAQ</a></div>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../../../guides/mcp-local-dev/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../../tr/guides/mcp-local-dev/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../install/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/install/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
   </div>
   <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
-<main class="guide">
-<h1>Yerel geliştirme ortamınız için MCP sunucusu</h1>
-<p class="lede">Bir asistana makinenizde kabuk erişimi vermek kolay ve pervasız. Model Context Protocol daha dar bir şey sunuyor: tanımlı bir işlem kümesi ve sizin belirlediğiniz bir sınır.</p>
-<p class="meta">MCP'nin yerel geliştirmede değiştirdikleri · izin kapsamları · güvenli bir araç yüzeyi neye benzer</p>
+<main class="page">
+<div class="pagehead">
+  <p class="crumb"><a href="../">BRAMPP</a> → Install</p>
+  <span class="eyebrow">Install</span>
+  <h1>Running in 60 seconds</h1>
+  <p class="lede">Download, drag, open, run the wizard. This page covers what each step does, how to check the app is genuine, and what to do on the rare occasion something goes wrong.</p>
+</div>
 
-<h2>"Terminal versek yeter" yaklaşımının sorunu</h2>
-<p>Bir asistanın geliştirme ortamınızı yönetmesinin en hızlı yolu ona kabuk vermek. Hemen çalışır ve iş için yanlış biçimdir.</p>
-<p>Kabuğun sözlüğü yoktur. Asistanın sizin tam dizin düzeninizi bilmesi, yapılandırma yollarını tahmin etmesi ve sürümler arasında değişen insan okunur çıktıyı ayrıştırması gerekir. Her işlem serbest metin olduğu için "okuyabilirsin ama yazamazsın" demenin bir yolu yoktur — veritabanlarını listeleyen komut, birini silen komutla aynı kapıdan geçer.</p>
-<p>Üstelik sonuçlar araçlarınıza görünmez. Asistan bir yapılandırma dosyasını doğrudan düzenlerse, o dosyayı yöneten uygulamanın haberi olmaz; bellekteki durumu ile diskteki dosya sessizce ayrışır.</p>
+<section id="requirements">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Before you start</span>
+      <h2>Requirements</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>macOS 14 Sonoma or newer.</b> The app uses APIs that do not exist earlier.</li>
+      <li><b>Apple Silicon.</b> BRAMPP is a native arm64 build; so are the Homebrew services it manages.</li>
+      <li><b>Homebrew.</b> If it is missing the setup wizard offers to install it — it does not do so behind your back.</li>
+      <li><b>An administrator account.</b> Editing <code>/etc/hosts</code>, binding low ports and adding a certificate authority to the system trust store all need it. You will be asked, in the moment, for each.</li>
+    </ul>
+    <div class="callout"><p><b>Disk space is mostly not BRAMPP's.</b> The app itself is a few tens of megabytes. What takes room is the stack you choose to install through it — Apache, PHP versions, MariaDB and the rest live under <code>/opt/homebrew</code> like any other Homebrew package, and <code>brew upgrade</code> keeps them current.</p></div>
+  </div>
+</section>
 
-<h2>MCP gerçekte nedir</h2>
-<p><a href="https://modelcontextprotocol.io">Model Context Protocol</a>, bir asistan ile yetenek sunan bir program arasındaki JSON-RPC arayüzü. Program bir <em>araç</em> listesi yayınlar — her birinin adı, açıklaması ve argümanları için tipli bir şeması vardır — asistan da onları adıyla çağırır.</p>
-<p>Bundan üç özellik doğar ve kabuğa tercih etmenin bütün gerekçesi bunlardır:</p>
-<ul>
-<li><strong>Sözlük açıktır.</strong> <code>list_domains</code> ya vardır ya yoktur. Deneme yanılmayla keşfedilecek bir şey kalmaz.</li>
-<li><strong>Argümanlar tipli ve doğrulanmıştır</strong>; hatalı bir çağrı iş yarıda kalmadan sınırda reddedilir.</li>
-<li><strong>Yüzey sonludur.</strong> Araç olmayan şey yapılamaz — "yapılmamalı" değil, yapılamaz.</li>
-</ul>
+<section class="band" id="steps">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Setup</span>
+      <h2>Four steps</h2>
+    </div>
+    <ol class="steps">
+      <li><b>Download and drag.</b> Grab <code>BRAMPP.dmg</code> from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> and drag BRAMPP.app into Applications. Run it from Applications rather than from the mounted disk image — a few macOS protections behave differently inside a read-only volume.</li>
+      <li><b>Open it.</b> The app is Developer ID signed and notarized, so macOS launches it without an extra step. No right-click → Open, no trip to Privacy &amp; Security.</li>
+      <li><b>Run the setup wizard.</b> It works through Apache ports, PHP-FPM, the mkcert certificate authority, localhost SSL, MariaDB root access and phpMyAdmin — installing only what you approve and printing every command it runs into the console, so nothing happens that you cannot read.</li>
+      <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and a platform → open <code>https://myproject.local</code>. The virtual host, hosts entry, site folder, starter project and certificate are all in place by then.</li>
+    </ol>
+    <p class="para">From a clean machine the wizard is the long part, and it is long mostly because Homebrew is downloading. Everything after that is seconds.</p>
+  </div>
+</section>
 
-<h2>Sunucu neden uygulamanın içinde olmalı</h2>
-<p>Geliştirme ortamı için bir MCP sunucusu, aynı servislerle konuşan bağımsız bir süreç olabilir. Akla ilk gelen tasarım budur ve çözmesi gereken sorunu geri getirir: aynı yapılandırmayı yöneten iki program, biri bir şey değiştirdiğinde ayrışır.</p>
-<p>Sunucuyu, o durumun zaten sahibi olan uygulamanın <em>içinde</em> çalıştırmak bunu ortadan kaldırır. Araçlar, düğmelerin çağırdığı kod yollarını çağırır. Ayrışacak ikinci bir uygulama yoktur ve pencere araç çalıştığı anda güncellenir, çünkü aynı nesne grafiğidir.</p>
-<div class="callout"><p><b>Bedeli bir bağımlılıktır.</b> Uygulama kapalıysa uç nokta da yoktur. Bunu örtmek yerine açıkça söylemek gerekir — çözüm sunucuyu dışarı taşımak değil, uygulamanın oturumla birlikte başlamasıdır.</p></div>
+<section id="signature">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Trust</span>
+      <h2>Signed, and verifiable by you</h2>
+      <p class="lede">You should not have to take a download's word for what it is. Here is how to check.</p>
+    </div>
+    <p class="para">Every release is signed with a <b>Developer ID Application</b> certificate and submitted to Apple. The resulting ticket is stapled both to the DMG and to the app inside it, which is the part that matters if your first launch happens without a network — Gatekeeper can verify a stapled ticket offline, and cannot verify an unstapled one.</p>
+    <p class="para">After installing, confirm it yourself:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
+# accepted
+# source=Notarized Developer ID</code></pre>
+    <p class="para">To see who signed it and with which team identifier:</p>
+    <pre><code>codesign -dv --verbose=4 /Applications/BRAMPP.app 2>&amp;1 | grep -E 'Authority|TeamIdentifier'</code></pre>
+    <p class="note">Building from source produces an unsigned local build instead. That is expected — an app you compiled yourself is never quarantined, because it never passed through the download path that applies the quarantine flag.</p>
+  </div>
+</section>
 
-<h2>İzin kapsamları araç sayısından önemli</h2>
-<p>"19 araç" güvenlik hakkında hiçbir şey söylemez. Önemli olan, alan bazında asistanın neye izinli olduğuna karar verebilmeniz — ve bu kararın birden fazla yerde uygulanması.</p>
-<p>İşe yarayan model, araçları kapsamlara ayırıp her kapsama üç düzey verir:</p>
-<div class="tscroll"><table>
-<thead><tr><th>Kapsam</th><th>İzin yok</th><th>Okuma</th><th>Okuma + yazma</th></tr></thead>
-<tbody>
-<tr><td>Alan Adları</td><td>görünmez</td><td>listeleme</td><td>oluşturma, güncelleme, uygulama başlatma</td></tr>
-<tr><td>Servisler</td><td>görünmez</td><td>durum, sağlık</td><td>başlat, durdur, yeniden başlat</td></tr>
-<tr><td>Veritabanları</td><td>görünmez</td><td>listeleme, salt-okunur SQL</td><td>oluşturma, yedek, geri yükleme, yazma</td></tr>
-<tr><td>Loglar</td><td>görünmez</td><td>okuma</td><td>—</td></tr>
-</tbody>
-</table></div>
-<p>Bunu süsten çıkarıp gerçek yapan iki ayrıntı var.</p>
-<p><strong>İzin verilmeyen araç hiç gönderilmez.</strong> <code>tools/list</code> yanıtını süzmek, asistanın o yeteneğin varlığını bilmemesi demektir; denemeye karar veremez, size seçenek olarak da söyleyemez.</p>
-<p><strong>Çağrı ayrıca reddedilir.</strong> Liste süzmesi tek başına güvenlik sınırı değildir — araç adını sabit yazmış bir istemci onu atlar. İzin, çağrı geldiğinde yeniden denetlenmelidir.</p>
+<section class="band" id="source">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Alternative</span>
+      <h2>Building from source</h2>
+    </div>
+    <p class="para">The repository is MIT licensed and builds with Xcode 15 or newer:</p>
+    <pre><code>git clone https://github.com/macitkaraca/brampp.git
+cd brampp/macos
+open BRAMPP.xcodeproj</code></pre>
+    <p class="para">Select the BRAMPP scheme and run. The unit tests live in the BRAMPP test target and run with <kbd>⌘U</kbd> — they cover the pure logic (version comparison, config parsing, dependency ordering, path validation) rather than anything that would touch your actual services.</p>
+  </div>
+</section>
 
-<h2>Varsayılan salt okuma, özellikle SQL'de</h2>
-<p>Geliştirme ortamındaki en tehlikeli araç serbest SQL'dir ve naif uygulama ilk kelimeye bakar. Bu hemen çöker:</p>
-<pre><code>-- WITH ile başlıyor, her şeyi siliyor
-WITH gitti AS (DELETE FROM users RETURNING *) SELECT * FROM gitti;
+<section id="trouble">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Troubleshooting</span>
+      <h2>When something does go wrong</h2>
+    </div>
+    <h3 class="sub-h">"BRAMPP can't be opened"</h3>
+    <p class="para">Almost always an older download. Signing and notarization landed in a specific release; a DMG saved before that will still trip Gatekeeper. Delete the copy in Applications, empty the Trash, and download the current DMG from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> again. If it persists, check what macOS actually objects to:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code></pre>
+    <h3 class="sub-h">A port is already taken</h3>
+    <p class="para">macOS ships its own Apache, and it is occasionally running. BRAMPP tells you which process owns the port rather than just failing; the usual fix is to stop the system copy:</p>
+    <pre><code>sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist</code></pre>
+    <h3 class="sub-h">A new domain is not being served</h3>
+    <p class="para">If a domain seems invisible to the web server, restart that service from the Services tab — and if it keeps happening on a current build, please open an issue with the domain's platform and web server, because that is a bug rather than something you should have to work around.</p>
+    <h3 class="sub-h">The browser still complains about the certificate</h3>
+    <p class="para">Check the wizard finished the mkcert step; the CA has to be in the system trust store, not just generated. The <a href="../guides/local-https/">local HTTPS guide</a> explains what to look for and why <code>.local</code> can fail even when everything else is correct.</p>
+  </div>
+</section>
 
--- SELECT ile başlıyor, diskten dosya okuyor
-SELECT LOAD_FILE('/etc/passwd');</code></pre>
-<p>Önek kontrolü ikisini de geçirir. İfadenin gövdesi hem veri değiştiren komutlar hem de dosya sistemine uzanan fonksiyonlar için incelenmelidir — <code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>, <code>INTO OUTFILE</code>.</p>
-<p>Zor olan yarısı, dürüst sorguları bozmadan katı kalmak. Şunların hepsi meşru okumadır ve geçmelidir:</p>
-<pre><code>SELECT 'delete me' AS not_;      -- tehlikeli kelime, dizge içinde
-SHOW CHARACTER SET;              -- içinde SET geçiyor
-SELECT updated_at FROM siparis;  -- içinde UPDATE geçiyor</code></pre>
-<p>Yazmak mümkün kalmalı — ama hem açık bir bayrağın hem yazma izninin arkasında, yani bir dikkatsizlikle değil iki bilinçli adımla.</p>
-
-<h2>Loopback'te tutun, varsayılan kapalı</h2>
-<p>Yerel bir geliştirme sunucusunun ağdan bağlantı kabul etmesi için sebep yok. <code>0.0.0.0</code> yerine <code>127.0.0.1</code>'e bağlanmak, asistanınızın kullandığı bir araçla kafedeki herkesin erişebileceği bir servis arasındaki farktır.</p>
-<p>Varsayılan kapalı olması aynı sebeple önemli: kimsenin açmadığı yetenek kötüye kullanılamaz. Gelen isteklerde <code>Origin</code> başlığını denetlemek, ziyaret ettiğiniz bir web sayfasının kendi tarayıcınızdan o porta ulaşmaya çalıştığı boşluğu kapatır.</p>
-
-<h2>Asistana nasıl kullanacağını anlatın</h2>
-<p>Araç listesi belge değildir. Adlar ve şemalar neyin var olduğunu söyler; ne zaman başvurulacağını ya da işlemlerin hangi sırayla yapılacağını söylemez. Beceri dosyalarının doldurduğu boşluk budur: istemcinin araçlarla birlikte yüklediği, iş akışlarını ve kısıtları anlatan düz metin.</p>
-<p>Değerli olan kısım şemanın ifade edemediğidir — döküm uygulamadan önce yedek al; yıkıcı SQL'i önce kullanıcıya doğrulat; veritabanı adını tahmin etme, listele; bir araç eksikse bu bir izin ayarıdır, kabuğa dönmek için gerekçe değil.</p>
-
-<h2>BRAMPP bunu nasıl yapıyor</h2>
-<p><a href="../../../">BRAMPP</a> çalışan uygulamanın içinden <code>127.0.0.1</code> üzerinde bir MCP sunucusu yayınlıyor; siz açana kadar kapalı. Yukarıdaki dört kapsamda 19 araç sunuyor, burada anlatılan iki katmanlı izin modelini ve SQL kurallarını uyguluyor, ayrıca asistanın bunları nasıl kullanacağını bilmesi için iki beceri dosyası kuruyor.</p>
-<p>MIT lisanslı, ücretsiz ve açık kaynak — sunucu, izin denetimleri ve SQL süzgeci sınırların tam olarak nerede olduğunu görmek isterseniz depoda.</p>
-<a class="backlink" href="../../../">← BRAMPP'e dön</a>
+<div class="nextprev">
+  <a href="../features/"><small>Next</small><b>What BRAMPP manages →</b></a>
+  <a href="../guides/"><small>Also</small><b>Guides →</b></a>
+</div>
 
 </main>
 <footer class="sitefoot">
   <div class="wrap footgrid">
     <div>
-      <h2>Sayfalar</h2>
-      <a href="../../../tr/">Ana sayfa</a>
-      <a href="../../../tr/features/">Özellikler</a>
-      <a href="../../../tr/install/">Kurulum</a>
-      <a href="../../../tr/mcp/">MCP</a>
-      <a href="../../../tr/compare/">Karşılaştırma</a>
+      <h2>Pages</h2>
+      <a href="../">Home</a>
+      <a href="../features/">Features</a>
+      <a href="../install/">Install</a>
+      <a href="../mcp/">MCP</a>
+      <a href="../compare/">Compare</a>
     </div>
     <div>
-      <h2>Rehberler</h2>
-      <a href="../../../tr/guides/">Rehberler</a>
-      <a href="../../../tr/guides/local-https/">Yerel HTTPS</a>
-      <a href="../../../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
-      <a href="../../../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
+      <h2>Guides</h2>
+      <a href="../guides/">Guides</a>
+      <a href="../guides/local-https/">Local HTTPS</a>
+      <a href="../guides/apache-nginx-together/">Apache and Nginx together</a>
+      <a href="../guides/mcp-local-dev/">MCP for local development</a>
     </div>
     <div>
-      <h2>Proje</h2>
-      <a href="https://github.com/macitkaraca/brampp">Depo</a>
-      <a href="https://github.com/macitkaraca/brampp/releases/latest">Son sürüm</a>
-      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">Lisans</a>
+      <h2>Project</h2>
+      <a href="https://github.com/macitkaraca/brampp">Repository</a>
+      <a href="https://github.com/macitkaraca/brampp/releases/latest">Latest release</a>
+      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">License</a>
     </div>
     <div class="footlang">
-      <h2>Dil</h2>
-      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../../../guides/mcp-local-dev/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../../tr/guides/mcp-local-dev/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+      <h2>Language</h2>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../install/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/install/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
     </div>
   </div>
   <div class="wrap footbase">
-    <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> bünyesinde geliştirildi · MIT © 2023–2026 Karaca Teknoloji</p>
-    <p class="fine">"bremp" diye okunur. Ücretsiz ve açık kaynak, MIT lisanslı.</p>
+    <p>Built by <a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> at <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> · MIT © 2023–2026 Karaca Teknoloji</p>
+    <p class="fine">Pronounced "bremp". Free and open source, MIT licensed.</p>
   </div>
 </footer>
 <script>

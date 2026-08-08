@@ -1,0 +1,91 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Compare</p>
+  <span class="eyebrow">Comparison</span>
+  <h1>Where BRAMPP fits</h1>
+  <p class="lede">Two tables and no asterisks. Everything here is about what BRAMPP does — not a verdict on anyone else's roadmap, and not a claim that the other tools are bad choices. Several of them are excellent at the thing they set out to do.</p>
+</div>
+
+<section id="premise">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">The premise</span>
+      <h2>Your Mac already has a stack</h2>
+    </div>
+    <p class="para">Homebrew gives you Apache, Nginx, five PHP versions, MariaDB, PostgreSQL and Redis, all built for Apple Silicon and all one <code>brew upgrade</code> away from current. The pieces are already there and already good. What is missing is not another copy of them — it is the twenty minutes of vhost editing, <code>/etc/hosts</code> lines, certificate wrangling and port archaeology that stands between you and a working local site.</p>
+    <p class="para">BRAMPP is a GUI over the services you already have, rather than a second, private stack living beside them. That single decision explains most of the differences below. It also sets the honest limit: if you do not want Homebrew on your machine, BRAMPP is not for you.</p>
+  </div>
+</section>
+
+<section class="band" id="bundled">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Against bundled stacks</span>
+      <h2>Bundled binaries versus your own services</h2>
+      <p class="lede">The classic all-in-one packages ship their own Apache, their own PHP and their own MySQL, sandboxed inside the install directory.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp" aria-label="Bundled stacks compared with BRAMPP">
+        <thead><tr><th scope="col"><span class="vh">Criterion</span></th><th scope="col">Bundled stacks (XAMPP / MAMP)</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Server binaries</th><td>Bundled, sandboxed, duplicated</td><td class="win">Your own Homebrew services</td></tr>
+          <tr><th scope="row">Platforms served</th><td>PHP (mostly)</td><td class="win">PHP, Node.js, Python, ASP.NET Core, static</td></tr>
+          <tr><th scope="row">Web servers</th><td>Apache</td><td class="win">Apache and Nginx, even side by side</td></tr>
+          <tr><th scope="row">Databases</th><td>MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
+          <tr><th scope="row">Local HTTPS</th><td>Manual work</td><td class="win">Automatic via mkcert</td></tr>
+          <tr><th scope="row"><code>brew upgrade</code> friendly</th><td>Not really</td><td class="win">That is the whole point</td></tr>
+          <tr><th scope="row">AI assistant access</th><td>—</td><td class="win">Built-in MCP server, 19 tools</td></tr>
+          <tr><th scope="row">End-to-end arm64</th><td>Varies by product and installer</td><td class="win">The app <i>and</i> every service it manages, natively</td></tr>
+          <tr><th scope="row">Price</th><td>Free tier; some paid editions</td><td class="win">Free, MIT, open source</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="para">The duplication is the part that costs you later. A bundled stack means two Apaches, two PHPs and two MySQLs on one machine, only one set of which your terminal, your editor and your CI scripts know about. Version drift between "the one the GUI runs" and "the one <code>php -v</code> reports" is a genuinely common afternoon lost.</p>
+  </div>
+</section>
+
+<section id="native">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Against native tooling</span>
+      <h2>Single-language tools and containers</h2>
+      <p class="lede">The Mac-native crowd made the opposite trade: use the system's own services, but narrow the scope.</p>
+    </div>
+    <div class="tscroll">
+      <table class="cmp" aria-label="Native tools and containers compared with BRAMPP">
+        <thead><tr><th scope="col"><span class="vh">Criterion</span></th><th scope="col">PHP-first GUI tools</th><th scope="col">Terminal-only PHP tools</th><th scope="col">Container stacks</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Scope</th><td>PHP-first</td><td>PHP only, terminal</td><td>Anything, in containers</td><td class="win">PHP + Node + Python + .NET + static</td></tr>
+          <tr><th scope="row">Where services run</th><td>Bundled runtime</td><td>Your Homebrew PHP</td><td>Containers</td><td class="win">Your Homebrew services</td></tr>
+          <tr><th scope="row">GUI</th><td>Yes, some features paid</td><td>No</td><td>Third-party</td><td class="win">Yes, free</td></tr>
+          <tr><th scope="row">Nginx and Apache</th><td>Nginx</td><td>Nginx</td><td>Your call</td><td class="win">Both, per domain</td></tr>
+          <tr><th scope="row">Startup cost</th><td>Low</td><td>Low</td><td>A daemon and an image pull</td><td class="win">Native processes, nothing extra</td></tr>
+          <tr><th scope="row">Cost</th><td>Free tier + paid</td><td>Free</td><td>Free</td><td class="win">Free, MIT</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h">When containers are the better answer</h3>
+    <p class="para">If your production environment is containerised and you need local to match it byte for byte, use containers locally. That is what they are for, and no amount of GUI convenience beats "the same image runs in both places". BRAMPP is aimed at the other situation — a Mac, several projects in several languages, and a wish to stop editing config files at one in the morning.</p>
+    <h3 class="sub-h">When a PHP-only tool is the better answer</h3>
+    <p class="para">If everything you build is PHP and you are happy in the terminal, a focused PHP tool is lighter and will stay out of your way. BRAMPP earns its place when the third project is a FastAPI service, the fourth is a Next.js app and the fifth needs Apache specifically — at which point a single window that runs all of them behind real HTTPS starts to matter.</p>
+  </div>
+</section>
+
+<section class="band" id="honest">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Straight answers</span>
+      <h2>What BRAMPP is not</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>Not a production tool.</b> It configures a development machine. Nothing it writes is meant to be deployed.</li>
+      <li><b>Not a Homebrew replacement.</b> It drives Homebrew; it does not vendor packages or pin versions behind your back.</li>
+      <li><b>Not Intel or older macOS.</b> Apple Silicon and macOS 14+ only, and that is unlikely to change.</li>
+      <li><b>Not a competitor pitch.</b> BRAMPP is free and MIT licensed. There is no paid tier to upsell you to, which is also why this page can afford to tell you when something else fits better.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}features/"><small>Next</small><b>What BRAMPP manages →</b></a>
+  <a href="{{UP}}install/"><small>Ready?</small><b>Install it →</b></a>
+</div>

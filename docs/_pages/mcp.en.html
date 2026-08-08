@@ -1,0 +1,99 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → MCP</p>
+  <span class="eyebrow">AI &amp; MCP</span>
+  <h1>Let your assistant drive the stack</h1>
+  <p class="lede">Flip one switch and BRAMPP becomes a Model Context Protocol server. Your assistant can create a domain, start the services it needs and read the logs — while you watch the window update live.</p>
+</div>
+
+<section id="what">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">The idea</span>
+      <h2>Not a wrapper around your shell</h2>
+    </div>
+    <p class="para">The obvious way to give an assistant access to a development environment is to hand it a terminal. It works, and it is the wrong shape: a shell has no notion of what you meant to allow, so every request is either fully trusted or blocked, and the assistant has to reverse-engineer your setup from config files before it can do anything useful.</p>
+    <p class="para">BRAMPP exposes the managers the app itself uses. Each tool has a narrow job with validated arguments, and the app already knows where your domains live, which PHP version each one uses and which services are up. The assistant asks for an outcome — "create a Node domain called shop and start what it needs" — instead of assembling six commands and hoping.</p>
+    <div class="callout"><p><b>Everything goes through the live app.</b> There is no separate state file and no second source of truth. A change made through MCP appears in the BRAMPP window immediately, because it <i>is</i> the same code path as clicking the button.</p></div>
+  </div>
+</section>
+
+<section class="band" id="tools">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Surface</span>
+      <h2>19 tools, four areas</h2>
+      <p class="lede">Each area has its own permission setting, so you decide how far the assistant reaches.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="num">8</span><span class="lbl">Domain tools</span></div>
+      <div class="stat"><span class="num">4</span><span class="lbl">Service tools</span></div>
+      <div class="stat"><span class="num">5</span><span class="lbl">Database tools</span></div>
+      <div class="stat"><span class="num">2</span><span class="lbl">Log tools</span></div>
+    </div>
+    <div class="tscroll">
+      <table class="cmp">
+        <thead><tr><th scope="col">Area</th><th scope="col">Tools</th><th scope="col">What they do</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Domains</th>
+              <td><code>list_domains</code>, <code>create_domain</code>, <code>update_domain</code>, <code>set_domain_enabled</code>, <code>health_check</code>, <code>start_app</code>, <code>stop_app</code>, <code>app_status</code></td>
+              <td>Create and edit domains across every platform, enable or disable them, run a health check, and control the supervised app server behind a domain.</td></tr>
+          <tr><th scope="row">Services</th>
+              <td><code>service_status</code>, <code>start_service</code>, <code>stop_service</code>, <code>restart_service</code></td>
+              <td>Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL and Redis — with the same port-ownership checks the UI uses.</td></tr>
+          <tr><th scope="row">Databases</th>
+              <td><code>db_list</code>, <code>db_create</code>, <code>db_query</code>, <code>db_export</code>, <code>db_import</code></td>
+              <td>List and create databases, run a single SQL statement, dump to <code>.sql</code> and restore from one.</td></tr>
+          <tr><th scope="row">Logs</th>
+              <td><code>read_log</code>, <code>read_domain_log</code></td>
+              <td>Service logs and per-domain access and error logs, so the assistant can diagnose instead of guessing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="permissions">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Permissions</span>
+      <h2>What you disallow never appears</h2>
+      <p class="lede">Each of the four areas is set independently to No access, Read, or Read + write.</p>
+    </div>
+    <div class="perms">
+      <span>Per-area: <b>No access</b></span>
+      <span><b>Read</b></span>
+      <span><b>Read + write</b></span>
+      <span>Disallowed tools <b>never appear</b> to the client</span>
+    </div>
+    <p class="para">The filtering happens twice, on purpose. A tool you have not permitted is left out of the <code>tools/list</code> response, so the assistant never learns it exists and cannot decide to try it. And if a call arrives for it anyway, it is refused at the boundary. Hiding alone would be a UI convenience; refusing alone would leak the shape of your setup. Doing both is what makes it a boundary rather than a suggestion.</p>
+    <h3 class="sub-h">SQL is read-only until you say otherwise</h3>
+    <p class="para"><code>db_query</code> accepts <code>SELECT</code>, <code>SHOW</code>, <code>DESCRIBE</code>, <code>EXPLAIN</code> and <code>WITH</code> by default. Anything that modifies data requires an explicit <code>allow_write</code> — and even then, statements whose body hides a write behind a CTE, or that call functions reaching the filesystem (<code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>), are rejected outright. Dump and restore paths must be absolute, end in <code>.sql</code>, and contain no shell metacharacters.</p>
+    <p class="para">Read the full tool reference in the <a href="{{UP}}guides/mcp-local-dev/">MCP for local development guide</a>, which goes into why scoped permissions matter more than tool count.</p>
+  </div>
+</section>
+
+<section class="band" id="setup">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Setup</span>
+      <h2>Turning it on</h2>
+    </div>
+    <ol class="steps">
+      <li><b>Open Settings → MCP</b> in BRAMPP and turn the server on. It binds to <code>127.0.0.1</code> only and is off until you do this.</li>
+      <li><b>Set the four permissions</b> to whatever you are comfortable with. Read-only across the board is a reasonable place to start.</li>
+      <li><b>Connect your client.</b> Claude Code takes a single CLI command; Claude Desktop and ChatGPT Codex have a one-click config button in the same panel.</li>
+      <li><b>Enable "Launch BRAMPP at login"</b> if you use this daily — the server only answers while the app is running, and this removes the "why is my assistant not seeing the tools" moment.</li>
+    </ol>
+    <p class="endpoint">Endpoint: <code>http://127.0.0.1:8765/mcp</code> — JSON-RPC 2.0 over POST, loopback only, off by default.</p>
+    <div class="clients">
+      <div class="client">Claude Code<small>one CLI command</small></div>
+      <div class="client">Claude Desktop<small>one-click config</small></div>
+      <div class="client">ChatGPT Codex<small>one-click config</small></div>
+    </div>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}guides/mcp-local-dev/"><small>Guide</small><b>MCP for local development →</b></a>
+  <a href="{{UP}}features/"><small>Also</small><b>All features →</b></a>
+</div>

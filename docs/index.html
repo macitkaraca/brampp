@@ -227,7 +227,6 @@ code{
   padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
 .navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
 .navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
-@media (max-width:900px){.navlinks{display:none}}
 .topbar{
   position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -578,14 +577,102 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
   *,*::before,*::after{transition:none!important;animation:none!important}
   .sticky-dl{transition:none!important}
 }
+.secmore{margin:30px 0 0;text-align:center}
+.secmore .btn{font-size:15px}
+
+
+
+/* ── Mobil gezinme ─────────────────────────────────────────
+   Tek sayfadan çok sayfaya geçince menüyü dar ekranda gizlemek gezinmeyi
+   tümden kapatıyordu. ≤900px'te bağlantılar hamburger düğmesinin açtığı bir
+   panele taşınıyor; panel çubuğun üstüne bindiği için --bar-h değişmiyor. */
+.navtoggle{display:none;width:40px;height:38px;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;padding:0;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid var(--line-soft);border-radius:10px}
+.navtoggle span{display:block;width:17px;height:2px;border-radius:2px;background:var(--fg);
+  transition:transform .2s ease,opacity .2s ease}
+.navtoggle[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.navtoggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.navtoggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+@media (max-width:1024px){
+  .navtoggle{display:flex}
+  .navlinks{display:none;position:absolute;top:100%;left:0;right:0;z-index:79;
+    flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px;
+    overflow:visible;pointer-events:auto;
+    background:rgba(11,21,38,.98);
+    -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
+    border-bottom:1px solid var(--line-soft);
+    padding:8px max(14px,var(--pad)) 12px}
+  .navlinks.open{display:flex}
+  .navlinks a{font-size:15px;padding:11px 12px;border-radius:9px}
+}
+.navlinks a{white-space:nowrap}
+/* Site CSS'i satır içi <code> için white-space:nowrap veriyor; bu, uzun bir
+   komut satırının ("mysqldump --single-transaction …") dar ekranda sayfayı
+   kendi genişliğine zorlamasına yol açıyordu. Metin içindeki kod sarılabilsin,
+   <pre> içindeki kod bloğu ise biçimini korusun. */
+code{white-space:normal;overflow-wrap:anywhere}
+pre code{white-space:pre;overflow-wrap:normal}
+/* Mobil üst çubuk düzeni: solda logo + marka adı, sağda dil seçimi ve menü
+   düğmesi. İndirme düğmesi dar ekranda çıkarıldı — hem yer kaplıyordu hem de
+   indirme zaten her sayfanın gövdesinde duruyor. */
+@media (max-width:1024px){
+  .topbar .pill-dl{display:none}
+  .brandmark b{display:inline !important}
+  .barcta{gap:6px}
+}
+@media (max-width:380px){
+  .brandmark b{font-size:15.5px}
+  .pill{font-size:12px;padding:8px 10px}
+}
+/* ── Dil kutusu ────────────────────────────────────────────
+   Düğme bulunduğunuz dili gösterir; liste iki seçeneği sunar. Panel sağ kenara
+   hizalı çünkü kutu her zaman çubuğun/footer'ın sağ ucunda duruyor. */
+.langsel{position:relative;flex:0 0 auto}
+.langbtn{cursor:pointer;font-family:inherit}
+.langbtn .chev{font-size:10px;opacity:.7;margin-left:1px}
+.langmenu{display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:90;
+  min-width:158px;padding:6px;border-radius:12px;
+  background:rgba(13,24,42,.98);border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.85)}
+.langmenu.open{display:block}
+.langmenu a{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;
+  text-decoration:none;color:var(--muted);font-size:14px;font-weight:500;white-space:nowrap}
+.langmenu a:hover{background:rgba(255,255,255,.07);color:var(--fg)}
+.langmenu a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+
+/* ── Site footer'ı ─────────────────────────────────────────
+   Alt sayfalarda ana sayfadaki kısa footer yerine sütunlu sürüm kullanılıyor;
+   her sayfadan diğer sayfalara ve rehberlere çıkış olsun diye. */
+.sitefoot{border-top:1px solid var(--line-soft);margin-top:80px;padding:44px 0 40px;
+  background:rgba(6,13,26,.5)}
+.footgrid{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.footgrid h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);margin:0 0 12px}
+.footgrid a{display:block;color:var(--muted);text-decoration:none;font-size:14.5px;
+  line-height:1.5;margin:0 0 8px}
+.footgrid a:hover{color:var(--amber-hi)}
+.footlang .langmenu{right:auto;left:0;top:auto;bottom:calc(100% + 6px)}
+.footbase{margin-top:34px;padding-top:22px;border-top:1px solid var(--line-soft);
+  color:var(--muted);font-size:14.5px;line-height:1.7}
+.footbase p{margin:0 0 6px}
+.footbase a{color:var(--muted);text-decoration:none}
+.footbase a:hover{color:var(--amber-hi)}
+.footbase .fine{font-size:13px;color:#8ea3bd;margin-top:12px}
+@media (max-width:1024px){
+  /* Dil kutusu menü ikonunun hemen soluna yapışsın — ortada asılı kalmasın. */
+  .topbar .barcta{margin-left:auto}
+}
 </style>
 </head>
 <body>
 
 <nav class="topbar" aria-label="Site">
   <a class="brandmark" href="./" aria-label="BRAMPP"><img src="assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks"><a href="#why">Why</a><a href="#compare">Compare</a><a href="#features">Features</a><a href="#screenshots">Screenshots</a><a href="#install">Install</a><a href="#mcp">MCP</a><a href="guides/">Guides</a><a href="#faq">FAQ</a></div>
-  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="Download BRAMPP.dmg">⬇ <span class="hide-sm">Download </span>DMG</a><a class="pill" href="tr/" hreflang="tr" lang="tr" aria-label="Bu sayfayı Türkçe görüntüle">🇹🇷 Türkçe</a></div>
+  <div class="navlinks" id="sitenav"><a href="features/">Features</a><a href="install/">Install</a><a href="mcp/">MCP</a><a href="compare/">Compare</a><a href="guides/">Guides</a><a href="#faq">FAQ</a></div>
+  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="Download BRAMPP.dmg">⬇ <span class="hide-sm">Download </span>DMG</a><div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="./" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="tr/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div></div>
+  <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
 
 <main>
@@ -646,7 +733,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     <div class="shead">
       <span class="eyebrow">Comparison</span>
       <h2>How it stacks up</h2>
-      <p class="lede">Two tables, no asterisks. Everything below is about what BRAMPP does — not a verdict on anyone else's roadmap.</p>
+      <p class="lede">Bundled binaries versus your own Homebrew services — the short version.</p>
     </div>
     <h3 class="sub-h" id="cmp-xampp">Against XAMPP / MAMP</h3>
     <div class="tscroll">
@@ -665,19 +752,8 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
         </tbody>
       </table>
     </div>
-    <h3 class="sub-h" id="cmp-native">Against the Mac-native crowd</h3>
-    <div class="tscroll">
-      <table class="cmp" aria-labelledby="cmp-native">
-        <thead><tr><th scope="col"><span class="vh">Criterion</span></th><th scope="col">Laravel Herd</th><th scope="col">Laravel Valet</th><th scope="col">Docker stacks</th><th scope="col">BRAMPP</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Scope</th><td>PHP-first</td><td>PHP only, terminal</td><td>Anything, in containers</td><td class="win">PHP + Node + Python + .NET + static</td></tr>
-          <tr><th scope="row">Where services run</th><td>Bundled runtime</td><td>Your Homebrew PHP</td><td>Containers</td><td class="win">Your Homebrew services</td></tr>
-          <tr><th scope="row">GUI</th><td>Yes (Pro features paid)</td><td>No</td><td>Third-party</td><td class="win">Yes, free</td></tr>
-          <tr><th scope="row">Nginx and Apache</th><td>Nginx</td><td>Nginx</td><td>Your call</td><td class="win">Both, per domain</td></tr>
-          <tr><th scope="row">Cost</th><td>Free tier + Pro</td><td>Free</td><td>Free</td><td class="win">Free, MIT</td></tr>
-        </tbody>
-      </table>
-    </div>
+    
+    <p class="secmore"><a class="btn btn-ghost" href="compare/">Full comparison →</a></p>
   </div>
 </section>
 
@@ -687,7 +763,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     <div class="shead">
       <span class="eyebrow">Features</span>
       <h2>What you get</h2>
-      <p class="lede">Twelve things you would otherwise do by hand, in config files, at 1&nbsp;a.m.</p>
+      <p class="lede">Six of the twelve. Each one is something you would otherwise do by hand, in a config file, at 1&nbsp;a.m.</p>
     </div>
     <div class="grid">
       <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Service control</h3><p>Start, stop and restart Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL and Redis. Live status with port checks, crash notifications, auto-start of last-running services.</p></div>
@@ -695,14 +771,9 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
       <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Every stack, one app</h3><p>PHP with a per-domain version, Node.js, Python (FastAPI, Django, Flask with venv), ASP.NET Core, static sites and SPAs with history-mode fallback.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Real HTTPS locally</h3><p>One-click mkcert integration: local certificate authority, per-domain certificates and HTTP→HTTPS redirect. The green padlock, at home.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Databases without the CLI</h3><p>Create and drop databases, dump and restore, phpMyAdmin / pgAdmin / Adminer installers, plus <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code> editors with safe writes.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP extension manager</h3><p>50+ extensions per PHP version — xdebug, redis, imagick and friends — one-click toggle, PECL install and <code>php.ini</code> quick settings.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>App server supervisor</h3><p>Node, Python and .NET apps run under a zero-dependency supervisor: auto-restart, combined logs and a stop that verifies port ownership before signalling anything.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Setup wizard</h3><p>Checks and configures Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to <code>https://localhost</code> without opening a config file.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Honest backups</h3><p>One click backs up domains, settings, vhosts, SSL certificates and php.ini files. Partial backups are detected, flagged, and never silently restored as if complete.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>MCP server for AI tools</h3><p>A built-in Model Context Protocol endpoint, loopback only and off by default. Your assistant gets 19 tools behind per-area permissions — and every change shows up in the window instantly.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menu bar app</h3><p>The whole stack lives in your menu bar: start and stop services, launch at login, crash notifications. Turkish and English UI, switchable while running.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Native arm64, end to end</h3><p>BRAMPP.app is a native Apple Silicon binary on macOS 14+, and so are the services it manages: <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> and <code>redis-server</code> all come from Homebrew's arm64 bottles. App and stack, native all the way down — no Rosetta, no emulation layer.</p></div>
     </div>
+    <p class="secmore"><a class="btn btn-ghost" href="features/">All 12 features →</a></p>
   </div>
 </section>
 
@@ -757,19 +828,8 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
       <li><b>Run the setup wizard.</b> It configures Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin — installing only what you approve, showing every command in the console.</li>
       <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and platform → open <code>https://myproject.local</code> in your browser.</li>
     </ol>
-
-    <div class="gate">
-        <h3 class="gate-h" id="gate-title"><span aria-hidden="true">🔏</span> Signed and notarized</h3>
-        <div class="gate-b">
-          <p>Every release is signed with a <b>Developer ID Application</b> certificate and <b>notarized by Apple</b>. The notarization ticket is stapled to the DMG <i>and</i> to the app itself, so Gatekeeper can verify it even when the first launch happens offline. There is no "Open Anyway" step to hunt for.</p>
-          <p>Verify it yourself after installing:</p>
-          <div class="pretop"><pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
-# accepted
-# source=Notarized Developer ID</code></pre></div>
-          <p class="note">Building from source produces an unsigned local build instead — that is expected, and a locally built app is never quarantined.</p>
-        </div>
-      </div>
-    </div>
+    <p class="secmore"><a class="btn btn-ghost" href="install/">Requirements &amp; troubleshooting →</a></p>
+  </div>
 </section>
 
 <!-- 8 · MCP -->
@@ -783,21 +843,11 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     <div class="stats">
       <div class="stat"><span class="num">8</span><span class="lbl">Domain tools</span></div>
       <div class="stat"><span class="num">4</span><span class="lbl">Service tools</span></div>
-      <div class="stat"><span class="num">3</span><span class="lbl">Database tools</span></div>
+      <div class="stat"><span class="num">5</span><span class="lbl">Database tools</span></div>
       <div class="stat"><span class="num">2</span><span class="lbl">Log tools</span></div>
     </div>
-    <div class="perms">
-      <span>Per-area permissions: <b>No access</b></span>
-      <span><b>Read</b></span>
-      <span><b>Read + write</b></span>
-      <span>Tools you disallow <b>never appear</b> to the client</span>
-    </div>
-    <div class="clients">
-      <div class="client">Claude Code<small>one CLI command</small></div>
-      <div class="client">Claude Desktop<small>one-click config</small></div>
-      <div class="client">ChatGPT Codex<small>one-click config</small></div>
-    </div>
     <p class="endpoint">Endpoint: <code>http://127.0.0.1:8765/mcp</code> — bound to loopback only, off by default, and SQL is read-only unless you explicitly allow writes.</p>
+    <p class="secmore"><a class="btn btn-ghost" href="mcp/">How the MCP server works →</a></p>
   </div>
 </section>
 
@@ -827,10 +877,38 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
 </main>
 
 <!-- 10 · FOOTER -->
-<footer class="wrap">
-  <p>Built by <a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> at <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a></p>
-  <p><a href="https://github.com/macitkaraca/brampp">GitHub</a> · <a href="tr/" hreflang="tr" lang="tr">Türkçe</a> · MIT © 2023–2026 Karaca Teknoloji</p>
-  <p class="fine">Pronounced "bremp". Internal codename: Demlik 🫖 — Turkish for teapot, where things brew properly.</p>
+<footer class="sitefoot">
+  <div class="wrap footgrid">
+    <div>
+      <h2>Pages</h2>
+      <a href="">Home</a>
+      <a href="features/">Features</a>
+      <a href="install/">Install</a>
+      <a href="mcp/">MCP</a>
+      <a href="compare/">Compare</a>
+    </div>
+    <div>
+      <h2>Guides</h2>
+      <a href="guides/">Guides</a>
+      <a href="guides/local-https/">Local HTTPS</a>
+      <a href="guides/apache-nginx-together/">Apache and Nginx together</a>
+      <a href="guides/mcp-local-dev/">MCP for local development</a>
+    </div>
+    <div>
+      <h2>Project</h2>
+      <a href="https://github.com/macitkaraca/brampp">Repository</a>
+      <a href="https://github.com/macitkaraca/brampp/releases/latest">Latest release</a>
+      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">License</a>
+    </div>
+    <div class="footlang">
+      <h2>Language</h2>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="./" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="tr/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    </div>
+  </div>
+  <div class="wrap footbase">
+    <p>Built by <a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> at <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> · MIT © 2023–2026 Karaca Teknoloji</p>
+    <p class="fine">Pronounced "bremp". Free and open source, MIT licensed.</p>
+  </div>
 </footer>
 
 <script>
@@ -853,5 +931,33 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
   })();
   </script>
 
+<script>
+(function () {
+  // Açılır her şey (menü paneli + dil kutuları) tek bir listeden yönetiliyor:
+  // biri açılırken diğerleri kapanmalı, sayfa boşluğuna tıklamak hepsini kapatmalı.
+  var groups = [];
+  var btn = document.querySelector('.navtoggle'), nav = document.getElementById('sitenav');
+  if (btn && nav) groups.push([btn, nav]);
+  document.querySelectorAll('.langsel').forEach(function (sel) {
+    var b = sel.querySelector('.langbtn'), m = sel.querySelector('.langmenu');
+    if (b && m) groups.push([b, m]);
+  });
+  function closeAll() {
+    groups.forEach(function (g) { g[1].classList.remove('open'); g[0].setAttribute('aria-expanded', 'false'); });
+  }
+  groups.forEach(function (g) {
+    g[0].addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasOpen = g[1].classList.contains('open');
+      closeAll();
+      if (!wasOpen) { g[1].classList.add('open'); g[0].setAttribute('aria-expanded', 'true'); }
+    });
+    g[1].addEventListener('click', function (e) { if (e.target.closest('a')) closeAll(); });
+  });
+  document.addEventListener('click', closeAll);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+  addEventListener('resize', function () { if (innerWidth > 1024) closeAll(); });
+})();
+</script>
 </body>
 </html>

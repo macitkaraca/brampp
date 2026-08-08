@@ -6,7 +6,7 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/"/>
-    <lastmod>2026-07-26</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -15,56 +15,152 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/"/>
-    <lastmod>2026-07-26</lastmod>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/features/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/features/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/features/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/features/"/>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/tr/features/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/features/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/features/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/features/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/install/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/install/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/install/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/install/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/tr/install/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/install/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/install/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/install/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/mcp/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/mcp/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/tr/mcp/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/mcp/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/compare/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/compare/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/compare/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/compare/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/tr/compare/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/compare/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/compare/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/compare/"/>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/guides/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/tr/guides/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/guides/local-https/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/local-https/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/local-https/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/local-https/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/tr/guides/local-https/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/local-https/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/local-https/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/local-https/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/guides/apache-nginx-together/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/apache-nginx-together/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/tr/guides/apache-nginx-together/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/apache-nginx-together/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/guides/mcp-local-dev/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/"/>
     <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

@@ -1,0 +1,94 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Kurulum</p>
+  <span class="eyebrow">Kurulum</span>
+  <h1>60 saniyede çalışır hâlde</h1>
+  <p class="lede">İndirin, sürükleyin, açın, sihirbazı çalıştırın. Bu sayfa her adımın ne yaptığını, uygulamanın gerçekten sizin indirdiğiniz şey olduğunu nasıl doğrulayacağınızı ve nadiren bir şey ters gittiğinde ne yapmanız gerektiğini anlatıyor.</p>
+</div>
+
+<section id="requirements">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Başlamadan önce</span>
+      <h2>Gereksinimler</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>macOS 14 Sonoma veya üzeri.</b> Uygulama, daha eski sürümlerde bulunmayan API'ler kullanıyor.</li>
+      <li><b>Apple Silicon.</b> BRAMPP yerel bir arm64 derlemesi; yönettiği Homebrew servisleri de öyle.</li>
+      <li><b>Homebrew.</b> Kurulu değilse sihirbaz kurmayı önerir — arkanızdan kendiliğinden kurmaz.</li>
+      <li><b>Yönetici hesabı.</b> <code>/etc/hosts</code> düzenlemek, düşük portları dinlemek ve sistem güven deposuna sertifika otoritesi eklemek için gerekir. Her biri için, tam o anda, ayrı ayrı sorulur.</li>
+    </ul>
+    <div class="callout"><p><b>Disk alanının çoğu BRAMPP'a ait değil.</b> Uygulamanın kendisi birkaç on megabayt. Yer kaplayan, onun üzerinden kurmayı seçtiğiniz ortam: Apache, PHP sürümleri, MariaDB ve gerisi diğer Homebrew paketleri gibi <code>/opt/homebrew</code> altında durur ve <code>brew upgrade</code> ile güncel kalır.</p></div>
+  </div>
+</section>
+
+<section class="band" id="steps">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Kurulum</span>
+      <h2>Dört adım</h2>
+    </div>
+    <ol class="steps">
+      <li><b>İndirin ve sürükleyin.</b> <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> sayfasından <code>BRAMPP.dmg</code> dosyasını alın ve BRAMPP.app'i Uygulamalar klasörüne sürükleyin. Bağlı disk imajından değil, Uygulamalar'dan çalıştırın — bazı macOS korumaları salt okunur bir birim içinde farklı davranır.</li>
+      <li><b>Açın.</b> Uygulama Developer ID ile imzalı ve noter onaylıdır; macOS onu fazladan bir adım gerektirmeden başlatır. Sağ tık → Aç yok, Gizlilik ve Güvenlik'e gitmek yok.</li>
+      <li><b>Kurulum sihirbazını çalıştırın.</b> Apache portları, PHP-FPM, mkcert sertifika otoritesi, localhost SSL, MariaDB root erişimi ve phpMyAdmin sırayla ele alınır — yalnızca onayladıklarınız kurulur ve çalıştırılan her komut konsola yazılır, yani okuyamayacağınız hiçbir şey olmaz.</li>
+      <li><b>İlk alan adınızı oluşturun.</b> <i>+ Yeni Alan Adı</i> → ad ve platform seçin → <code>https://projem.local</code> adresini açın. Sanal sunucu, hosts kaydı, site klasörü, başlangıç projesi ve sertifika o âna kadar hazırdır.</li>
+    </ol>
+    <p class="para">Sıfırdan bir makinede uzun süren kısım sihirbazdır ve uzun sürmesinin sebebi çoğunlukla Homebrew'un indirme yapmasıdır. Sonrasındaki her şey saniyeler alır.</p>
+  </div>
+</section>
+
+<section id="signature">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Güven</span>
+      <h2>İmzalı — ve doğrulaması sizde</h2>
+      <p class="lede">Bir indirmenin ne olduğuna dair sözüne inanmak zorunda değilsiniz. Nasıl denetleyeceğiniz aşağıda.</p>
+    </div>
+    <p class="para">Her sürüm bir <b>Developer ID Application</b> sertifikasıyla imzalanır ve Apple'a gönderilir. Dönen bilet hem DMG'ye hem içindeki uygulamaya zımbalanır; ilk açılışınız ağsız gerçekleşiyorsa asıl önemli olan kısım budur — Gatekeeper zımbalanmış bileti çevrimdışı doğrulayabilir, zımbalanmamışı doğrulayamaz.</p>
+    <p class="para">Kurduktan sonra kendiniz doğrulayın:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
+# accepted
+# source=Notarized Developer ID</code></pre>
+    <p class="para">Kimin, hangi takım kimliğiyle imzaladığını görmek için:</p>
+    <pre><code>codesign -dv --verbose=4 /Applications/BRAMPP.app 2>&amp;1 | grep -E 'Authority|TeamIdentifier'</code></pre>
+    <p class="note">Kaynaktan derlemek imzasız bir yerel derleme üretir. Bu beklenen davranıştır — kendi derlediğiniz bir uygulama hiçbir zaman karantinaya alınmaz, çünkü karantina bayrağını koyan indirme yolundan hiç geçmemiştir.</p>
+  </div>
+</section>
+
+<section class="band" id="source">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Alternatif</span>
+      <h2>Kaynaktan derleme</h2>
+    </div>
+    <p class="para">Depo MIT lisanslıdır ve Xcode 15 veya üzeriyle derlenir:</p>
+    <pre><code>git clone https://github.com/macitkaraca/brampp.git
+cd brampp/macos
+open BRAMPP.xcodeproj</code></pre>
+    <p class="para">BRAMPP şemasını seçip çalıştırın. Birim testler BRAMPP test hedefindedir ve <kbd>⌘U</kbd> ile koşar — gerçek servislerinize dokunacak hiçbir şeyi değil, saf mantığı (sürüm karşılaştırma, yapılandırma ayrıştırma, bağımlılık sıralaması, yol doğrulama) sınarlar.</p>
+  </div>
+</section>
+
+<section id="trouble">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Sorun giderme</span>
+      <h2>Bir şey ters gittiğinde</h2>
+    </div>
+    <h3 class="sub-h">"BRAMPP açılamıyor"</h3>
+    <p class="para">Neredeyse her zaman eski bir indirmedir. İmzalama ve noter onayı belirli bir sürümle geldi; ondan önce kaydedilmiş bir DMG hâlâ Gatekeeper'a takılır. Uygulamalar'daki kopyayı silin, Çöp Kutusu'nu boşaltın ve <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> sayfasından güncel DMG'yi yeniden indirin. Sürerse, macOS'un tam olarak neye itiraz ettiğine bakın:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code></pre>
+    <h3 class="sub-h">Port zaten kullanımda</h3>
+    <p class="para">macOS kendi Apache'siyle gelir ve arada bir çalışır hâlde olur. BRAMPP yalnızca hata vermek yerine portun sahibini söyler; olağan çözüm sistem kopyasını durdurmaktır:</p>
+    <pre><code>sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist</code></pre>
+    <h3 class="sub-h">Yeni alan adı sunulmuyor</h3>
+    <p class="para">Bir alan adı web sunucusuna görünmez gibiyse, Servisler sekmesinden o servisi yeniden başlatın — güncel bir derlemede bu tekrarlıyorsa lütfen alan adının platformunu ve web sunucusunu belirterek bir issue açın; bu, etrafından dolaşmanız gereken bir durum değil, bir hatadır.</p>
+    <h3 class="sub-h">Tarayıcı hâlâ sertifikadan şikâyetçi</h3>
+    <p class="para">Sihirbazın mkcert adımını tamamladığından emin olun; otoritenin yalnızca üretilmiş olması yetmez, sistem güven deposunda bulunması gerekir. <a href="{{UP}}guides/local-https/">Yerel HTTPS rehberi</a> neye bakacağınızı ve her şey doğruyken bile <code>.local</code> uzantısının neden başarısız olabileceğini anlatıyor.</p>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}features/"><small>Sırada</small><b>BRAMPP neleri yönetiyor →</b></a>
+  <a href="{{UP}}guides/"><small>Ayrıca</small><b>Rehberler →</b></a>
+</div>

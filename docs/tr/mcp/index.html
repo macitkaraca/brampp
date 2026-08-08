@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Yerel geliştirme ortamınız için MCP sunucusu</title>
-<meta name="description" content="Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.">
-<link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
-<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/mcp-local-dev/">
-<link rel="icon" type="image/png" href="../../../assets/icon-256.png">
+<title>MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın</title>
+<meta name="description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/mcp/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/mcp/">
+<link rel="icon" type="image/png" href="../../assets/icon-256.png">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Yerel geliştirme ortamınız için MCP sunucusu">
-<meta property="og:description" content="Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.">
-<meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/">
+<meta property="og:title" content="MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın">
+<meta property="og:description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/mcp/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,9 +21,9 @@
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
- "@type": "TechArticle",
- "headline": "Yerel geliştirme ortamınız için MCP sunucusu",
- "description": "Model Context Protocol'ün yerel geliştirmede neyi değiştirdiği, izin kapsamlarının araç sayısından neden önemli olduğu ve ortamı bir asistana güvenle açmanın yolu.",
+ "@type": "WebPage",
+ "name": "MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın",
+ "description": "BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.",
  "inLanguage": "tr",
  "datePublished": "2026-08-08",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
@@ -36,7 +36,7 @@
   "@type": "Organization",
   "name": "Karaca Teknoloji"
  },
- "mainEntityOfPage": "https://macitkaraca.github.io/brampp/tr/guides/mcp-local-dev/"
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/tr/mcp/"
 }
 </script>
 <style>
@@ -597,98 +597,132 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
 </head>
 <body>
 <nav class="topbar is-scrolled" aria-label="Site">
-  <a class="brandmark" href="../../../" aria-label="BRAMPP"><img src="../../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks" id="sitenav"><a href="../../../features/">Özellikler</a><a href="../../../install/">Kurulum</a><a href="../../../mcp/">MCP</a><a href="../../../compare/">Karşılaştırma</a><a href="../../../guides/" aria-current="true">Rehberler</a><a href="../../../#faq">SSS</a></div>
+  <a class="brandmark" href="../../" aria-label="BRAMPP"><img src="../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks" id="sitenav"><a href="../../features/">Özellikler</a><a href="../../install/">Kurulum</a><a href="../../mcp/" aria-current="true">MCP</a><a href="../../compare/">Karşılaştırma</a><a href="../../guides/">Rehberler</a><a href="../../#faq">SSS</a></div>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../../../guides/mcp-local-dev/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../../tr/guides/mcp-local-dev/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../../mcp/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/mcp/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
   </div>
   <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
-<main class="guide">
-<h1>Yerel geliştirme ortamınız için MCP sunucusu</h1>
-<p class="lede">Bir asistana makinenizde kabuk erişimi vermek kolay ve pervasız. Model Context Protocol daha dar bir şey sunuyor: tanımlı bir işlem kümesi ve sizin belirlediğiniz bir sınır.</p>
-<p class="meta">MCP'nin yerel geliştirmede değiştirdikleri · izin kapsamları · güvenli bir araç yüzeyi neye benzer</p>
+<main class="page">
+<div class="pagehead">
+  <p class="crumb"><a href="../../">BRAMPP</a> → MCP</p>
+  <span class="eyebrow">Yapay zekâ &amp; MCP</span>
+  <h1>Asistanınız ortamı sizin için yönetsin</h1>
+  <p class="lede">Tek bir anahtarı açın, BRAMPP bir Model Context Protocol sunucusuna dönüşsün. Asistanınız alan adı oluşturabilir, ihtiyaç duyduğu servisleri başlatabilir ve günlükleri okuyabilir — siz pencerenin canlı güncellenmesini izlerken.</p>
+</div>
 
-<h2>"Terminal versek yeter" yaklaşımının sorunu</h2>
-<p>Bir asistanın geliştirme ortamınızı yönetmesinin en hızlı yolu ona kabuk vermek. Hemen çalışır ve iş için yanlış biçimdir.</p>
-<p>Kabuğun sözlüğü yoktur. Asistanın sizin tam dizin düzeninizi bilmesi, yapılandırma yollarını tahmin etmesi ve sürümler arasında değişen insan okunur çıktıyı ayrıştırması gerekir. Her işlem serbest metin olduğu için "okuyabilirsin ama yazamazsın" demenin bir yolu yoktur — veritabanlarını listeleyen komut, birini silen komutla aynı kapıdan geçer.</p>
-<p>Üstelik sonuçlar araçlarınıza görünmez. Asistan bir yapılandırma dosyasını doğrudan düzenlerse, o dosyayı yöneten uygulamanın haberi olmaz; bellekteki durumu ile diskteki dosya sessizce ayrışır.</p>
+<section id="what">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Fikir</span>
+      <h2>Kabuğun etrafına sarılmış bir katman değil</h2>
+    </div>
+    <p class="para">Bir asistana geliştirme ortamı erişimi vermenin akla ilk gelen yolu ona bir terminal uzatmaktır. İşe yarar, ama yanlış biçimdedir: kabuğun neye izin vermek istediğinize dair bir kavrayışı yoktur, dolayısıyla her istek ya tümüyle güvenilirdir ya da engellidir; üstelik asistan işe yarar bir şey yapabilmek için kurulumunuzu yapılandırma dosyalarından geri mühendislikle çıkarmak zorundadır.</p>
+    <p class="para">BRAMPP, uygulamanın kendi kullandığı yöneticileri dışa açar. Her aracın dar bir görevi ve doğrulanmış argümanları vardır; uygulama zaten alan adlarınızın nerede olduğunu, hangisinin hangi PHP sürümünü kullandığını ve hangi servislerin ayakta olduğunu bilir. Asistan altı komut kurup umut etmek yerine bir sonuç ister: "shop adında bir Node alan adı oluştur ve gerekenleri başlat".</p>
+    <div class="callout"><p><b>Her şey canlı uygulamanın üzerinden geçer.</b> Ayrı bir durum dosyası ya da ikinci bir doğruluk kaynağı yok. MCP üzerinden yapılan bir değişiklik BRAMPP penceresinde anında görünür; çünkü düğmeye basmakla <i>aynı</i> kod yoludur.</p></div>
+  </div>
+</section>
 
-<h2>MCP gerçekte nedir</h2>
-<p><a href="https://modelcontextprotocol.io">Model Context Protocol</a>, bir asistan ile yetenek sunan bir program arasındaki JSON-RPC arayüzü. Program bir <em>araç</em> listesi yayınlar — her birinin adı, açıklaması ve argümanları için tipli bir şeması vardır — asistan da onları adıyla çağırır.</p>
-<p>Bundan üç özellik doğar ve kabuğa tercih etmenin bütün gerekçesi bunlardır:</p>
-<ul>
-<li><strong>Sözlük açıktır.</strong> <code>list_domains</code> ya vardır ya yoktur. Deneme yanılmayla keşfedilecek bir şey kalmaz.</li>
-<li><strong>Argümanlar tipli ve doğrulanmıştır</strong>; hatalı bir çağrı iş yarıda kalmadan sınırda reddedilir.</li>
-<li><strong>Yüzey sonludur.</strong> Araç olmayan şey yapılamaz — "yapılmamalı" değil, yapılamaz.</li>
-</ul>
+<section class="band" id="tools">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Yüzey</span>
+      <h2>19 araç, dört alan</h2>
+      <p class="lede">Her alanın kendi izin ayarı var; asistanın nereye kadar uzanacağına siz karar veriyorsunuz.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="num">8</span><span class="lbl">Alan adı aracı</span></div>
+      <div class="stat"><span class="num">4</span><span class="lbl">Servis aracı</span></div>
+      <div class="stat"><span class="num">5</span><span class="lbl">Veritabanı aracı</span></div>
+      <div class="stat"><span class="num">2</span><span class="lbl">Günlük aracı</span></div>
+    </div>
+    <div class="tscroll">
+      <table class="cmp">
+        <thead><tr><th scope="col">Alan</th><th scope="col">Araçlar</th><th scope="col">Ne yaparlar</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Alan adları</th>
+              <td><code>list_domains</code>, <code>create_domain</code>, <code>update_domain</code>, <code>set_domain_enabled</code>, <code>health_check</code>, <code>start_app</code>, <code>stop_app</code>, <code>app_status</code></td>
+              <td>Her platformda alan adı oluşturma ve düzenleme, etkinleştirme/devre dışı bırakma, sağlık denetimi ve alan adının arkasındaki gözetlenen uygulama sunucusunu denetleme.</td></tr>
+          <tr><th scope="row">Servisler</th>
+              <td><code>service_status</code>, <code>start_service</code>, <code>stop_service</code>, <code>restart_service</code></td>
+              <td>Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL ve Redis — arayüzün kullandığı port sahipliği denetimlerinin aynısıyla.</td></tr>
+          <tr><th scope="row">Veritabanları</th>
+              <td><code>db_list</code>, <code>db_create</code>, <code>db_query</code>, <code>db_export</code>, <code>db_import</code></td>
+              <td>Veritabanı listeleme ve oluşturma, tek bir SQL ifadesi çalıştırma, <code>.sql</code> yedeği alma ve geri yükleme.</td></tr>
+          <tr><th scope="row">Günlükler</th>
+              <td><code>read_log</code>, <code>read_domain_log</code></td>
+              <td>Servis günlükleri ile alan adı başına erişim ve hata günlükleri; asistan tahmin etmek yerine teşhis koyabilsin diye.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
-<h2>Sunucu neden uygulamanın içinde olmalı</h2>
-<p>Geliştirme ortamı için bir MCP sunucusu, aynı servislerle konuşan bağımsız bir süreç olabilir. Akla ilk gelen tasarım budur ve çözmesi gereken sorunu geri getirir: aynı yapılandırmayı yöneten iki program, biri bir şey değiştirdiğinde ayrışır.</p>
-<p>Sunucuyu, o durumun zaten sahibi olan uygulamanın <em>içinde</em> çalıştırmak bunu ortadan kaldırır. Araçlar, düğmelerin çağırdığı kod yollarını çağırır. Ayrışacak ikinci bir uygulama yoktur ve pencere araç çalıştığı anda güncellenir, çünkü aynı nesne grafiğidir.</p>
-<div class="callout"><p><b>Bedeli bir bağımlılıktır.</b> Uygulama kapalıysa uç nokta da yoktur. Bunu örtmek yerine açıkça söylemek gerekir — çözüm sunucuyu dışarı taşımak değil, uygulamanın oturumla birlikte başlamasıdır.</p></div>
+<section id="permissions">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">İzinler</span>
+      <h2>İzin vermediğiniz araç hiç görünmez</h2>
+      <p class="lede">Dört alanın her biri bağımsız olarak Erişim yok, Okuma ya da Okuma + yazma değerine ayarlanır.</p>
+    </div>
+    <div class="perms">
+      <span>Alan bazlı: <b>Erişim yok</b></span>
+      <span><b>Okuma</b></span>
+      <span><b>Okuma + yazma</b></span>
+      <span>İzin verilmeyen araçlar istemciye <b>hiç görünmez</b></span>
+    </div>
+    <p class="para">Süzme bilerek iki kez yapılır. İzin vermediğiniz bir araç <code>tools/list</code> yanıtına hiç konmaz, yani asistan onun varlığını öğrenmez ve denemeye karar edemez. Yine de o araç için bir çağrı gelirse sınırda reddedilir. Yalnızca gizlemek arayüz kolaylığı olurdu; yalnızca reddetmek kurulumunuzun biçimini sızdırırdı. İkisini birden yapmak, bunu bir öneri değil bir sınır hâline getiriyor.</p>
+    <h3 class="sub-h">Siz izin verene kadar SQL salt okunurdur</h3>
+    <p class="para"><code>db_query</code> öntanımlı olarak <code>SELECT</code>, <code>SHOW</code>, <code>DESCRIBE</code>, <code>EXPLAIN</code> ve <code>WITH</code> kabul eder. Veriyi değiştiren her şey açık bir <code>allow_write</code> ister — o durumda bile gövdesinde yazmayı bir CTE arkasına saklayan ifadeler ya da dosya sistemine uzanan işlevleri (<code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>) çağıranlar doğrudan reddedilir. Yedek alma ve geri yükleme yolları mutlak olmalı, <code>.sql</code> ile bitmeli ve kabuk meta karakteri içermemelidir.</p>
+    <p class="para">Araçların tam dökümü için <a href="../../guides/mcp-local-dev/">yerel geliştirme için MCP rehberine</a> bakın; orada izin kapsamlarının araç sayısından neden daha önemli olduğu anlatılıyor.</p>
+  </div>
+</section>
 
-<h2>İzin kapsamları araç sayısından önemli</h2>
-<p>"19 araç" güvenlik hakkında hiçbir şey söylemez. Önemli olan, alan bazında asistanın neye izinli olduğuna karar verebilmeniz — ve bu kararın birden fazla yerde uygulanması.</p>
-<p>İşe yarayan model, araçları kapsamlara ayırıp her kapsama üç düzey verir:</p>
-<div class="tscroll"><table>
-<thead><tr><th>Kapsam</th><th>İzin yok</th><th>Okuma</th><th>Okuma + yazma</th></tr></thead>
-<tbody>
-<tr><td>Alan Adları</td><td>görünmez</td><td>listeleme</td><td>oluşturma, güncelleme, uygulama başlatma</td></tr>
-<tr><td>Servisler</td><td>görünmez</td><td>durum, sağlık</td><td>başlat, durdur, yeniden başlat</td></tr>
-<tr><td>Veritabanları</td><td>görünmez</td><td>listeleme, salt-okunur SQL</td><td>oluşturma, yedek, geri yükleme, yazma</td></tr>
-<tr><td>Loglar</td><td>görünmez</td><td>okuma</td><td>—</td></tr>
-</tbody>
-</table></div>
-<p>Bunu süsten çıkarıp gerçek yapan iki ayrıntı var.</p>
-<p><strong>İzin verilmeyen araç hiç gönderilmez.</strong> <code>tools/list</code> yanıtını süzmek, asistanın o yeteneğin varlığını bilmemesi demektir; denemeye karar veremez, size seçenek olarak da söyleyemez.</p>
-<p><strong>Çağrı ayrıca reddedilir.</strong> Liste süzmesi tek başına güvenlik sınırı değildir — araç adını sabit yazmış bir istemci onu atlar. İzin, çağrı geldiğinde yeniden denetlenmelidir.</p>
+<section class="band" id="setup">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Kurulum</span>
+      <h2>Nasıl açılır</h2>
+    </div>
+    <ol class="steps">
+      <li><b>BRAMPP'ta Ayarlar → MCP</b> bölümünü açın ve sunucuyu açın. Yalnızca <code>127.0.0.1</code> adresine bağlanır ve siz açana kadar kapalıdır.</li>
+      <li><b>Dört izni</b> rahat ettiğiniz seviyeye getirin. Hepsini salt okunur bırakmak makul bir başlangıçtır.</li>
+      <li><b>İstemcinizi bağlayın.</b> Claude Code tek bir CLI komutuyla; Claude Desktop ve ChatGPT Codex aynı paneldeki tek tıklık yapılandırma düğmesiyle bağlanır.</li>
+      <li><b>"BRAMPP'ı girişte başlat"</b> seçeneğini açın — bunu her gün kullanıyorsanız işe yarar; sunucu yalnızca uygulama çalışırken yanıt verir ve bu, "asistanım araçları neden görmüyor" anını ortadan kaldırır.</li>
+    </ol>
+    <p class="endpoint">Uç nokta: <code>http://127.0.0.1:8765/mcp</code> — POST üzerinden JSON-RPC 2.0, yalnızca loopback, öntanımlı kapalı.</p>
+    <div class="clients">
+      <div class="client">Claude Code<small>tek CLI komutu</small></div>
+      <div class="client">Claude Desktop<small>tek tıkla yapılandırma</small></div>
+      <div class="client">ChatGPT Codex<small>tek tıkla yapılandırma</small></div>
+    </div>
+  </div>
+</section>
 
-<h2>Varsayılan salt okuma, özellikle SQL'de</h2>
-<p>Geliştirme ortamındaki en tehlikeli araç serbest SQL'dir ve naif uygulama ilk kelimeye bakar. Bu hemen çöker:</p>
-<pre><code>-- WITH ile başlıyor, her şeyi siliyor
-WITH gitti AS (DELETE FROM users RETURNING *) SELECT * FROM gitti;
-
--- SELECT ile başlıyor, diskten dosya okuyor
-SELECT LOAD_FILE('/etc/passwd');</code></pre>
-<p>Önek kontrolü ikisini de geçirir. İfadenin gövdesi hem veri değiştiren komutlar hem de dosya sistemine uzanan fonksiyonlar için incelenmelidir — <code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>, <code>INTO OUTFILE</code>.</p>
-<p>Zor olan yarısı, dürüst sorguları bozmadan katı kalmak. Şunların hepsi meşru okumadır ve geçmelidir:</p>
-<pre><code>SELECT 'delete me' AS not_;      -- tehlikeli kelime, dizge içinde
-SHOW CHARACTER SET;              -- içinde SET geçiyor
-SELECT updated_at FROM siparis;  -- içinde UPDATE geçiyor</code></pre>
-<p>Yazmak mümkün kalmalı — ama hem açık bir bayrağın hem yazma izninin arkasında, yani bir dikkatsizlikle değil iki bilinçli adımla.</p>
-
-<h2>Loopback'te tutun, varsayılan kapalı</h2>
-<p>Yerel bir geliştirme sunucusunun ağdan bağlantı kabul etmesi için sebep yok. <code>0.0.0.0</code> yerine <code>127.0.0.1</code>'e bağlanmak, asistanınızın kullandığı bir araçla kafedeki herkesin erişebileceği bir servis arasındaki farktır.</p>
-<p>Varsayılan kapalı olması aynı sebeple önemli: kimsenin açmadığı yetenek kötüye kullanılamaz. Gelen isteklerde <code>Origin</code> başlığını denetlemek, ziyaret ettiğiniz bir web sayfasının kendi tarayıcınızdan o porta ulaşmaya çalıştığı boşluğu kapatır.</p>
-
-<h2>Asistana nasıl kullanacağını anlatın</h2>
-<p>Araç listesi belge değildir. Adlar ve şemalar neyin var olduğunu söyler; ne zaman başvurulacağını ya da işlemlerin hangi sırayla yapılacağını söylemez. Beceri dosyalarının doldurduğu boşluk budur: istemcinin araçlarla birlikte yüklediği, iş akışlarını ve kısıtları anlatan düz metin.</p>
-<p>Değerli olan kısım şemanın ifade edemediğidir — döküm uygulamadan önce yedek al; yıkıcı SQL'i önce kullanıcıya doğrulat; veritabanı adını tahmin etme, listele; bir araç eksikse bu bir izin ayarıdır, kabuğa dönmek için gerekçe değil.</p>
-
-<h2>BRAMPP bunu nasıl yapıyor</h2>
-<p><a href="../../../">BRAMPP</a> çalışan uygulamanın içinden <code>127.0.0.1</code> üzerinde bir MCP sunucusu yayınlıyor; siz açana kadar kapalı. Yukarıdaki dört kapsamda 19 araç sunuyor, burada anlatılan iki katmanlı izin modelini ve SQL kurallarını uyguluyor, ayrıca asistanın bunları nasıl kullanacağını bilmesi için iki beceri dosyası kuruyor.</p>
-<p>MIT lisanslı, ücretsiz ve açık kaynak — sunucu, izin denetimleri ve SQL süzgeci sınırların tam olarak nerede olduğunu görmek isterseniz depoda.</p>
-<a class="backlink" href="../../../">← BRAMPP'e dön</a>
+<div class="nextprev">
+  <a href="../../guides/mcp-local-dev/"><small>Rehber</small><b>Yerel geliştirme için MCP →</b></a>
+  <a href="../../features/"><small>Ayrıca</small><b>Tüm özellikler →</b></a>
+</div>
 
 </main>
 <footer class="sitefoot">
   <div class="wrap footgrid">
     <div>
       <h2>Sayfalar</h2>
-      <a href="../../../tr/">Ana sayfa</a>
-      <a href="../../../tr/features/">Özellikler</a>
-      <a href="../../../tr/install/">Kurulum</a>
-      <a href="../../../tr/mcp/">MCP</a>
-      <a href="../../../tr/compare/">Karşılaştırma</a>
+      <a href="../../tr/">Ana sayfa</a>
+      <a href="../../tr/features/">Özellikler</a>
+      <a href="../../tr/install/">Kurulum</a>
+      <a href="../../tr/mcp/">MCP</a>
+      <a href="../../tr/compare/">Karşılaştırma</a>
     </div>
     <div>
       <h2>Rehberler</h2>
-      <a href="../../../tr/guides/">Rehberler</a>
-      <a href="../../../tr/guides/local-https/">Yerel HTTPS</a>
-      <a href="../../../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
-      <a href="../../../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
+      <a href="../../tr/guides/">Rehberler</a>
+      <a href="../../tr/guides/local-https/">Yerel HTTPS</a>
+      <a href="../../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
+      <a href="../../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
     </div>
     <div>
       <h2>Proje</h2>
@@ -698,7 +732,7 @@ SELECT updated_at FROM siparis;  -- içinde UPDATE geçiyor</code></pre>
     </div>
     <div class="footlang">
       <h2>Dil</h2>
-      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../../../guides/mcp-local-dev/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../../tr/guides/mcp-local-dev/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../../mcp/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/mcp/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
     </div>
   </div>
   <div class="wrap footbase">

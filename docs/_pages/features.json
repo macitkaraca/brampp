@@ -1,0 +1,8 @@
+{"published": "2026-08-08",
+ "path": "features",
+ "nav": "features/",
+ "type": "WebPage",
+ "en": {"title": "Features — everything BRAMPP manages on macOS",
+        "desc": "Service control for Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL and Redis; local domains with real HTTPS; databases, PHP extensions, an app-server supervisor and backups — the full feature reference."},
+ "tr": {"title": "Özellikler — BRAMPP macOS'ta neleri yönetir",
+        "desc": "Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL ve Redis için servis denetimi; gerçek HTTPS'li yerel alan adları; veritabanları, PHP eklentileri, uygulama sunucusu gözetmeni ve yedekler — tüm özelliklerin ayrıntılı listesi."}}

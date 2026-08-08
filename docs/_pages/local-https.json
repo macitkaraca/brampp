@@ -1,0 +1,14 @@
+{
+ "published": "2026-08-08",
+ "en": {
+  "title": "Local HTTPS on macOS: mkcert, trust stores and the .local trap",
+  "desc": "Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local."
+ },
+ "tr": {
+  "title": "macOS'ta yerel HTTPS: mkcert, güven deposu ve .local tuzağı",
+  "desc": "macOS'ta yerel geliştirmede kendi imzalı sertifikanın neden yetmediği, yerel sertifika otoritesinin sorunu nasıl çözdüğü ve .test'in .local'dan neden iyi olduğu."
+ },
+ "path": "guides/local-https",
+ "nav": "guides/",
+ "type": "TechArticle"
+}

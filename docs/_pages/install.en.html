@@ -1,0 +1,94 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Install</p>
+  <span class="eyebrow">Install</span>
+  <h1>Running in 60 seconds</h1>
+  <p class="lede">Download, drag, open, run the wizard. This page covers what each step does, how to check the app is genuine, and what to do on the rare occasion something goes wrong.</p>
+</div>
+
+<section id="requirements">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Before you start</span>
+      <h2>Requirements</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>macOS 14 Sonoma or newer.</b> The app uses APIs that do not exist earlier.</li>
+      <li><b>Apple Silicon.</b> BRAMPP is a native arm64 build; so are the Homebrew services it manages.</li>
+      <li><b>Homebrew.</b> If it is missing the setup wizard offers to install it — it does not do so behind your back.</li>
+      <li><b>An administrator account.</b> Editing <code>/etc/hosts</code>, binding low ports and adding a certificate authority to the system trust store all need it. You will be asked, in the moment, for each.</li>
+    </ul>
+    <div class="callout"><p><b>Disk space is mostly not BRAMPP's.</b> The app itself is a few tens of megabytes. What takes room is the stack you choose to install through it — Apache, PHP versions, MariaDB and the rest live under <code>/opt/homebrew</code> like any other Homebrew package, and <code>brew upgrade</code> keeps them current.</p></div>
+  </div>
+</section>
+
+<section class="band" id="steps">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Setup</span>
+      <h2>Four steps</h2>
+    </div>
+    <ol class="steps">
+      <li><b>Download and drag.</b> Grab <code>BRAMPP.dmg</code> from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> and drag BRAMPP.app into Applications. Run it from Applications rather than from the mounted disk image — a few macOS protections behave differently inside a read-only volume.</li>
+      <li><b>Open it.</b> The app is Developer ID signed and notarized, so macOS launches it without an extra step. No right-click → Open, no trip to Privacy &amp; Security.</li>
+      <li><b>Run the setup wizard.</b> It works through Apache ports, PHP-FPM, the mkcert certificate authority, localhost SSL, MariaDB root access and phpMyAdmin — installing only what you approve and printing every command it runs into the console, so nothing happens that you cannot read.</li>
+      <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and a platform → open <code>https://myproject.local</code>. The virtual host, hosts entry, site folder, starter project and certificate are all in place by then.</li>
+    </ol>
+    <p class="para">From a clean machine the wizard is the long part, and it is long mostly because Homebrew is downloading. Everything after that is seconds.</p>
+  </div>
+</section>
+
+<section id="signature">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Trust</span>
+      <h2>Signed, and verifiable by you</h2>
+      <p class="lede">You should not have to take a download's word for what it is. Here is how to check.</p>
+    </div>
+    <p class="para">Every release is signed with a <b>Developer ID Application</b> certificate and submitted to Apple. The resulting ticket is stapled both to the DMG and to the app inside it, which is the part that matters if your first launch happens without a network — Gatekeeper can verify a stapled ticket offline, and cannot verify an unstapled one.</p>
+    <p class="para">After installing, confirm it yourself:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
+# accepted
+# source=Notarized Developer ID</code></pre>
+    <p class="para">To see who signed it and with which team identifier:</p>
+    <pre><code>codesign -dv --verbose=4 /Applications/BRAMPP.app 2>&amp;1 | grep -E 'Authority|TeamIdentifier'</code></pre>
+    <p class="note">Building from source produces an unsigned local build instead. That is expected — an app you compiled yourself is never quarantined, because it never passed through the download path that applies the quarantine flag.</p>
+  </div>
+</section>
+
+<section class="band" id="source">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Alternative</span>
+      <h2>Building from source</h2>
+    </div>
+    <p class="para">The repository is MIT licensed and builds with Xcode 15 or newer:</p>
+    <pre><code>git clone https://github.com/macitkaraca/brampp.git
+cd brampp/macos
+open BRAMPP.xcodeproj</code></pre>
+    <p class="para">Select the BRAMPP scheme and run. The unit tests live in the BRAMPP test target and run with <kbd>⌘U</kbd> — they cover the pure logic (version comparison, config parsing, dependency ordering, path validation) rather than anything that would touch your actual services.</p>
+  </div>
+</section>
+
+<section id="trouble">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Troubleshooting</span>
+      <h2>When something does go wrong</h2>
+    </div>
+    <h3 class="sub-h">"BRAMPP can't be opened"</h3>
+    <p class="para">Almost always an older download. Signing and notarization landed in a specific release; a DMG saved before that will still trip Gatekeeper. Delete the copy in Applications, empty the Trash, and download the current DMG from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> again. If it persists, check what macOS actually objects to:</p>
+    <pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code></pre>
+    <h3 class="sub-h">A port is already taken</h3>
+    <p class="para">macOS ships its own Apache, and it is occasionally running. BRAMPP tells you which process owns the port rather than just failing; the usual fix is to stop the system copy:</p>
+    <pre><code>sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist</code></pre>
+    <h3 class="sub-h">A new domain is not being served</h3>
+    <p class="para">If a domain seems invisible to the web server, restart that service from the Services tab — and if it keeps happening on a current build, please open an issue with the domain's platform and web server, because that is a bug rather than something you should have to work around.</p>
+    <h3 class="sub-h">The browser still complains about the certificate</h3>
+    <p class="para">Check the wizard finished the mkcert step; the CA has to be in the system trust store, not just generated. The <a href="{{UP}}guides/local-https/">local HTTPS guide</a> explains what to look for and why <code>.local</code> can fail even when everything else is correct.</p>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="{{UP}}features/"><small>Next</small><b>What BRAMPP manages →</b></a>
+  <a href="{{UP}}guides/"><small>Also</small><b>Guides →</b></a>
+</div>

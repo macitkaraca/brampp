@@ -1,0 +1,8 @@
+{"published": "2026-08-08",
+ "path": "compare",
+ "nav": "compare/",
+ "type": "WebPage",
+ "en": {"title": "How BRAMPP compares — a Homebrew-based local stack on macOS",
+        "desc": "Bundled binaries versus your own Homebrew services, one language versus five, containers versus native processes. An honest look at where a Homebrew-based stack fits and where it does not."},
+ "tr": {"title": "BRAMPP nerede duruyor — macOS'ta Homebrew tabanlı yerel ortam",
+        "desc": "Paketlenmiş ikililer mi kendi Homebrew servisleriniz mi, tek dil mi beş dil mi, konteyner mı yerel süreç mi. Homebrew tabanlı bir ortamın nereye oturduğuna ve nereye oturmadığına dürüst bir bakış."}}
