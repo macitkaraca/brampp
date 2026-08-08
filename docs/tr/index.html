@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRAMPP — macOS için XAMPP / MAMP Alternatifi (Homebrew tabanlı)</title>
+<meta name="google-site-verification" content="Dr_pnPKU4C_cQ7uToJkgdmhoa7GJ_3wBqu1x2vewY8c">
+<meta name="description" content="macOS için ücretsiz, açık kaynak XAMPP / MAMP alternatifi. Homebrew servislerinizle yerel sunucu, yerel alan adları ve otomatik HTTPS — tek uygulamada.">
+<link rel="icon" type="image/png" href="../assets/icon-256.png">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:site_name" content="BRAMPP">
+<meta property="og:title" content="BRAMPP — macOS için XAMPP &amp; MAMP Alternatifi">
+<meta property="og:description" content="Apache, Nginx, MySQL, PostgreSQL, Redis, PHP, Node.js, Python ve ASP.NET Core'u tek bir yerel macOS uygulamasından yönetin. Homebrew tabanlı. Ücretsiz ve açık kaynak.">
+<meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/icon-1024.png">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="1024">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- JSON-LD: SoftwareApplication + FAQ (SEO + AI Overviews/GEO) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "BRAMPP",
+  "inLanguage": "tr-TR",
+  "operatingSystem": "macOS 14+ (Apple Silicon)",
+  "applicationCategory": "DeveloperApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "macOS için ücretsiz, açık kaynak XAMPP/MAMP alternatifi. Apache, Nginx, MariaDB/MySQL, PostgreSQL, Redis, PHP, Node.js, Python ve ASP.NET Core yerel geliştirme servislerini Homebrew üzerinden yönetir; yerel alan adları ve otomatik HTTPS sunar.",
+  "url": "https://macitkaraca.github.io/brampp/tr/",
+  "downloadUrl": "https://github.com/macitkaraca/brampp/releases/latest",
+  "softwareVersion": "1.1",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": {
+    "@type": "Organization",
+    "name": "Karaca Teknoloji",
+    "alternateName": "Karaca Technology",
+    "url": "https://karacatechnology.com",
+    "sameAs": [
+      "https://karacatechnology.com",
+      "https://github.com/macitkaraca"
+    ]
+  },
+  "creator": {
+    "@type": "Person",
+    "name": "Macit Karaca",
+    "url": "https://github.com/macitkaraca"
+  },
+  "featureList": [
+    "Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL ve Redis'i Homebrew üzerinden başlat/durdur",
+    "Yerel alan adı oluşturma: vhost, /etc/hosts kaydı ve örnek proje",
+    "mkcert ile otomatik yerel HTTPS (yerel CA + alan adı başına sertifika)",
+    "PHP 8.1–8.5 yan yana, alan adı başına sabitlenebilir",
+    "Node.js, Python (FastAPI/Django/Flask) ve ASP.NET Core uygulama süpervizörü",
+    "Veritabanı yönetimi: MariaDB ve PostgreSQL oluştur, sil, yedekle, geri yükle",
+    "phpMyAdmin, pgAdmin ve Adminer kurulumu",
+    "Sürüm başına 50+ eklentiyle PHP eklenti yöneticisi",
+    "Yapay zekâ araçlarının stack'i yönetebilmesi için yerleşik MCP sunucusu",
+    "Türkçe ve İngilizce arayüzlü menü çubuğu uygulaması"
+  ],
+  "screenshot": [
+    "https://macitkaraca.github.io/brampp/assets/tr/domains.webp",
+    "https://macitkaraca.github.io/brampp/assets/tr/services.webp",
+    "https://macitkaraca.github.io/brampp/assets/tr/database.webp",
+    "https://macitkaraca.github.io/brampp/assets/tr/phpExtensions.webp",
+    "https://macitkaraca.github.io/brampp/assets/tr/logs.webp",
+    "https://macitkaraca.github.io/brampp/assets/tr/settings.webp"
+  ],
+  "dateModified": "2026-07-26",
+  "sameAs": [
+    "https://github.com/macitkaraca/brampp"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "tr-TR",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Bu, Mac'te XAMPP'in yerini tutar mı?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Evet — tasarım hedefi tam olarak bu. XAMPP/MAMP akışını karşılar, üstüne Nginx, PostgreSQL, Redis, Node.js, Python ve ASP.NET Core ekler. XAMPP'ten farklı olarak ikili dosya paketlemez; mevcut Homebrew servislerinizi yönetir."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Mevcut Homebrew kurulumumla kavga eder mi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hayır — zaten o sizin Homebrew kurulumunuz. BRAMPP hiçbir şeyin ikinci bir kopyasını kurmaz."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Uygulama imzalı ve noter onaylı mı?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Evet. Yayın sürümleri Developer ID Application sertifikasıyla imzalanır ve Apple noter onayından geçer; bilet hem DMG'ye hem uygulamaya zımbalanır, böylece ilk açılışta internet olmasa bile doğrulanır. Proje tümüyle açık kaynaktır, tek bir xcodebuild komutuyla kendiniz de derleyebilirsiniz."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Şifremi ne için soruyor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yalnızca /etc/hosts düzenlemeleri için (127.0.0.1 projem.local satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "BRAMPP Node.js / Python / ASP.NET uygulamamı çalıştırabilir mi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Evet — her uygulama, bağımlılığı olmayan bir süpervizör altında otomatik yeniden başlatma ve birleşik günlüklerle çalışır; önünde ters vekil (reverse proxy) olarak Apache ya da Nginx durur (WebSocket, SSE, HTTP/2 ve gRPC seçenekleri dahil). Uygulamanızdan önce otomatik başlayacak servis bağımlılıkları da tanımlayabilirsiniz (örneğin MariaDB + Redis)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hangi PHP sürümleri destekleniyor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PHP 8.1, 8.2, 8.3, 8.4 ve 8.5 yan yana — her alan adı kendi sürümünü sabitleyebilir; eklenti yöneticisi de sürüm başına çalışır."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hangi Mac'lerde çalışır?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yalnızca Apple Silicon. Dağıtılan sürüm yerel bir arm64 ikilisidir ve macOS 14 (Sonoma) veya üstünü gerektirir — Intel Mac'ler desteklenmez. Homebrew prefix'i (/opt/homebrew) otomatik algılanır."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Claude gibi yapay zekâ araçları BRAMPP'i kullanabilir mi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar) her alana izin yok, okuma ya da okuma + yazma verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca 127.0.0.1 üzerinden dinler ve varsayılan olarak kapalıdır."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Nasıl kaldırırım?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "BRAMPP'ten çıkın, uygulamayı silin ve ~/Library/Application Support/BRAMPP klasörünü kaldırın. Homebrew servisleriniz ve site klasörleriniz olduğu gibi kalır."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+/* ══ tokens ═════════════════════════════════════════════ */
+:root{
+  --bg:#0b1526; --bg-2:#122540; --bg-3:#0e1c31;
+  --fg:#eaf1fa; --fg-2:#c6d5e8; --muted:#9db1c9; --dim:#7d92ad;
+  --amber:#f59e0b; --amber-lo:#d97706; --amber-hi:#fbbf24;
+  --card:#13233c; --card-2:#101d33; --panel:#0f1e35;
+  --line:#22365a; --line-soft:#1b2d4c; --line-hair:rgba(120,155,200,.14);
+  --green:#34d399;
+  --r-xs:9px; --r-sm:12px; --r-md:16px; --r-lg:22px;
+  --shadow-lg:0 28px 64px -28px rgba(0,0,0,.85);
+  --shadow-md:0 16px 36px -22px rgba(0,0,0,.9);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
+  --maxw:1120px;
+  --pad:26px;
+  --bar-h:66px;
+}
+
+/* ══ base ═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar-h) + 16px);-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  font-size:clamp(16px,0.98rem + 0.12vw,17.5px);
+  line-height:1.7;
+  color:var(--fg);
+  background:var(--bg);
+  background-image:
+    radial-gradient(1200px 680px at 50% -220px,rgba(245,158,11,.15),transparent 68%),
+    radial-gradient(900px 520px at 88% 12%,rgba(56,110,180,.14),transparent 70%),
+    linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 58%,var(--bg-3) 100%);
+  background-attachment:scroll,scroll,fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--amber);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--amber-hi)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{
+  background:rgba(6,14,27,.75);border:1px solid rgba(90,130,180,.22);
+  padding:1.5px 7px;border-radius:7px;color:var(--amber-hi);white-space:nowrap;
+}
+:focus-visible{outline:2.5px solid var(--amber-hi);outline-offset:3px;border-radius:8px}
+::selection{background:rgba(245,158,11,.28)}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);width:100%}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ══ fixed top bar ══════════════════════════════════════ */
+/* Bölüm menüsü — sabit çubuğun ortasında. Dar ekranda gizlenir: indirme ve
+   dil düğmeleri her zaman erişilebilir kalmalı, menü ikincil. */
+.navlinks{display:flex;align-items:center;gap:2px;flex:1;justify-content:center;
+  overflow:hidden}
+.navlinks a{color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:500;
+  padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+.navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
+.navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+@media (max-width:900px){.navlinks{display:none}}
+.topbar{
+  position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:var(--bar-h);
+  padding:12px max(14px,calc((100vw - var(--maxw))/2 + var(--pad)));
+  pointer-events:none;
+}
+/* Marka bloğu — solda logo + isim. Çubuğun kimliğini taşır, kaydırmadan
+   bağımsız her zaman görünür. */
+.brandmark{display:flex;align-items:center;gap:9px;text-decoration:none;flex:0 0 auto}
+.brandmark img{width:26px;height:26px;border-radius:6px;display:block}
+.brandmark b{font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--fg)}
+.brandmark b i{font-style:normal;color:var(--amber-hi)}
+.barcta{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+@media (max-width:620px){.brandmark b{display:none}}
+.topbar::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:rgba(11,21,38,.78);
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);
+  backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid var(--line-soft);
+  opacity:0;transition:opacity .22s ease;
+}
+/* Zemin yalnızca kaydırınca gelir: hero'nun üstünde kutu görünmesin, ama
+   içerik menünün altından geçerken yazılar okunaksız kalmasın. */
+.topbar.is-scrolled::before{opacity:1}
+@media (prefers-reduced-motion:reduce){.topbar::before{transition:none}}
+.topbar>*{pointer-events:auto;min-width:0}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;flex:0 1 auto;
+  font-size:13.5px;font-weight:600;line-height:1;letter-spacing:.1px;
+  text-decoration:none;white-space:nowrap;
+  padding:10px 16px;border-radius:999px;
+  border:1px solid rgba(130,165,210,.3);
+  background:rgba(11,21,38,.7);color:var(--fg);
+  -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
+  box-shadow:0 8px 26px -12px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:border-color .2s ease,background .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.pill:hover{color:var(--fg);border-color:rgba(245,158,11,.6);transform:translateY(-1px)}
+.pill-dl{
+  background:linear-gradient(135deg,rgba(217,119,6,.96),rgba(245,158,11,.96));
+  color:#1b1206;border-color:rgba(251,191,36,.55);
+  box-shadow:0 10px 28px -14px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.pill-dl:hover{color:#1b1206;border-color:rgba(255,255,255,.6)}
+.pill .ov{overflow:hidden;text-overflow:ellipsis}
+.sticky-dl{
+  opacity:0;visibility:hidden;transform:translateY(-14px) scale(.95);
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear .32s;
+}
+.sticky-dl.is-visible{
+  opacity:1;visibility:visible;transform:none;
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear 0s;
+}
+
+/* ══ hero ═══════════════════════════════════════════════ */
+.hero{padding-top:calc(var(--bar-h) + 42px);padding-bottom:6px;text-align:center}
+.hero-icon{
+  width:116px;height:116px;margin-inline:auto;border-radius:26px;
+  filter:drop-shadow(0 20px 42px rgba(0,0,0,.62)) drop-shadow(0 0 34px rgba(245,158,11,.18));
+}
+h1{
+  font-size:clamp(44px,8.4vw,74px);line-height:1.0;font-weight:800;
+  letter-spacing:-.035em;margin:24px 0 0;
+}
+h1 .amber{
+  background:linear-gradient(112deg,var(--amber-hi) 8%,var(--amber-lo) 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.h1sub{
+  display:block;margin-top:16px;
+  font-size:clamp(17px,2.5vw,24px);line-height:1.35;font-weight:600;
+  letter-spacing:-.015em;color:var(--fg-2);
+}
+.tag{
+  font-size:clamp(16.5px,1.9vw,19.5px);line-height:1.62;color:var(--muted);
+  max-width:660px;margin:20px auto 0;
+}
+.tag b{color:var(--fg);font-weight:600}
+.cta{margin-top:36px;display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:15px 30px;border-radius:14px;text-decoration:none;
+  font-weight:650;font-size:16.5px;line-height:1.2;white-space:nowrap;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber) 60%,var(--amber-hi));
+  color:#1b1206;
+  box-shadow:0 16px 36px -16px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-primary:hover{color:#1b1206;transform:translateY(-2px);box-shadow:0 24px 46px -16px rgba(245,158,11,1),inset 0 1px 0 rgba(255,255,255,.34)}
+.btn-ghost{
+  border:1.5px solid rgba(120,160,210,.32);color:var(--fg);
+  background:rgba(19,35,60,.55);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.btn-ghost:hover{color:var(--fg);transform:translateY(-2px);border-color:rgba(150,190,235,.5);background:rgba(24,43,73,.78)}
+.trust{margin-top:22px;font-size:14px;letter-spacing:.25px;color:var(--dim)}
+.trust b{color:var(--fg-2);font-weight:650}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:32px auto 0;max-width:740px}
+.chips span{
+  background:rgba(19,35,60,.6);border:1px solid var(--line-soft);border-radius:10px;
+  padding:6px 12px;font-size:13px;line-height:1.2;color:var(--muted);
+}
+.chips b{color:var(--amber);font-weight:750}
+
+/* ══ proof shot ═════════════════════════════════════════ */
+.proof{padding-top:48px}
+.frame{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--shadow-lg);
+}
+.frame-bar{
+  display:flex;gap:7px;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,#13233c,#0e1c31);
+}
+.frame-bar i{width:11px;height:11px;border-radius:50%;background:#2b4166;display:block}
+.frame-bar i:first-child{background:#3f5a80}
+.proof-cap{text-align:center;color:var(--dim);font-size:14.5px;margin-top:18px}
+
+/* ══ sections ═══════════════════════════════════════════ */
+section{padding-block:clamp(58px,7.2vw,100px)}
+.band{
+  background:linear-gradient(180deg,rgba(9,17,31,.5),rgba(9,17,31,.16));
+  border-top:1px solid var(--line-hair);border-bottom:1px solid var(--line-hair);
+}
+.shead{text-align:center;max-width:760px;margin-inline:auto}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:750;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+  padding:5px 12px;border-radius:999px;
+  border:1px solid rgba(245,158,11,.26);background:rgba(245,158,11,.07);
+  margin-bottom:16px;
+}
+h2{font-size:clamp(27px,3.6vw,41px);line-height:1.14;letter-spacing:-.028em;font-weight:750;margin:0}
+.lede{color:var(--muted);font-size:clamp(16px,1.6vw,17.5px);line-height:1.68;margin-top:16px}
+.lede b{color:var(--fg);font-weight:600}
+.sub-h{
+  font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);text-align:center;margin:40px 0 16px;
+}
+
+/* ══ problem / solution ═════════════════════════════════ */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:38px}
+.vs-card{
+  border-radius:var(--r-md);padding:26px 24px;
+  border:1px solid var(--line-soft);
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.vs-card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+.vs-card p{color:var(--muted);font-size:15.5px;line-height:1.68}
+.vs-card .kicker{
+  display:block;font-size:11.5px;font-weight:750;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.vs-old .kicker{color:var(--dim)}
+.vs-new{border-color:rgba(245,158,11,.3);background:linear-gradient(165deg,rgba(37,32,18,.9),var(--card-2))}
+.vs-new .kicker{color:var(--amber)}
+
+/* ══ tables ═════════════════════════════════════════════ */
+.tscroll{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border-radius:var(--r-md);border:1px solid var(--line-soft);
+  background:var(--card);box-shadow:var(--shadow-md);
+}
+table{width:100%;border-collapse:collapse;min-width:580px}
+th,td{padding:15px 18px;text-align:left;font-size:15px;line-height:1.55;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child th,tr:last-child td{border-bottom:0}
+thead th{
+  background:var(--panel);font-weight:700;font-size:13.5px;
+  letter-spacing:.05em;color:var(--fg);white-space:nowrap;
+}
+tbody th{font-weight:600;color:var(--fg);width:24%}
+td{color:var(--muted)}
+td.win{color:var(--fg);font-weight:600;background:rgba(245,158,11,.055)}
+.cmp thead th:last-child{color:var(--amber-hi);background:rgba(245,158,11,.09)}
+
+/* ══ feature cards ══════════════════════════════════════ */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:40px}
+.card{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:26px 24px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(150,190,235,.34);box-shadow:0 22px 40px -26px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.06)}
+.card .ico{
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  font-size:20px;line-height:1;margin-bottom:15px;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(245,158,11,.24),rgba(245,158,11,.06));
+  border:1px solid rgba(245,158,11,.24);
+}
+.card h3{font-size:17.5px;font-weight:680;letter-spacing:-.012em;margin-bottom:9px}
+.card p{color:var(--muted);font-size:15px;line-height:1.66}
+
+/* ══ tour ═══════════════════════════════════════════════ */
+.tour{display:grid;gap:clamp(40px,5vw,64px);margin-top:44px}
+.tour figure{margin:0}
+.tour .frame{margin-bottom:18px}
+.tour figcaption{color:var(--muted);font-size:15.5px;line-height:1.68;max-width:860px}
+.tour figcaption b{color:var(--fg);display:block;font-size:17.5px;font-weight:680;letter-spacing:-.01em;margin-bottom:6px}
+.tour .n{
+  display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+  color:var(--amber);background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.24);border-radius:999px;
+  padding:4px 11px;margin-bottom:12px;
+}
+
+/* ══ install ════════════════════════════════════════════ */
+.steps{counter-reset:s;list-style:none;margin:40px auto 0;max-width:780px;display:grid;gap:14px}
+.steps li{
+  position:relative;counter-increment:s;
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:19px 24px 19px 68px;color:var(--muted);font-size:15.5px;line-height:1.66;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.steps li::before{
+  content:counter(s);position:absolute;left:22px;top:18px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber-hi));color:#1b1206;
+  font-size:14px;font-weight:750;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px -8px rgba(245,158,11,.9);
+}
+.steps b{color:var(--fg);font-weight:650}
+.gate{
+  max-width:860px;margin:40px auto 0;overflow:hidden;
+  border:1px solid rgba(180,140,50,.34);border-radius:var(--r-md);
+  background:linear-gradient(165deg,#1e1a10,#141f33);
+  box-shadow:var(--shadow-md);
+}
+.gate-h{
+  margin:0;padding:17px 24px;border-bottom:1px solid rgba(180,140,50,.26);
+  font-size:16.5px;font-weight:680;letter-spacing:-.01em;
+  display:flex;gap:10px;align-items:center;
+}
+.gate-b{padding:22px 24px}
+.gate-b>p{color:var(--muted);font-size:15px;line-height:1.68;margin-bottom:18px}
+.gate .tscroll{background:#111e33;border-color:rgba(160,130,60,.24);box-shadow:none}
+.gate table{min-width:540px}
+.gate thead th{background:#17243b}
+.gate tbody th{width:32%;color:var(--amber-hi);font-weight:680}
+.note{
+  margin-top:18px;padding:14px 18px;border-left:3px solid var(--amber);
+  background:rgba(245,158,11,.08);border-radius:0 var(--r-xs) var(--r-xs) 0;
+  color:var(--muted);font-size:14.5px;line-height:1.66;
+}
+.note b{color:var(--fg)}
+
+/* ══ mcp ════════════════════════════════════════════════ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:14px;margin-top:40px}
+.stat{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px 16px;text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.stat .num{
+  display:block;font-size:30px;font-weight:780;line-height:1.15;
+  letter-spacing:-.03em;color:var(--amber-hi);
+}
+.stat .lbl{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}
+.perms{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.perms span{
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px 16px;font-size:13.5px;line-height:1.3;
+  color:var(--muted);background:rgba(19,35,60,.55);
+}
+.perms b{color:var(--fg);font-weight:680}
+.clients{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:16px}
+.client{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px;text-align:center;font-weight:650;font-size:15.5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.client small{display:block;color:var(--dim);font-weight:400;font-size:13.5px;margin-top:5px}
+.endpoint{text-align:center;margin-top:26px;color:var(--dim);font-size:14.5px;line-height:1.7}
+
+/* ══ faq ════════════════════════════════════════════════ */
+.faq{max-width:820px;margin:40px auto 0;display:grid;gap:10px}
+details{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:border-color .2s ease;
+}
+details[open]{border-color:rgba(150,190,235,.32)}
+summary{
+  cursor:pointer;font-weight:650;font-size:16.5px;line-height:1.5;
+  padding:18px 52px 18px 22px;position:relative;list-style:none;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"";position:absolute;right:22px;top:26px;width:9px;height:9px;
+  border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);
+  transform:rotate(45deg);transition:transform .22s ease;
+}
+details[open] summary::after{transform:rotate(-135deg);top:29px}
+details p{color:var(--muted);font-size:15.5px;line-height:1.7;padding:0 22px 20px}
+
+/* ══ footer ═════════════════════════════════════════════ */
+footer{
+  border-top:1px solid var(--line-hair);
+  padding-top:52px;padding-bottom:72px;
+  text-align:center;color:var(--dim);font-size:14.5px;line-height:1.75;
+}
+footer p+p{margin-top:10px}
+footer b{color:var(--fg-2);font-weight:650}
+footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
+
+/* ══ responsive ═════════════════════════════════════════ */
+@media (max-width:1200px){:root{--maxw:980px}}
+@media (max-width:900px){
+  :root{--maxw:760px}
+  .vs{grid-template-columns:1fr}
+  .hero{padding-top:calc(var(--bar-h) + 30px)}
+}
+@media (max-width:600px){
+  :root{--pad:18px;--bar-h:58px}
+  .topbar{padding:10px 14px;gap:8px}
+  .pill{font-size:12.5px;padding:9px 13px;gap:6px}
+  .hero{padding-top:calc(var(--bar-h) + 26px)}
+  .hero-icon{width:92px;height:92px;border-radius:21px}
+  h1{letter-spacing:-.03em}
+  .btn{padding:14px 24px;font-size:15.5px;flex:1 1 100%;justify-content:center}
+  .cta{gap:10px}
+  .card,.vs-card{padding:22px 19px}
+  .steps li{padding:17px 19px 17px 60px;font-size:15px}
+  .steps li::before{left:18px}
+  .gate-h,.gate-b{padding-inline:17px}
+  summary{font-size:15.5px;padding:16px 44px 16px 18px}
+  summary::after{right:18px}
+  details p{padding:0 18px 18px;font-size:15px}
+  .frame-bar{padding:10px 13px}
+  .frame-bar i{width:9px;height:9px}
+  .hide-sm{display:none}
+  th,td{padding:13px 15px;font-size:14.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .sticky-dl{transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar" aria-label="Site">
+  <a class="brandmark" href="./" aria-label="BRAMPP"><img src="../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks"><a href="#why">Neden</a><a href="#compare">Karşılaştırma</a><a href="#features">Özellikler</a><a href="#screenshots">Ekranlar</a><a href="#install">Kurulum</a><a href="#mcp">MCP</a><a href="#faq">SSS</a></div>
+  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="BRAMPP.dmg indir">⬇ <span class="hide-sm">İndir </span>DMG</a><a class="pill" href="../" hreflang="en" lang="en" aria-label="View this page in English">🇬🇧 English</a></div>
+</nav>
+
+<main>
+
+<!-- 1 · HERO -->
+<div class="hero wrap">
+  <img class="hero-icon" src="../assets/icon-256.png" alt="BRAMPP uygulama simgesi — lacivert zeminde amber sunucu katmanları" width="256" height="256" fetchpriority="high">
+  <h1>BRA<span class="amber">MPP</span>
+    <span class="h1sub">macOS için XAMPP ve MAMP alternatifi</span>
+  </h1>
+  <p class="tag"><b>Zaten kurulu olan</b> Homebrew servislerinizi çalıştıran tek bir native uygulama — yerel alan adları, otomatik HTTPS, veritabanları ve uygulama sunucuları. Paketlenmiş ikili yok, port kavgası yok.</p>
+  <div class="cta" id="heroCta">
+    <a class="btn btn-primary" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ BRAMPP.dmg indir</a>
+    <a class="btn btn-ghost" href="https://github.com/macitkaraca/brampp">★ GitHub'da görüntüle</a>
+  </div>
+  <p class="trust"><b>Ücretsiz</b> · <b>MIT</b> · <b>macOS 14+</b> · <b>Apple Silicon</b></p>
+  <div class="chips">
+    <span><b>B</b>rew</span><span><b>R</b>edis</span><span><b>A</b>pache</span><span><b>M</b>ySQL</span><span><b>P</b>ostgreSQL</span><span><b>P</b>HP</span>
+    <span>+ Nginx</span><span>+ Node.js</span><span>+ Python</span><span>+ ASP.NET Core</span>
+  </div>
+</div>
+
+<!-- 2 · KANIT -->
+<div class="proof wrap">
+  <div class="frame">
+    <div class="frame-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+    <img src="../assets/tr/domains.webp" alt="BRAMPP ana penceresi — platform rozeti, PHP sürümü, web sunucusu, SSL kilidi ve canlı durumuyla tüm yerel alan adları tek listede" width="1500" height="953" loading="lazy">
+  </div>
+  <p class="proof-cap">Bütün yerel siteleriniz tek listede — platform, PHP sürümü, web sunucusu, SSL ve canlı durum.</p>
+</div>
+
+<!-- 3 · SORUN / ÇÖZÜM -->
+<section id="why">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Fark</span>
+      <h2>Mac'inizde zaten bir sunucu var. Onu kullanın.</h2>
+      <p class="lede">Bütün mesele iki paragrafa sığıyor.</p>
+    </div>
+    <div class="vs">
+      <div class="vs-card vs-old">
+        <span class="kicker">Paketli yöntem</span>
+        <h3>XAMPP ve MAMP kendi kopyalarını getirir</h3>
+        <p>Terminalde kullandığınız Homebrew kurulumunun yanına ikinci bir Apache, ikinci bir PHP ve ikinci bir MySQL kurarlar. İki web sunucusu, iki <code>php.ini</code>, iki veri klasörü — ve yine tek bir 80 portu.</p>
+      </div>
+      <div class="vs-card vs-new">
+        <span class="kicker">BRAMPP yöntemi</span>
+        <h3>BRAMPP sizin kurduğunuz servisleri çalıştırır</h3>
+        <p>Hiçbir sunucu ikilisi taşımaz; <code>brew</code> ile kurduğunuz aynı <code>httpd</code>, <code>php</code> ve <code>mariadb</code> üzerinde çalışır ve zahmetli kısımları üstlenir: virtual host'lar, <code>/etc/hosts</code> kayıtları, yerel sertifikalar ve veritabanı işleri.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · KARŞILAŞTIRMA -->
+<section class="band" id="compare">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Karşılaştırma</span>
+      <h2>Nerede duruyor?</h2>
+      <p class="lede">İki tablo, yıldızlı dipnot yok. Aşağıdaki her satır BRAMPP'in ne yaptığını anlatır — başkasının yol haritası hakkında hüküm vermez.</p>
+    </div>
+    <h3 class="sub-h" id="cmp-xampp">XAMPP / MAMP karşısında</h3>
+    <div class="tscroll">
+      <table class="cmp" aria-labelledby="cmp-xampp">
+        <thead><tr><th scope="col"><span class="vh">Ölçüt</span></th><th scope="col">XAMPP / MAMP</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Sunucu ikilileri</th><td>Gömülü, izole, mükerrer</td><td class="win">Kendi Homebrew servisleriniz</td></tr>
+          <tr><th scope="row">Desteklenen platformlar</th><td>Çoğunlukla PHP</td><td class="win">PHP, Node.js, Python, ASP.NET Core, statik</td></tr>
+          <tr><th scope="row">Web sunucuları</th><td>Apache</td><td class="win">Apache ve Nginx (aynı anda bile)</td></tr>
+          <tr><th scope="row">Veritabanları</th><td>MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
+          <tr><th scope="row">Yerel HTTPS</th><td>Elle, zahmetli</td><td class="win">mkcert ile otomatik</td></tr>
+          <tr><th scope="row"><code>brew upgrade</code> uyumu</th><td>Pek değil</td><td class="win">Zaten bütün mesele bu</td></tr>
+          <tr><th scope="row">Yapay zekâ erişimi</th><td>—</td><td class="win">Yerleşik MCP sunucusu, 19 araç</td></tr>
+          <tr><th scope="row">Uçtan uca arm64</th><td>Ürüne ve kuruluma göre değişir</td><td class="win">Uygulama <i>ve</i> yönettiği tüm servisler, native</td></tr>
+          <tr><th scope="row">Fiyat</th><td>XAMPP ücretsiz · MAMP PRO ücretli</td><td class="win">Ücretsiz, MIT, açık kaynak</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h" id="cmp-native">macOS'a özgü diğer araçlar karşısında</h3>
+    <div class="tscroll">
+      <table class="cmp" aria-labelledby="cmp-native">
+        <thead><tr><th scope="col"><span class="vh">Ölçüt</span></th><th scope="col">Laravel Herd</th><th scope="col">Laravel Valet</th><th scope="col">Docker yığınları</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Kapsam</th><td>Önce PHP</td><td>Yalnızca PHP, terminal</td><td>Her şey, konteynerde</td><td class="win">PHP + Node + Python + .NET + statik</td></tr>
+          <tr><th scope="row">Servisler nerede çalışır</th><td>Gömülü çalışma zamanı</td><td>Kendi Homebrew PHP'niz</td><td>Konteyner</td><td class="win">Kendi Homebrew servisleriniz</td></tr>
+          <tr><th scope="row">Arayüz</th><td>Var (Pro özellikleri ücretli)</td><td>Yok</td><td>Üçüncü parti</td><td class="win">Var, ücretsiz</td></tr>
+          <tr><th scope="row">Nginx ve Apache</th><td>Nginx</td><td>Nginx</td><td>Size kalmış</td><td class="win">İkisi de, alan adı başına</td></tr>
+          <tr><th scope="row">Ücret</th><td>Ücretsiz katman + Pro</td><td>Ücretsiz</td><td>Ücretsiz</td><td class="win">Ücretsiz, MIT</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · ÖZELLİKLER -->
+<section id="features">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Özellikler</span>
+      <h2>Neler yapıyor</h2>
+      <p class="lede">Aksi hâlde gece bir'de, elle, config dosyalarında yapacağınız on iki iş.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Servis kontrolü</h3><p>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL ve Redis'i başlatın, durdurun, yeniden başlatın. Port kontrollü canlı durum, çökme bildirimleri, son çalışan servisleri açılışta başlatma.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Yerel alan adları</h3><p>Saniyeler içinde <code>projem.local</code>: vhost, <code>/etc/hosts</code> kaydı, site klasörü ve örnek proje sizin için oluşturulur. Alan adı başına Apache ya da Nginx.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Her platform, tek uygulama</h3><p>Alan adı başına sürümüyle PHP, Node.js, Python (venv ile FastAPI, Django, Flask), ASP.NET Core, statik siteler ve history-mode yönlendirmeli SPA'lar.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Gerçek yerel HTTPS</h3><p>Tek tıkla mkcert entegrasyonu: yerel sertifika otoritesi, alan adı başına sertifika ve HTTP→HTTPS yönlendirme. Yeşil kilit, artık evinizde.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Terminalsiz veritabanı</h3><p>Veritabanı oluşturma ve silme, yedekleme ve geri yükleme, phpMyAdmin / pgAdmin / Adminer kurucuları, ayrıca güvenli yazmalı <code>my.cnf</code>, <code>postgresql.conf</code> ve <code>redis.conf</code> panelleri.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP eklenti yöneticisi</h3><p>PHP sürümü başına 50'den fazla eklenti — xdebug, redis, imagick ve arkadaşları — tek tıkla aç/kapat, PECL kurulumu ve <code>php.ini</code> hızlı ayarları.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>Uygulama süpervizörü</h3><p>Node, Python ve .NET uygulamaları sıfır bağımlılıklı bir süpervizörle çalışır: otomatik yeniden başlatma, birleşik loglar ve sinyal göndermeden önce portun sahibini doğrulayan güvenli durdurma.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Kurulum sihirbazı</h3><p>Apache portlarını, PHP-FPM'i, mkcert CA'sını, localhost SSL'ini, MariaDB root erişimini ve phpMyAdmin'i denetleyip yapılandırır. Tek bir config dosyası açmadan <code>https://localhost</code>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Dürüst yedekler</h3><p>Tek tık; alan adları, ayarlar, vhost'lar, SSL sertifikaları ve php.ini dosyaları yedeklenir. Eksik yedekler tespit edilip işaretlenir, asla eksiksizmiş gibi sessizce geri yüklenmez.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>Yapay zekâ için MCP sunucusu</h3><p>Yerleşik Model Context Protocol uç noktası; yalnızca loopback ve varsayılan olarak kapalı. Asistanınız alan bazlı izinlerin arkasındaki 19 araca kavuşur — yaptığı her değişiklik pencerede anında görünür.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menü çubuğu uygulaması</h3><p>Tüm ortamınız menü çubuğunuzda: servisleri başlatıp durdurun, açılışta çalıştırın, çökme bildirimlerini görün. Türkçe ve İngilizce arayüz, çalışırken değiştirilebilir.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Uçtan uca native arm64</h3><p>BRAMPP.app, macOS 14+ üzerinde native bir Apple Silicon ikilisidir; yönettiği servisler de öyle: <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> ve <code>redis-server</code> Homebrew'un arm64 bottle'larından gelir. Uygulama da yığın da baştan sona native — Rosetta yok, emülasyon katmanı yok.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · TUR -->
+<section id="screenshots">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Ekran görüntüleri</span>
+      <h2>Uygulamada kısa bir tur</h2>
+      <p class="lede">Altı sekme. Terminal gerekmiyor — ama çalıştırılan her komut önce ekrana yazılıyor.</p>
+    </div>
+    <div class="tour">
+      <figure>
+        <div class="frame"><img src="../assets/tr/domains.webp" alt="BRAMPP Alan Adları sekmesi — platform rozetleri, SSL ve canlı durum ile yerel alan adları" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">01 — Alan Adları</span><b>Bütün yerel siteleriniz tek listede.</b> Platform rozeti, alan adı başına PHP sürümü, Apache ya da Nginx, SSL kilidi ve canlı çalışma durumu. Varsayılan <code>localhost</code> kartı iki web sunucusunun portlarını tek bakışta gösterir; <i>+ Yeni Alan Adı</i> ise vhost, <code>/etc/hosts</code> kaydı, site klasörü ve örnek projeyi tek adımda kurar.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="../assets/tr/services.webp" alt="BRAMPP Servisler sekmesi — kategorilere ayrılmış Homebrew servisleri ve canlı durumları" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">02 — Servisler</span><b>Tüm ortamınız, kategorilere ayrılmış.</b> Web sunucuları, PHP-FPM sürümleri, çalışma zamanları, veritabanları ve önbellek — tek tıkla başlat/durdur, canlı port rozetleri, Apache/Nginx yapılandırma panelleri ve servis satırının üzerinde phpMyAdmin / pgAdmin / Adminer kurucuları. Kurulu olmayan servisler gizlenebilir ya da buradan kurulabilir.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="../assets/tr/database.webp" alt="BRAMPP Veritabanı sekmesi — bağlantı bilgileri, root TCP erişim durumu ve veritabanı listesi" width="1500" height="815" loading="lazy"></div>
+        <figcaption><span class="n">03 — Veritabanı</span><b>Kopyalamaya hazır bağlantı bilgileri.</b> BRAMPP <code>root@localhost</code> TCP erişiminin yapılandırılıp yapılandırılmadığını algılar ve tek tık düzeltmeyi yalnızca gerçekten gerektiğinde önerir. Veritabanı oluşturun, silin, yedekleyin, geri yükleyin; phpMyAdmin ya da Adminer'i URL ezberlemeden açın.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="../assets/tr/phpExtensions.webp" alt="BRAMPP PHP Eklentileri sekmesi — sürüm başına eklenti yöneticisi" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">04 — PHP Eklentileri</span><b>PHP sürümü başına 50'den fazla eklenti.</b> xdebug, redis, imagick ve arkadaşları; tek tıkla aç/kapat, PECL kurulumu ve <code>php.ini</code> hızlı ayarları — 8.1'den 8.5'e, her sürüm için ayrı ayrı.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="../assets/tr/logs.webp" alt="BRAMPP Günlükler sekmesi — birleşik canlı günlük görüntüleyici" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">05 — Günlükler</span><b>Apache, Nginx, PHP-FPM ve uygulama günlükleri tek yerde.</b> Canlı akış dahil — beş terminal sekmesinde <code>tail -f</code> cambazlığına gerek yok.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="../assets/tr/settings.webp" alt="BRAMPP Ayarlar — durum, uç nokta adresi ve erişim izinleriyle yerleşik MCP sunucusu" width="1120" height="1256" loading="lazy"></div>
+        <figcaption><span class="n">06 — Ayarlar ve MCP</span><b>Tek bir anahtar BRAMPP'i yapay zekâ araçları için uç noktaya dönüştürür.</b> <code>http://127.0.0.1:8765/mcp</code>, yalnızca loopback; alan bazlı erişim izinleri, gerçekten kaç aracın etkin olduğunu gösteren canlı sayaç ve Claude Desktop, ChatGPT Codex ile beceri dosyası için tek tıkla kurulum.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · KURULUM -->
+<section class="band" id="install">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Kurulum</span>
+      <h2>60 saniyede çalışır hâlde</h2>
+      <p class="lede">Gereksinimler: macOS 14 Sonoma veya üstü, Apple Silicon ve Homebrew — Homebrew kurulu değilse sihirbaz kurmanıza yardım eder.</p>
+    </div>
+    <ol class="steps">
+      <li><b>İndirin ve sürükleyin.</b> <code>BRAMPP.dmg</code> dosyasını <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> sayfasından indirin, BRAMPP.app'i Uygulamalar klasörüne sürükleyin.</li>
+      <li><b>Açın.</b> Uygulama Developer ID ile imzalı ve Apple tarafından noter onaylıdır — macOS ek bir adım istemeden çalıştırır.</li>
+      <li><b>Kurulum sihirbazını çalıştırın.</b> Apache portlarını, PHP-FPM'i, mkcert CA'sını, localhost SSL'ini, MariaDB root erişimini ve phpMyAdmin'i yapılandırır — yalnızca onayladığınızı kurar, çalıştırdığı her komutu konsolda gösterir.</li>
+      <li><b>İlk alan adınızı oluşturun.</b> <i>+ Yeni Alan Adı</i> → bir ad ve platform seçin → tarayıcıda <code>https://projem.local</code> adresini açın.</li>
+    </ol>
+
+    <div class="gate">
+        <h3 class="gate-h" id="gate-title"><span aria-hidden="true">🔏</span> İmzalı ve noter onaylı</h3>
+        <div class="gate-b">
+          <p>Her sürüm <b>Developer ID Application</b> sertifikasıyla imzalanır ve <b>Apple noter onayından</b> geçer. Noter bileti hem DMG'ye <i>hem de</i> uygulamanın kendisine zımbalanır; böylece ilk açılış çevrimdışı olsa bile Gatekeeper doğrulayabilir. Aranacak bir "Yine de Aç" adımı yok.</p>
+          <p>Kurduktan sonra kendiniz doğrulayabilirsiniz:</p>
+          <div class="pretop"><pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
+# accepted
+# source=Notarized Developer ID</code></pre></div>
+          <p class="note">Kaynaktan derlerseniz imzasız yerel bir derleme elde edersiniz — bu beklenen durumdur ve yerelde derlenen uygulama karantinaya alınmaz.</p>
+        </div>
+      </div>
+    </div>
+</section>
+
+<!-- 8 · MCP -->
+<section id="mcp">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Yapay zekâ ve MCP</span>
+      <h2>Asistanınız ortamı sizin için yönetsin</h2>
+      <p class="lede">Ayarlar'da tek bir anahtarı açın, BRAMPP bir <b>Model Context Protocol</b> sunucusuna dönüşsün. Asistanınız alan adı oluşturabilir, ihtiyaç duyduğu servisleri başlatabilir ve logları okuyabilir — siz pencerenin canlı güncellenmesini izlersiniz.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="num">8</span><span class="lbl">Alan adı aracı</span></div>
+      <div class="stat"><span class="num">4</span><span class="lbl">Servis aracı</span></div>
+      <div class="stat"><span class="num">3</span><span class="lbl">Veritabanı aracı</span></div>
+      <div class="stat"><span class="num">2</span><span class="lbl">Log aracı</span></div>
+    </div>
+    <div class="perms">
+      <span>Alan bazlı izinler: <b>İzin yok</b></span>
+      <span><b>Okuma</b></span>
+      <span><b>Okuma + yazma</b></span>
+      <span>İzin vermediğiniz araçlar istemcide <b>hiç görünmez</b></span>
+    </div>
+    <div class="clients">
+      <div class="client">Claude Code<small>tek CLI komutu</small></div>
+      <div class="client">Claude Desktop<small>tek tıkla yapılandırma</small></div>
+      <div class="client">ChatGPT Codex<small>tek tıkla yapılandırma</small></div>
+    </div>
+    <p class="endpoint">Uç nokta: <code>http://127.0.0.1:8765/mcp</code> — yalnızca loopback'e bağlanır, varsayılan olarak kapalıdır ve siz açıkça izin vermedikçe SQL salt okunurdur.</p>
+  </div>
+</section>
+
+<!-- 9 · SSS -->
+<section class="band" id="faq">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">SSS</span>
+      <h2>Gerçekten sorulan sorular</h2>
+      <p class="lede">Dokuz yanıt, doğrudan README'den.</p>
+    </div>
+    <div class="faq">
+      <details><summary>Bu, Mac'te XAMPP'in yerini tutar mı?</summary><p>Evet — tasarım hedefi tam olarak bu. XAMPP/MAMP akışını karşılar, üstüne Nginx, PostgreSQL, Redis, Node.js, Python ve ASP.NET Core ekler. XAMPP'ten farklı olarak ikili dosya paketlemez; mevcut Homebrew servislerinizi yönetir.</p></details>
+      <details><summary>Mevcut Homebrew kurulumumla kavga eder mi?</summary><p>Hayır — zaten <i>o</i> sizin Homebrew kurulumunuz. BRAMPP hiçbir şeyin ikinci bir kopyasını kurmaz.</p></details>
+      <details><summary>Uygulama imzalı ve noter onaylı mı?</summary><p>Evet. Yayın sürümleri Developer ID Application sertifikasıyla imzalanır ve Apple noter onayından geçer; bilet hem DMG'ye hem uygulamaya zımbalanır, böylece ilk açılışta internet olmasa bile doğrulanır. <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> komutu <code>source=Notarized Developer ID</code> demeli. Proje tümüyle açık kaynaktır; dilerseniz kendiniz derleyin.</p></details>
+      <details><summary>Şifremi ne için soruyor?</summary><p>Yalnızca <code>/etc/hosts</code> düzenlemeleri için (<code>127.0.0.1 projem.local</code> satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir.</p></details>
+      <details><summary>BRAMPP Node.js / Python / ASP.NET uygulamamı çalıştırabilir mi?</summary><p>Evet — her uygulama, bağımlılığı olmayan bir süpervizör altında otomatik yeniden başlatma ve birleşik günlüklerle çalışır; önünde ters vekil (reverse proxy) olarak Apache ya da Nginx durur (WebSocket, SSE, HTTP/2 ve gRPC seçenekleri dahil). Uygulamanızdan önce otomatik başlayacak servis bağımlılıkları da tanımlayabilirsiniz (örneğin MariaDB + Redis).</p></details>
+      <details><summary>Hangi PHP sürümleri destekleniyor?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 ve 8.5 yan yana — her alan adı kendi sürümünü sabitleyebilir; eklenti yöneticisi de sürüm başına çalışır.</p></details>
+      <details><summary>Hangi Mac'lerde çalışır?</summary><p>Yalnızca Apple Silicon. Dağıtılan sürüm yerel bir <code>arm64</code> ikilisidir ve macOS 14 (Sonoma) veya üstünü gerektirir — Intel Mac'ler desteklenmez. Homebrew prefix'i (<code>/opt/homebrew</code>) otomatik algılanır.</p></details>
+      <details><summary>Claude gibi yapay zekâ araçları BRAMPP'i kullanabilir mi?</summary><p>Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar) her alana <i>izin yok</i>, <i>okuma</i> ya da <i>okuma + yazma</i> verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca <code>127.0.0.1</code> üzerinden dinler ve varsayılan olarak kapalıdır.</p></details>
+      <details><summary>Nasıl kaldırırım?</summary><p>BRAMPP'ten çıkın, uygulamayı silin ve <code>~/Library/Application Support/BRAMPP</code> klasörünü kaldırın. Homebrew servisleriniz ve site klasörleriniz olduğu gibi kalır.</p></details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- 10 · ALT BİLGİ -->
+<footer class="wrap">
+  <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Teknoloji</b></a> bünyesinde geliştirildi</p>
+  <p><a href="https://github.com/macitkaraca/brampp">GitHub</a> · <a href="../" hreflang="en" lang="en">English</a> · MIT © 2023–2026 Karaca Teknoloji</p>
+  <p class="fine">Okunuşu "bremp". Dahili kod adı: Demlik 🫖 — işlerin usulünce demlendiği yer.</p>
+</footer>
+
+<script>
+  (function () {
+    // Hero'nun CTA'sı ekrandan çıkınca çubuğa zemin ver. (Eskiden bu blok aynı
+    // zamanda kayan bir indirme düğmesini gösterirdi; düğme artık çubukta sürekli
+    // duruyor, geriye yalnızca zemin geçişi kaldı.)
+    var cta = document.getElementById('heroCta');
+    var bar = document.querySelector('.topbar');
+    if (!bar) return;
+    function scrolled(on) { bar.classList.toggle('is-scrolled', on); }
+    if (!cta || !('IntersectionObserver' in window)) { scrolled(true); return; }
+    var io = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        scrolled(!e.isIntersecting && e.boundingClientRect.top < 0);
+      }
+    }, { threshold: 0, rootMargin: '-8px 0px 0px 0px' });
+    io.observe(cta);
+  })();
+  </script>
+
+</body>
+</html>

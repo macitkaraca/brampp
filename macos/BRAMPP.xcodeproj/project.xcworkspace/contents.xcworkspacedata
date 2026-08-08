@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "self:">
+   </FileRef>
+   <FileRef
+      location = "group:TerminalHelper.swift">
+   </FileRef>
+   <FileRef
+      location = "group:TERMINAL_INTEGRATION.md">
+   </FileRef>
+   <FileRef
+      location = "group:FIX_TERMINALHELPER_ERROR.md">
+   </FileRef>
+   <FileRef
+      location = "group:MkcertManager.swift">
+   </FileRef>
+   <FileRef
+      location = "group:MKCERT_MANAGER_README.md">
+   </FileRef>
+   <FileRef
+      location = "group:MKCERT_INTEGRATION_SUMMARY.md">
+   </FileRef>
+   <FileRef
+      location = "group:MKCERT_XCODE_SETUP.md">
+   </FileRef>
+</Workspace>

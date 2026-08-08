@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRAMPP — XAMPP &amp; MAMP Alternative for macOS (Homebrew-powered)</title>
+<meta name="google-site-verification" content="Dr_pnPKU4C_cQ7uToJkgdmhoa7GJ_3wBqu1x2vewY8c">
+<meta name="description" content="Free, open-source XAMPP &amp; MAMP alternative for macOS. Runs your own Homebrew services with local domains and automatic HTTPS — one native app, MIT licensed.">
+<link rel="icon" type="image/png" href="assets/icon-256.png">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="BRAMPP — XAMPP & MAMP Alternative for macOS">
+<meta property="og:description" content="Manage Apache, Nginx, MySQL, PostgreSQL, Redis, PHP, Node.js, Python & ASP.NET Core from one native macOS app. Powered by Homebrew. Free & open source.">
+<meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/icon-1024.png">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/">
+<meta property="og:site_name" content="BRAMPP">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="tr_TR">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="1024">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- JSON-LD: SoftwareApplication + FAQ (SEO + AI Overviews/GEO) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "BRAMPP",
+  "operatingSystem": "macOS 14+ (Apple Silicon)",
+  "applicationCategory": "DeveloperApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "Free, open-source XAMPP/MAMP alternative for macOS. Manages Apache, Nginx, MariaDB/MySQL, PostgreSQL, Redis, PHP, Node.js, Python and ASP.NET Core local development services via Homebrew, with local domains and automatic HTTPS.",
+  "url": "https://macitkaraca.github.io/brampp/",
+  "downloadUrl": "https://github.com/macitkaraca/brampp/releases/latest",
+  "softwareVersion": "1.1",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": {
+    "@type": "Organization",
+    "name": "Karaca Teknoloji",
+    "alternateName": "Karaca Technology",
+    "url": "https://karacatechnology.com",
+    "sameAs": [
+      "https://karacatechnology.com",
+      "https://github.com/macitkaraca"
+    ]
+  },
+  "creator": {
+    "@type": "Person",
+    "name": "Macit Karaca",
+    "url": "https://github.com/macitkaraca"
+  },
+  "inLanguage": "en-US",
+  "featureList": [
+    "Start/stop Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL and Redis via Homebrew",
+    "Create local domains with vhost, /etc/hosts entry and sample project",
+    "Automatic local HTTPS with mkcert (local CA + per-domain certificates)",
+    "PHP 8.1–8.5 side by side, pinned per domain",
+    "Node.js, Python (FastAPI/Django/Flask) and ASP.NET Core app supervisor",
+    "Database management: create, drop, dump and restore MariaDB and PostgreSQL",
+    "phpMyAdmin, pgAdmin and Adminer installers",
+    "PHP extension manager with 50+ extensions per version",
+    "Built-in MCP server so AI tools can manage the stack",
+    "Menu bar app with Turkish and English UI"
+  ],
+  "screenshot": [
+    "https://macitkaraca.github.io/brampp/assets/en/domains.webp",
+    "https://macitkaraca.github.io/brampp/assets/en/services.webp",
+    "https://macitkaraca.github.io/brampp/assets/en/database.webp",
+    "https://macitkaraca.github.io/brampp/assets/en/phpExtensions.webp",
+    "https://macitkaraca.github.io/brampp/assets/en/logs.webp",
+    "https://macitkaraca.github.io/brampp/assets/en/settings.webp"
+  ],
+  "dateModified": "2026-07-26",
+  "sameAs": [
+    "https://github.com/macitkaraca/brampp"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "en-US",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is this a XAMPP replacement for Mac?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — that's the design goal. It covers the XAMPP/MAMP workflow and adds Nginx, PostgreSQL, Redis, Node.js, Python and ASP.NET Core. Unlike XAMPP it manages your existing Homebrew services instead of bundling binaries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will it fight my existing Homebrew setup?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No — it is your Homebrew setup. BRAMPP never installs a parallel copy of anything."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the app signed and notarized?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Releases are signed with a Developer ID Application certificate and notarized by Apple; the ticket is stapled to both the DMG and the app, so it verifies even if the first launch happens offline. The project is fully open source and you can build it yourself with one xcodebuild command."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What asks for my password?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Only /etc/hosts edits (adding 127.0.0.1 myproject.local). Each operation asks separately and shows the exact command first."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can BRAMPP run my Node.js / Python / ASP.NET app?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — each app runs under a zero-dependency supervisor with auto-restart and combined logs, behind Apache or Nginx as a reverse proxy (WebSocket, SSE, HTTP/2 and gRPC options included). You can declare service dependencies (e.g. MariaDB + Redis) that start automatically first."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which PHP versions are supported?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PHP 8.1, 8.2, 8.3, 8.4 and 8.5 side by side — each domain can pin its own version, and the extension manager works per version."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which Macs does BRAMPP run on?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Apple Silicon only. The shipped build is a native arm64 binary and requires macOS 14 (Sonoma) or newer — Intel Macs are not supported. The Homebrew prefix (/opt/homebrew) is detected automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can AI tools like Claude control BRAMPP?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 19 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs) let you grant no access, read or read + write — tools you disallow never appear to the client. It binds to 127.0.0.1 only and is off by default."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I uninstall?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Quit BRAMPP, delete the app and remove ~/Library/Application Support/BRAMPP. Your Homebrew services and site folders remain untouched."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+/* ══ tokens ═════════════════════════════════════════════ */
+:root{
+  --bg:#0b1526; --bg-2:#122540; --bg-3:#0e1c31;
+  --fg:#eaf1fa; --fg-2:#c6d5e8; --muted:#9db1c9; --dim:#7d92ad;
+  --amber:#f59e0b; --amber-lo:#d97706; --amber-hi:#fbbf24;
+  --card:#13233c; --card-2:#101d33; --panel:#0f1e35;
+  --line:#22365a; --line-soft:#1b2d4c; --line-hair:rgba(120,155,200,.14);
+  --green:#34d399;
+  --r-xs:9px; --r-sm:12px; --r-md:16px; --r-lg:22px;
+  --shadow-lg:0 28px 64px -28px rgba(0,0,0,.85);
+  --shadow-md:0 16px 36px -22px rgba(0,0,0,.9);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
+  --maxw:1120px;
+  --pad:26px;
+  --bar-h:66px;
+}
+
+/* ══ base ═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar-h) + 16px);-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  font-size:clamp(16px,0.98rem + 0.12vw,17.5px);
+  line-height:1.7;
+  color:var(--fg);
+  background:var(--bg);
+  background-image:
+    radial-gradient(1200px 680px at 50% -220px,rgba(245,158,11,.15),transparent 68%),
+    radial-gradient(900px 520px at 88% 12%,rgba(56,110,180,.14),transparent 70%),
+    linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 58%,var(--bg-3) 100%);
+  background-attachment:scroll,scroll,fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--amber);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--amber-hi)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{
+  background:rgba(6,14,27,.75);border:1px solid rgba(90,130,180,.22);
+  padding:1.5px 7px;border-radius:7px;color:var(--amber-hi);white-space:nowrap;
+}
+:focus-visible{outline:2.5px solid var(--amber-hi);outline-offset:3px;border-radius:8px}
+::selection{background:rgba(245,158,11,.28)}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);width:100%}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ══ fixed top bar ══════════════════════════════════════ */
+/* Bölüm menüsü — sabit çubuğun ortasında. Dar ekranda gizlenir: indirme ve
+   dil düğmeleri her zaman erişilebilir kalmalı, menü ikincil. */
+.navlinks{display:flex;align-items:center;gap:2px;flex:1;justify-content:center;
+  overflow:hidden}
+.navlinks a{color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:500;
+  padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+.navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
+.navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+@media (max-width:900px){.navlinks{display:none}}
+.topbar{
+  position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:var(--bar-h);
+  padding:12px max(14px,calc((100vw - var(--maxw))/2 + var(--pad)));
+  pointer-events:none;
+}
+/* Marka bloğu — solda logo + isim. Çubuğun kimliğini taşır, kaydırmadan
+   bağımsız her zaman görünür. */
+.brandmark{display:flex;align-items:center;gap:9px;text-decoration:none;flex:0 0 auto}
+.brandmark img{width:26px;height:26px;border-radius:6px;display:block}
+.brandmark b{font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--fg)}
+.brandmark b i{font-style:normal;color:var(--amber-hi)}
+.barcta{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+@media (max-width:620px){.brandmark b{display:none}}
+.topbar::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:rgba(11,21,38,.78);
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);
+  backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid var(--line-soft);
+  opacity:0;transition:opacity .22s ease;
+}
+/* Zemin yalnızca kaydırınca gelir: hero'nun üstünde kutu görünmesin, ama
+   içerik menünün altından geçerken yazılar okunaksız kalmasın. */
+.topbar.is-scrolled::before{opacity:1}
+@media (prefers-reduced-motion:reduce){.topbar::before{transition:none}}
+.topbar>*{pointer-events:auto;min-width:0}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;flex:0 1 auto;
+  font-size:13.5px;font-weight:600;line-height:1;letter-spacing:.1px;
+  text-decoration:none;white-space:nowrap;
+  padding:10px 16px;border-radius:999px;
+  border:1px solid rgba(130,165,210,.3);
+  background:rgba(11,21,38,.7);color:var(--fg);
+  -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
+  box-shadow:0 8px 26px -12px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:border-color .2s ease,background .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.pill:hover{color:var(--fg);border-color:rgba(245,158,11,.6);transform:translateY(-1px)}
+.pill-dl{
+  background:linear-gradient(135deg,rgba(217,119,6,.96),rgba(245,158,11,.96));
+  color:#1b1206;border-color:rgba(251,191,36,.55);
+  box-shadow:0 10px 28px -14px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.pill-dl:hover{color:#1b1206;border-color:rgba(255,255,255,.6)}
+.pill .ov{overflow:hidden;text-overflow:ellipsis}
+.sticky-dl{
+  opacity:0;visibility:hidden;transform:translateY(-14px) scale(.95);
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear .32s;
+}
+.sticky-dl.is-visible{
+  opacity:1;visibility:visible;transform:none;
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear 0s;
+}
+
+/* ══ hero ═══════════════════════════════════════════════ */
+.hero{padding-top:calc(var(--bar-h) + 42px);padding-bottom:6px;text-align:center}
+.hero-icon{
+  width:116px;height:116px;margin-inline:auto;border-radius:26px;
+  filter:drop-shadow(0 20px 42px rgba(0,0,0,.62)) drop-shadow(0 0 34px rgba(245,158,11,.18));
+}
+h1{
+  font-size:clamp(44px,8.4vw,74px);line-height:1.0;font-weight:800;
+  letter-spacing:-.035em;margin:24px 0 0;
+}
+h1 .amber{
+  background:linear-gradient(112deg,var(--amber-hi) 8%,var(--amber-lo) 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.h1sub{
+  display:block;margin-top:16px;
+  font-size:clamp(17px,2.5vw,24px);line-height:1.35;font-weight:600;
+  letter-spacing:-.015em;color:var(--fg-2);
+}
+.tag{
+  font-size:clamp(16.5px,1.9vw,19.5px);line-height:1.62;color:var(--muted);
+  max-width:660px;margin:20px auto 0;
+}
+.tag b{color:var(--fg);font-weight:600}
+.cta{margin-top:36px;display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:15px 30px;border-radius:14px;text-decoration:none;
+  font-weight:650;font-size:16.5px;line-height:1.2;white-space:nowrap;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber) 60%,var(--amber-hi));
+  color:#1b1206;
+  box-shadow:0 16px 36px -16px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-primary:hover{color:#1b1206;transform:translateY(-2px);box-shadow:0 24px 46px -16px rgba(245,158,11,1),inset 0 1px 0 rgba(255,255,255,.34)}
+.btn-ghost{
+  border:1.5px solid rgba(120,160,210,.32);color:var(--fg);
+  background:rgba(19,35,60,.55);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.btn-ghost:hover{color:var(--fg);transform:translateY(-2px);border-color:rgba(150,190,235,.5);background:rgba(24,43,73,.78)}
+.trust{margin-top:22px;font-size:14px;letter-spacing:.25px;color:var(--dim)}
+.trust b{color:var(--fg-2);font-weight:650}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:32px auto 0;max-width:740px}
+.chips span{
+  background:rgba(19,35,60,.6);border:1px solid var(--line-soft);border-radius:10px;
+  padding:6px 12px;font-size:13px;line-height:1.2;color:var(--muted);
+}
+.chips b{color:var(--amber);font-weight:750}
+
+/* ══ proof shot ═════════════════════════════════════════ */
+.proof{padding-top:48px}
+.frame{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--shadow-lg);
+}
+.frame-bar{
+  display:flex;gap:7px;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,#13233c,#0e1c31);
+}
+.frame-bar i{width:11px;height:11px;border-radius:50%;background:#2b4166;display:block}
+.frame-bar i:first-child{background:#3f5a80}
+.proof-cap{text-align:center;color:var(--dim);font-size:14.5px;margin-top:18px}
+
+/* ══ sections ═══════════════════════════════════════════ */
+section{padding-block:clamp(58px,7.2vw,100px)}
+.band{
+  background:linear-gradient(180deg,rgba(9,17,31,.5),rgba(9,17,31,.16));
+  border-top:1px solid var(--line-hair);border-bottom:1px solid var(--line-hair);
+}
+.shead{text-align:center;max-width:760px;margin-inline:auto}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:750;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+  padding:5px 12px;border-radius:999px;
+  border:1px solid rgba(245,158,11,.26);background:rgba(245,158,11,.07);
+  margin-bottom:16px;
+}
+h2{font-size:clamp(27px,3.6vw,41px);line-height:1.14;letter-spacing:-.028em;font-weight:750;margin:0}
+.lede{color:var(--muted);font-size:clamp(16px,1.6vw,17.5px);line-height:1.68;margin-top:16px}
+.lede b{color:var(--fg);font-weight:600}
+.sub-h{
+  font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);text-align:center;margin:40px 0 16px;
+}
+
+/* ══ problem / solution ═════════════════════════════════ */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:38px}
+.vs-card{
+  border-radius:var(--r-md);padding:26px 24px;
+  border:1px solid var(--line-soft);
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.vs-card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+.vs-card p{color:var(--muted);font-size:15.5px;line-height:1.68}
+.vs-card .kicker{
+  display:block;font-size:11.5px;font-weight:750;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.vs-old .kicker{color:var(--dim)}
+.vs-new{border-color:rgba(245,158,11,.3);background:linear-gradient(165deg,rgba(37,32,18,.9),var(--card-2))}
+.vs-new .kicker{color:var(--amber)}
+
+/* ══ tables ═════════════════════════════════════════════ */
+.tscroll{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border-radius:var(--r-md);border:1px solid var(--line-soft);
+  background:var(--card);box-shadow:var(--shadow-md);
+}
+table{width:100%;border-collapse:collapse;min-width:580px}
+th,td{padding:15px 18px;text-align:left;font-size:15px;line-height:1.55;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child th,tr:last-child td{border-bottom:0}
+thead th{
+  background:var(--panel);font-weight:700;font-size:13.5px;
+  letter-spacing:.05em;color:var(--fg);white-space:nowrap;
+}
+tbody th{font-weight:600;color:var(--fg);width:24%}
+td{color:var(--muted)}
+td.win{color:var(--fg);font-weight:600;background:rgba(245,158,11,.055)}
+.cmp thead th:last-child{color:var(--amber-hi);background:rgba(245,158,11,.09)}
+
+/* ══ feature cards ══════════════════════════════════════ */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:40px}
+.card{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:26px 24px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(150,190,235,.34);box-shadow:0 22px 40px -26px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.06)}
+.card .ico{
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  font-size:20px;line-height:1;margin-bottom:15px;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(245,158,11,.24),rgba(245,158,11,.06));
+  border:1px solid rgba(245,158,11,.24);
+}
+.card h3{font-size:17.5px;font-weight:680;letter-spacing:-.012em;margin-bottom:9px}
+.card p{color:var(--muted);font-size:15px;line-height:1.66}
+
+/* ══ tour ═══════════════════════════════════════════════ */
+.tour{display:grid;gap:clamp(40px,5vw,64px);margin-top:44px}
+.tour figure{margin:0}
+.tour .frame{margin-bottom:18px}
+.tour figcaption{color:var(--muted);font-size:15.5px;line-height:1.68;max-width:860px}
+.tour figcaption b{color:var(--fg);display:block;font-size:17.5px;font-weight:680;letter-spacing:-.01em;margin-bottom:6px}
+.tour .n{
+  display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+  color:var(--amber);background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.24);border-radius:999px;
+  padding:4px 11px;margin-bottom:12px;
+}
+
+/* ══ install ════════════════════════════════════════════ */
+.steps{counter-reset:s;list-style:none;margin:40px auto 0;max-width:780px;display:grid;gap:14px}
+.steps li{
+  position:relative;counter-increment:s;
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:19px 24px 19px 68px;color:var(--muted);font-size:15.5px;line-height:1.66;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.steps li::before{
+  content:counter(s);position:absolute;left:22px;top:18px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber-hi));color:#1b1206;
+  font-size:14px;font-weight:750;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px -8px rgba(245,158,11,.9);
+}
+.steps b{color:var(--fg);font-weight:650}
+.gate{
+  max-width:860px;margin:40px auto 0;overflow:hidden;
+  border:1px solid rgba(180,140,50,.34);border-radius:var(--r-md);
+  background:linear-gradient(165deg,#1e1a10,#141f33);
+  box-shadow:var(--shadow-md);
+}
+.gate-h{
+  margin:0;padding:17px 24px;border-bottom:1px solid rgba(180,140,50,.26);
+  font-size:16.5px;font-weight:680;letter-spacing:-.01em;
+  display:flex;gap:10px;align-items:center;
+}
+.gate-b{padding:22px 24px}
+.gate-b>p{color:var(--muted);font-size:15px;line-height:1.68;margin-bottom:18px}
+.gate .tscroll{background:#111e33;border-color:rgba(160,130,60,.24);box-shadow:none}
+.gate table{min-width:540px}
+.gate thead th{background:#17243b}
+.gate tbody th{width:32%;color:var(--amber-hi);font-weight:680}
+.note{
+  margin-top:18px;padding:14px 18px;border-left:3px solid var(--amber);
+  background:rgba(245,158,11,.08);border-radius:0 var(--r-xs) var(--r-xs) 0;
+  color:var(--muted);font-size:14.5px;line-height:1.66;
+}
+.note b{color:var(--fg)}
+
+/* ══ mcp ════════════════════════════════════════════════ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:14px;margin-top:40px}
+.stat{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px 16px;text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.stat .num{
+  display:block;font-size:30px;font-weight:780;line-height:1.15;
+  letter-spacing:-.03em;color:var(--amber-hi);
+}
+.stat .lbl{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}
+.perms{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.perms span{
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px 16px;font-size:13.5px;line-height:1.3;
+  color:var(--muted);background:rgba(19,35,60,.55);
+}
+.perms b{color:var(--fg);font-weight:680}
+.clients{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:16px}
+.client{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px;text-align:center;font-weight:650;font-size:15.5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.client small{display:block;color:var(--dim);font-weight:400;font-size:13.5px;margin-top:5px}
+.endpoint{text-align:center;margin-top:26px;color:var(--dim);font-size:14.5px;line-height:1.7}
+
+/* ══ faq ════════════════════════════════════════════════ */
+.faq{max-width:820px;margin:40px auto 0;display:grid;gap:10px}
+details{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:border-color .2s ease;
+}
+details[open]{border-color:rgba(150,190,235,.32)}
+summary{
+  cursor:pointer;font-weight:650;font-size:16.5px;line-height:1.5;
+  padding:18px 52px 18px 22px;position:relative;list-style:none;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"";position:absolute;right:22px;top:26px;width:9px;height:9px;
+  border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);
+  transform:rotate(45deg);transition:transform .22s ease;
+}
+details[open] summary::after{transform:rotate(-135deg);top:29px}
+details p{color:var(--muted);font-size:15.5px;line-height:1.7;padding:0 22px 20px}
+
+/* ══ footer ═════════════════════════════════════════════ */
+footer{
+  border-top:1px solid var(--line-hair);
+  padding-top:52px;padding-bottom:72px;
+  text-align:center;color:var(--dim);font-size:14.5px;line-height:1.75;
+}
+footer p+p{margin-top:10px}
+footer b{color:var(--fg-2);font-weight:650}
+footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
+
+/* ══ responsive ═════════════════════════════════════════ */
+@media (max-width:1200px){:root{--maxw:980px}}
+@media (max-width:900px){
+  :root{--maxw:760px}
+  .vs{grid-template-columns:1fr}
+  .hero{padding-top:calc(var(--bar-h) + 30px)}
+}
+@media (max-width:600px){
+  :root{--pad:18px;--bar-h:58px}
+  .topbar{padding:10px 14px;gap:8px}
+  .pill{font-size:12.5px;padding:9px 13px;gap:6px}
+  .hero{padding-top:calc(var(--bar-h) + 26px)}
+  .hero-icon{width:92px;height:92px;border-radius:21px}
+  h1{letter-spacing:-.03em}
+  .btn{padding:14px 24px;font-size:15.5px;flex:1 1 100%;justify-content:center}
+  .cta{gap:10px}
+  .card,.vs-card{padding:22px 19px}
+  .steps li{padding:17px 19px 17px 60px;font-size:15px}
+  .steps li::before{left:18px}
+  .gate-h,.gate-b{padding-inline:17px}
+  summary{font-size:15.5px;padding:16px 44px 16px 18px}
+  summary::after{right:18px}
+  details p{padding:0 18px 18px;font-size:15px}
+  .frame-bar{padding:10px 13px}
+  .frame-bar i{width:9px;height:9px}
+  .hide-sm{display:none}
+  th,td{padding:13px 15px;font-size:14.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .sticky-dl{transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar" aria-label="Site">
+  <a class="brandmark" href="./" aria-label="BRAMPP"><img src="assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks"><a href="#why">Why</a><a href="#compare">Compare</a><a href="#features">Features</a><a href="#screenshots">Screenshots</a><a href="#install">Install</a><a href="#mcp">MCP</a><a href="#faq">FAQ</a></div>
+  <div class="barcta"><a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest" aria-label="Download BRAMPP.dmg">⬇ <span class="hide-sm">Download </span>DMG</a><a class="pill" href="tr/" hreflang="tr" lang="tr" aria-label="Bu sayfayı Türkçe görüntüle">🇹🇷 Türkçe</a></div>
+</nav>
+
+<main>
+
+<!-- 1 · HERO -->
+<div class="hero wrap">
+  <img class="hero-icon" src="assets/icon-256.png" alt="BRAMPP app icon — an amber server stack on a navy background" width="256" height="256" fetchpriority="high">
+  <h1>BRA<span class="amber">MPP</span>
+    <span class="h1sub">The XAMPP &amp; MAMP alternative for macOS</span>
+  </h1>
+  <p class="tag">One native app that runs the Homebrew services you <b>already have</b> — local domains, automatic HTTPS, databases and app servers. No bundled binaries, no port fights.</p>
+  <div class="cta" id="heroCta">
+    <a class="btn btn-primary" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ Download BRAMPP.dmg</a>
+    <a class="btn btn-ghost" href="https://github.com/macitkaraca/brampp">★ View on GitHub</a>
+  </div>
+  <p class="trust"><b>Free</b> · <b>MIT</b> · <b>macOS 14+</b> · <b>Apple Silicon</b></p>
+  <div class="chips">
+    <span><b>B</b>rew</span><span><b>R</b>edis</span><span><b>A</b>pache</span><span><b>M</b>ySQL</span><span><b>P</b>ostgreSQL</span><span><b>P</b>HP</span>
+    <span>+ Nginx</span><span>+ Node.js</span><span>+ Python</span><span>+ ASP.NET Core</span>
+  </div>
+</div>
+
+<!-- 2 · PROOF -->
+<div class="proof wrap">
+  <div class="frame">
+    <div class="frame-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+    <img src="assets/en/domains.webp" alt="BRAMPP main window — every local domain in one list with platform badge, PHP version, web server, SSL padlock and live state" width="1500" height="953" loading="lazy">
+  </div>
+  <p class="proof-cap">Every local site in one list — platform, PHP version, web server, SSL and live state.</p>
+</div>
+
+<!-- 3 · PROBLEM / SOLUTION -->
+<section id="why">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">The difference</span>
+      <h2>Your Mac already has a stack. Use it.</h2>
+      <p class="lede">The whole idea fits in two paragraphs.</p>
+    </div>
+    <div class="vs">
+      <div class="vs-card vs-old">
+        <span class="kicker">The bundled way</span>
+        <h3>XAMPP and MAMP bring their own copies</h3>
+        <p>They install a second Apache, a second PHP and a second MySQL next to the Homebrew stack you use from the terminal. Two web servers, two <code>php.ini</code> files, two data folders — and still only one port 80.</p>
+      </div>
+      <div class="vs-card vs-new">
+        <span class="kicker">The BRAMPP way</span>
+        <h3>BRAMPP drives the services you installed</h3>
+        <p>It ships no server binaries at all and manages the same <code>httpd</code>, <code>php</code> and <code>mariadb</code> you got from <code>brew</code>, taking over the tedious parts: virtual hosts, <code>/etc/hosts</code> entries, local certificates and database chores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · COMPARISON -->
+<section class="band" id="compare">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Comparison</span>
+      <h2>How it stacks up</h2>
+      <p class="lede">Two tables, no asterisks. Everything below is about what BRAMPP does — not a verdict on anyone else's roadmap.</p>
+    </div>
+    <h3 class="sub-h" id="cmp-xampp">Against XAMPP / MAMP</h3>
+    <div class="tscroll">
+      <table class="cmp" aria-labelledby="cmp-xampp">
+        <thead><tr><th scope="col"><span class="vh">Criterion</span></th><th scope="col">XAMPP / MAMP</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Server binaries</th><td>Bundled, sandboxed, duplicated</td><td class="win">Your own Homebrew services</td></tr>
+          <tr><th scope="row">Platforms served</th><td>PHP (mostly)</td><td class="win">PHP, Node.js, Python, ASP.NET Core, static</td></tr>
+          <tr><th scope="row">Web servers</th><td>Apache</td><td class="win">Apache and Nginx (even side by side)</td></tr>
+          <tr><th scope="row">Databases</th><td>MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
+          <tr><th scope="row">Local HTTPS</th><td>Manual pain</td><td class="win">Automatic via mkcert</td></tr>
+          <tr><th scope="row"><code>brew upgrade</code> friendly</th><td>Not really</td><td class="win">That's the whole point</td></tr>
+          <tr><th scope="row">AI assistant access</th><td>—</td><td class="win">Built-in MCP server, 19 tools</td></tr>
+          <tr><th scope="row">End-to-end arm64</th><td>Varies by product and installer</td><td class="win">The app <i>and</i> every service it manages, natively</td></tr>
+          <tr><th scope="row">Price</th><td>XAMPP free · MAMP PRO paid</td><td class="win">Free, MIT, open source</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="sub-h" id="cmp-native">Against the Mac-native crowd</h3>
+    <div class="tscroll">
+      <table class="cmp" aria-labelledby="cmp-native">
+        <thead><tr><th scope="col"><span class="vh">Criterion</span></th><th scope="col">Laravel Herd</th><th scope="col">Laravel Valet</th><th scope="col">Docker stacks</th><th scope="col">BRAMPP</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Scope</th><td>PHP-first</td><td>PHP only, terminal</td><td>Anything, in containers</td><td class="win">PHP + Node + Python + .NET + static</td></tr>
+          <tr><th scope="row">Where services run</th><td>Bundled runtime</td><td>Your Homebrew PHP</td><td>Containers</td><td class="win">Your Homebrew services</td></tr>
+          <tr><th scope="row">GUI</th><td>Yes (Pro features paid)</td><td>No</td><td>Third-party</td><td class="win">Yes, free</td></tr>
+          <tr><th scope="row">Nginx and Apache</th><td>Nginx</td><td>Nginx</td><td>Your call</td><td class="win">Both, per domain</td></tr>
+          <tr><th scope="row">Cost</th><td>Free tier + Pro</td><td>Free</td><td>Free</td><td class="win">Free, MIT</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Features</span>
+      <h2>What you get</h2>
+      <p class="lede">Twelve things you would otherwise do by hand, in config files, at 1&nbsp;a.m.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Service control</h3><p>Start, stop and restart Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL and Redis. Live status with port checks, crash notifications, auto-start of last-running services.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Local domains</h3><p><code>myproject.local</code> in seconds: virtual host, <code>/etc/hosts</code> entry, site folder and sample project generated for you. Apache or Nginx, per domain.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Every stack, one app</h3><p>PHP with a per-domain version, Node.js, Python (FastAPI, Django, Flask with venv), ASP.NET Core, static sites and SPAs with history-mode fallback.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Real HTTPS locally</h3><p>One-click mkcert integration: local certificate authority, per-domain certificates and HTTP→HTTPS redirect. The green padlock, at home.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Databases without the CLI</h3><p>Create and drop databases, dump and restore, phpMyAdmin / pgAdmin / Adminer installers, plus <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code> editors with safe writes.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP extension manager</h3><p>50+ extensions per PHP version — xdebug, redis, imagick and friends — one-click toggle, PECL install and <code>php.ini</code> quick settings.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>App server supervisor</h3><p>Node, Python and .NET apps run under a zero-dependency supervisor: auto-restart, combined logs and a stop that verifies port ownership before signalling anything.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Setup wizard</h3><p>Checks and configures Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to <code>https://localhost</code> without opening a config file.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🗃️</span><h3>Honest backups</h3><p>One click backs up domains, settings, vhosts, SSL certificates and php.ini files. Partial backups are detected, flagged, and never silently restored as if complete.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🤖</span><h3>MCP server for AI tools</h3><p>A built-in Model Context Protocol endpoint, loopback only and off by default. Your assistant gets 19 tools behind per-area permissions — and every change shows up in the window instantly.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🔔</span><h3>Menu bar app</h3><p>The whole stack lives in your menu bar: start and stop services, launch at login, crash notifications. Turkish and English UI, switchable while running.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🍏</span><h3>Native arm64, end to end</h3><p>BRAMPP.app is a native Apple Silicon binary on macOS 14+, and so are the services it manages: <code>httpd</code>, <code>php-fpm</code>, <code>mariadbd</code> and <code>redis-server</code> all come from Homebrew's arm64 bottles. App and stack, native all the way down — no Rosetta, no emulation layer.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · TOUR -->
+<section id="screenshots">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Screenshots</span>
+      <h2>A tour of the app</h2>
+      <p class="lede">Six tabs. No terminal required — but every command it runs is printed first.</p>
+    </div>
+    <div class="tour">
+      <figure>
+        <div class="frame"><img src="assets/en/domains.webp" alt="BRAMPP domains tab — local domains with platform badges, SSL and live state" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">01 — Domains</span><b>Every local site in one list.</b> Platform badge, per-domain PHP version, Apache or Nginx, SSL padlock and live running state. The default <code>localhost</code> card shows both web servers' ports at a glance, and <i>+ New Domain</i> sets up vhost, <code>/etc/hosts</code>, site folder and sample project in one step.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/en/services.webp" alt="BRAMPP services tab — Homebrew services grouped by category with live status" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">02 — Services</span><b>The whole stack, grouped by category.</b> Web servers, PHP-FPM versions, runtimes, databases and cache — one-click start/stop, live port badges, Apache/Nginx config panels and phpMyAdmin / pgAdmin / Adminer installers right on the service row. Services you don't have can be hidden or installed from here.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/en/database.webp" alt="BRAMPP database tab — connection info, root TCP access state and database list" width="1500" height="815" loading="lazy"></div>
+        <figcaption><span class="n">03 — Database</span><b>Copy-ready connection info.</b> BRAMPP detects whether <code>root@localhost</code> TCP access is already configured and offers the one-click fix only when it's actually needed. Create, drop, dump and restore databases, and open phpMyAdmin or Adminer without remembering a URL.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/en/phpExtensions.webp" alt="BRAMPP PHP extensions tab — per-version extension manager" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">04 — PHP Extensions</span><b>50+ extensions per PHP version.</b> xdebug, redis, imagick and friends, with one-click enable/disable, PECL install and <code>php.ini</code> quick settings — separately for 8.1 through 8.5.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/en/logs.webp" alt="BRAMPP logs tab — combined live log viewer" width="1500" height="953" loading="lazy"></div>
+        <figcaption><span class="n">05 — Logs</span><b>Apache, Nginx, PHP-FPM and app logs in one place.</b> Live tail included — no <code>tail -f</code> gymnastics across five terminal tabs.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/en/settings.webp" alt="BRAMPP settings — built-in MCP server with status, endpoint URL and access permissions" width="1120" height="1256" loading="lazy"></div>
+        <figcaption><span class="n">06 — Settings &amp; MCP</span><b>One switch turns BRAMPP into an AI-tool endpoint.</b> <code>http://127.0.0.1:8765/mcp</code>, loopback only, with per-area access permissions, a live count of the tools actually enabled, and one-click setup for Claude Desktop, ChatGPT Codex and the skill file.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · INSTALL -->
+<section class="band" id="install">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Install</span>
+      <h2>Running in 60 seconds</h2>
+      <p class="lede">Requirements: macOS 14 Sonoma or newer, Apple Silicon, and Homebrew — the wizard helps you install Homebrew if it's missing.</p>
+    </div>
+    <ol class="steps">
+      <li><b>Download and drag.</b> Grab <code>BRAMPP.dmg</code> from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> and drag BRAMPP.app to Applications.</li>
+      <li><b>Open it.</b> The app is Developer ID signed and notarized by Apple, so macOS runs it without any extra step.</li>
+      <li><b>Run the setup wizard.</b> It configures Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin — installing only what you approve, showing every command in the console.</li>
+      <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and platform → open <code>https://myproject.local</code> in your browser.</li>
+    </ol>
+
+    <div class="gate">
+        <h3 class="gate-h" id="gate-title"><span aria-hidden="true">🔏</span> Signed and notarized</h3>
+        <div class="gate-b">
+          <p>Every release is signed with a <b>Developer ID Application</b> certificate and <b>notarized by Apple</b>. The notarization ticket is stapled to the DMG <i>and</i> to the app itself, so Gatekeeper can verify it even when the first launch happens offline. There is no "Open Anyway" step to hunt for.</p>
+          <p>Verify it yourself after installing:</p>
+          <div class="pretop"><pre><code>spctl -a -vvv -t exec /Applications/BRAMPP.app
+# accepted
+# source=Notarized Developer ID</code></pre></div>
+          <p class="note">Building from source produces an unsigned local build instead — that is expected, and a locally built app is never quarantined.</p>
+        </div>
+      </div>
+    </div>
+</section>
+
+<!-- 8 · MCP -->
+<section id="mcp">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">AI &amp; MCP</span>
+      <h2>Let your assistant drive the stack</h2>
+      <p class="lede">Flip one switch in Settings and BRAMPP becomes a <b>Model Context Protocol</b> server. Your assistant can create a domain, start the services it needs and check the logs — while you watch the window update live.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="num">8</span><span class="lbl">Domain tools</span></div>
+      <div class="stat"><span class="num">4</span><span class="lbl">Service tools</span></div>
+      <div class="stat"><span class="num">3</span><span class="lbl">Database tools</span></div>
+      <div class="stat"><span class="num">2</span><span class="lbl">Log tools</span></div>
+    </div>
+    <div class="perms">
+      <span>Per-area permissions: <b>No access</b></span>
+      <span><b>Read</b></span>
+      <span><b>Read + write</b></span>
+      <span>Tools you disallow <b>never appear</b> to the client</span>
+    </div>
+    <div class="clients">
+      <div class="client">Claude Code<small>one CLI command</small></div>
+      <div class="client">Claude Desktop<small>one-click config</small></div>
+      <div class="client">ChatGPT Codex<small>one-click config</small></div>
+    </div>
+    <p class="endpoint">Endpoint: <code>http://127.0.0.1:8765/mcp</code> — bound to loopback only, off by default, and SQL is read-only unless you explicitly allow writes.</p>
+  </div>
+</section>
+
+<!-- 9 · FAQ -->
+<section class="band" id="faq">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">FAQ</span>
+      <h2>Questions people actually ask</h2>
+      <p class="lede">Nine answers, straight from the README.</p>
+    </div>
+    <div class="faq">
+      <details><summary>Is this a XAMPP replacement for Mac?</summary><p>Yes — that's the design goal. It covers the XAMPP/MAMP workflow and adds Nginx, PostgreSQL, Redis, Node.js, Python and ASP.NET Core. Unlike XAMPP it manages your existing Homebrew services instead of bundling binaries.</p></details>
+      <details><summary>Will it fight my existing Homebrew setup?</summary><p>No — it <i>is</i> your Homebrew setup. BRAMPP never installs a parallel copy of anything.</p></details>
+      <details><summary>Is the app signed and notarized?</summary><p>Yes. Releases are signed with a Developer ID Application certificate and notarized by Apple; the ticket is stapled to both the DMG and the app, so it verifies even if the first launch is offline. Run <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> and you should see <code>source=Notarized Developer ID</code>. The project is fully open source — build it yourself if you prefer.</p></details>
+      <details><summary>What asks for my password?</summary><p>Only <code>/etc/hosts</code> edits (adding <code>127.0.0.1 myproject.local</code>). Each operation asks separately and shows the exact command first.</p></details>
+      <details><summary>Can BRAMPP run my Node.js / Python / ASP.NET app?</summary><p>Yes — each app runs under a zero-dependency supervisor with auto-restart and combined logs, behind Apache or Nginx as a reverse proxy (WebSocket, SSE, HTTP/2 and gRPC options included). You can declare service dependencies (e.g. MariaDB + Redis) that start automatically first.</p></details>
+      <details><summary>Which PHP versions are supported?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 and 8.5 side by side — each domain can pin its own version, and the extension manager works per version.</p></details>
+      <details><summary>Which Macs does BRAMPP run on?</summary><p>Apple Silicon only. The shipped build is a native <code>arm64</code> binary and requires macOS 14 (Sonoma) or newer — Intel Macs are not supported. The Homebrew prefix (<code>/opt/homebrew</code>) is detected automatically.</p></details>
+      <details><summary>Can AI tools like Claude control BRAMPP?</summary><p>Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 19 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs) let you grant <i>no access</i>, <i>read</i> or <i>read + write</i> — tools you disallow never appear to the client. It binds to <code>127.0.0.1</code> only and is off by default.</p></details>
+      <details><summary>How do I uninstall?</summary><p>Quit BRAMPP, delete the app and remove <code>~/Library/Application Support/BRAMPP</code>. Your Homebrew services and site folders remain untouched.</p></details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- 10 · FOOTER -->
+<footer class="wrap">
+  <p>Built by <a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> at <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a></p>
+  <p><a href="https://github.com/macitkaraca/brampp">GitHub</a> · <a href="tr/" hreflang="tr" lang="tr">Türkçe</a> · MIT © 2023–2026 Karaca Teknoloji</p>
+  <p class="fine">Pronounced "bremp". Internal codename: Demlik 🫖 — Turkish for teapot, where things brew properly.</p>
+</footer>
+
+<script>
+  (function () {
+    // Hero'nun CTA'sı ekrandan çıkınca çubuğa zemin ver. (Eskiden bu blok aynı
+    // zamanda kayan bir indirme düğmesini gösterirdi; düğme artık çubukta sürekli
+    // duruyor, geriye yalnızca zemin geçişi kaldı.)
+    var cta = document.getElementById('heroCta');
+    var bar = document.querySelector('.topbar');
+    if (!bar) return;
+    function scrolled(on) { bar.classList.toggle('is-scrolled', on); }
+    if (!cta || !('IntersectionObserver' in window)) { scrolled(true); return; }
+    var io = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        scrolled(!e.isIntersecting && e.boundingClientRect.top < 0);
+      }
+    }, { threshold: 0, rootMargin: '-8px 0px 0px 0px' });
+    io.observe(cta);
+  })();
+  </script>
+
+</body>
+</html>

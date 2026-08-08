@@ -1,0 +1,40 @@
+# BRAMPP
+
+> BRAMPP is a free, open-source XAMPP/MAMP alternative for macOS. It manages local development
+> services (Apache, Nginx, MariaDB/MySQL, PostgreSQL, Redis, PHP-FPM, Node.js, Python, ASP.NET Core)
+> through Homebrew — with local domains, automatic HTTPS via mkcert, database tools and a native
+> SwiftUI interface. MIT licensed.
+
+Key facts:
+- Platform: macOS 14+ (Sonoma), Apple Silicon (arm64) only — native SwiftUI app; Intel Macs are not supported
+- Not a binary bundle: it controls the user's existing Homebrew services (`brew services run`)
+- Local domains: creates vhosts, /etc/hosts entries and per-domain SSL certificates (mkcert)
+- Supported stacks: PHP 8.1–8.5, Node.js, Python (FastAPI/Django/Flask), ASP.NET Core, static/SPA
+- Databases: MariaDB/MySQL, PostgreSQL (multi-version), Redis; phpMyAdmin/pgAdmin/Adminer installers
+- Languages: English and Turkish UI (runtime switchable)
+- MCP server: built-in Model Context Protocol endpoint (http://127.0.0.1:8765/mcp, loopback only,
+  off by default) with 17 tools — AI assistants (Claude Code, Claude Desktop, ChatGPT Codex) can
+  create/update domains, start and stop app servers, control services, read BRAMPP and per-domain
+  logs, manage databases and run read-only SQL; per-scope permissions (Domains, Services, Databases,
+  Logs) grant no access / read / read+write, and disallowed tools never appear to the client;
+  the native UI reflects every change instantly
+- License: MIT — Copyright Karaca Teknoloji (Macit Karaca)
+- Author: Macit Karaca (https://github.com/macitkaraca), Karaca Technology (https://karacatechnology.com)
+
+## Links
+
+- [Home page (English)](https://macitkaraca.github.io/brampp/): features, comparison, screenshots, FAQ
+- [Ana sayfa (Türkçe)](https://macitkaraca.github.io/brampp/tr/): the same page in Turkish
+- [Repository](https://github.com/macitkaraca/brampp): source code, issues, releases
+- [English README](https://github.com/macitkaraca/brampp/blob/main/README.md)
+- [Turkish README](https://github.com/macitkaraca/brampp/blob/main/README.tr.md)
+- [Latest release / DMG download](https://github.com/macitkaraca/brampp/releases/latest)
+
+## Comparisons
+
+- vs XAMPP / MAMP: BRAMPP does not bundle Apache, PHP or MySQL binaries — it manages the Homebrew
+  formulas already installed on the machine, so there is no second copy to keep in sync.
+- vs Laravel Herd / Valet: BRAMPP is framework-agnostic and covers Nginx, PostgreSQL, Redis,
+  Node.js, Python and ASP.NET Core alongside PHP; everything is free and MIT licensed.
+- vs Docker-based local stacks: no containers, no daemon overhead — native services on the host,
+  started per session with `brew services run`.

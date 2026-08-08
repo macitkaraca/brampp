@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://macitkaraca.github.io/brampp/sitemap.xml
