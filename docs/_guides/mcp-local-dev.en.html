@@ -1,0 +1,65 @@
+<h1>An MCP server for your local development environment</h1>
+<p class="lede">Giving an assistant shell access to your machine is easy and reckless. The Model Context Protocol offers something narrower: a defined set of operations, with a boundary you control.</p>
+<p class="meta">What MCP changes for local development · scoped permissions · what a safe tool surface looks like</p>
+
+<h2>The problem with "just give it a terminal"</h2>
+<p>The fastest way to let an assistant manage your dev environment is to hand it a shell. It works immediately and it is the wrong shape for the job.</p>
+<p>A shell has no vocabulary. The assistant has to know your exact layout, guess at config file paths, and parse human-readable output that changes between versions. Every operation is free-form text, so there is no way to say "you may read but not write" — the same command that lists databases can drop one.</p>
+<p>And the results are invisible to your tools. If the assistant edits a config file directly, the application managing that file has no idea; its in-memory state and the file on disk quietly disagree.</p>
+
+<h2>What MCP actually is</h2>
+<p><a href="https://modelcontextprotocol.io">Model Context Protocol</a> is a JSON-RPC interface between an assistant and a program that exposes capabilities. The program publishes a list of <em>tools</em> — each with a name, a description and a typed schema for its arguments — and the assistant calls them by name.</p>
+<p>Three properties follow from that, and they are the entire reason to prefer it over a shell:</p>
+<ul>
+<li><strong>The vocabulary is explicit.</strong> <code>list_domains</code> either exists or it does not. There is nothing to discover by trial and error.</li>
+<li><strong>Arguments are typed and validated</strong> before anything runs, so a malformed call fails at the boundary rather than halfway through.</li>
+<li><strong>The surface is finite.</strong> Whatever is not a tool cannot be done — not "should not", cannot.</li>
+</ul>
+
+<h2>Why the server belongs inside the app</h2>
+<p>An MCP server for a dev environment can be a standalone process that talks to the same services. That is the obvious design and it reintroduces the problem it was meant to solve: two programs managing the same configuration, disagreeing whenever one changes something.</p>
+<p>Running the server <em>inside</em> the application that already owns that state avoids it. Tools call the same code paths the buttons call. There is no separate implementation to drift, and the window updates the moment a tool runs, because it is the same object graph.</p>
+<div class="callout"><p><b>The cost is a dependency.</b> If the app is closed there is no endpoint. That is worth stating plainly rather than papering over — the fix is to have the app start with your session, not to move the server out of it.</p></div>
+
+<h2>Scoped permissions matter more than tool count</h2>
+<p>"19 tools" tells you nothing about safety. What matters is whether you can decide, per area, what the assistant is allowed to do — and whether that decision is enforced in more than one place.</p>
+<p>A workable model groups tools into scopes and gives each scope three levels:</p>
+<table>
+<thead><tr><th>Scope</th><th>No access</th><th>Read</th><th>Read + write</th></tr></thead>
+<tbody>
+<tr><td>Domains</td><td>invisible</td><td>list</td><td>create, update, enable, start apps</td></tr>
+<tr><td>Services</td><td>invisible</td><td>status, health</td><td>start, stop, restart</td></tr>
+<tr><td>Databases</td><td>invisible</td><td>list, read-only SQL</td><td>create, dump, restore, write SQL</td></tr>
+<tr><td>Logs</td><td>invisible</td><td>read</td><td>—</td></tr>
+</tbody>
+</table>
+<p>Two details make this real rather than decorative.</p>
+<p><strong>Disallowed tools are never sent.</strong> Filtering the <code>tools/list</code> response means the assistant does not know the capability exists, so it cannot decide to try it, and cannot mention it to you as an option.</p>
+<p><strong>The call is refused as well.</strong> List filtering alone is not a security boundary — a client that hardcoded a tool name would sail past it. The permission has to be checked again when the call arrives.</p>
+
+<h2>Read-only by default, especially for SQL</h2>
+<p>The most dangerous tool in a dev environment is arbitrary SQL, and the naive implementation checks the first word. That fails immediately:</p>
+<pre><code>-- Starts with WITH, deletes everything
+WITH doomed AS (DELETE FROM users RETURNING *) SELECT * FROM doomed;
+
+-- Starts with SELECT, reads a file off disk
+SELECT LOAD_FILE('/etc/passwd');</code></pre>
+<p>A prefix check passes both. The statement body has to be inspected for data-modifying commands and for functions that reach the filesystem — <code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>, <code>INTO OUTFILE</code>.</p>
+<p>Getting it strict without breaking honest queries is the harder half. These are all legitimate reads and must still pass:</p>
+<pre><code>SELECT 'delete me' AS note;      -- dangerous word, inside a string
+SHOW CHARACTER SET;              -- contains SET
+SELECT updated_at FROM orders;   -- contains UPDATE as a substring</code></pre>
+<p>Writing has to stay possible — but behind an explicit flag <em>and</em> the write permission, so it takes two deliberate acts rather than one careless one.</p>
+
+<h2>Keep it on loopback, off by default</h2>
+<p>A local dev server has no reason to accept connections from the network. Binding to <code>127.0.0.1</code> rather than <code>0.0.0.0</code> is the difference between a tool your assistant uses and a service anyone on the café wifi can reach.</p>
+<p>Off by default matters for the same reason: a capability nobody enabled cannot be abused. Checking the <code>Origin</code> header on incoming requests closes the remaining gap, where a web page you visit tries to reach the port from your own browser.</p>
+
+<h2>Tell the assistant how to use it</h2>
+<p>A tool list is not documentation. Names and schemas say what exists, not when to reach for it or what order operations belong in. That gap is what skill files fill: prose the client loads alongside the tools, describing workflows and constraints.</p>
+<p>The useful content is the part a schema cannot express — take a backup before importing a dump; confirm destructive SQL with the user first; do not guess a database name, list them; if a tool is missing it is a permission setting, not a reason to fall back to the shell.</p>
+
+<h2>How BRAMPP does it</h2>
+<p><a href="../../">BRAMPP</a> publishes an MCP server from inside the running app on <code>127.0.0.1</code>, off until you enable it. It exposes 19 tools across the four scopes above, with the two-layer permission model and the SQL rules described here, and ships two skill files so the assistant knows how to use them.</p>
+<p>Free and open source under the MIT license — the server, the permission checks and the SQL filter are all in the repository if you want to see exactly where the boundaries are.</p>
+<a class="backlink" href="../../">← Back to BRAMPP</a>

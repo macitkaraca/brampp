@@ -1,0 +1,74 @@
+<h1>Aynı Mac'te Apache ve Nginx'i birlikte çalıştırmak</h1>
+<p class="lede">80 portunu aynı anda tek süreç tutabilir. Bu tek olgu kurulumdaki her kararı belirliyor — ve işlerin ters gitme biçimlerinin çoğunu da açıklıyor.</p>
+<p class="meta">macOS geliştiricileri için pratik rehber · portlar, alan adı başına yönlendirme, ters vekil ve reload tuzağı</p>
+
+<h2>Neden ikisi birden</h2>
+<p>Çoğu yığın bir sunucu seçip orada kalır. Ama birkaç yıldır kullanılan bir makinede nadiren tek tür proje bulunur. Eski bir WordPress sitesi Apache'nin <code>.htaccess</code> ve <code>mod_rewrite</code> davranışını bekler. Next.js ya da FastAPI uygulaması Nginx'e göre belgelenmiş, dağıtılmış ve hata ayıklanmıştır. Birinin yapılandırmasını diğerine uydurmak, karşılığı olmayan bir emektir.</p>
+<p>Alternatif, ikisini birden çalıştırıp her alan adını yazıldığı sunucuya yönlendirmek.</p>
+
+<h2>Port sorunu</h2>
+<p>80 ve 443 portlarını tek süreç bağlayabilir. Önce başlayan kazanır; ikincisi <code>Address already in use</code> ile düşer ve bir servis yöneticisiyle başlattıysanız arka planda sessizce yeniden denemeye devam edebilir.</p>
+<p>İşe yarayan düzen, bilinen portları bir sunucuya verip diğerini yukarı taşımak:</p>
+<table>
+<thead><tr><th>Sunucu</th><th>HTTP</th><th>HTTPS</th><th>Adres şöyle görünür</th></tr></thead>
+<tbody>
+<tr><td>Apache</td><td>80</td><td>443</td><td><code>https://eski.test</code></td></tr>
+<tr><td>Nginx</td><td>8080</td><td>8443</td><td><code>https://uygulama.test:8443</code></td></tr>
+</tbody>
+</table>
+<p>Görünür bedel, ikinci sunucudaki sitelerin adresinde port taşıması. Kozmetik bir sorun ama mutlak adres üreten her şeye sızıyor — <code>HTTP_HOST</code>'tan bağlantı kuran çatılar bunu genelde doğru yapar, şemayı ve ana makineyi sabit yazanlar yapmaz.</p>
+
+<div class="callout"><p><b>Tek bir ön vekille çözmeye kalkışmayın, gerekmedikçe.</b> Nginx'i 80'e koyup bazı adları Apache'ye vekillemek adreslerden portu kaldırır, ama artık her Apache isteği Nginx'ten geçer ve tek bir istek yanlış davrandığında iki sunucuyu birden ayıklarsınız. Yerel geliştirmede bu takas nadiren değer.</p></div>
+
+<h2>Portu gerçekte kim tutuyor</h2>
+<p>Yapılandırmayı değiştirmeden önce kimin dinlediğine bakın. Bu iş boyunca en çok işe yarayan tek komut budur:</p>
+<pre><code>$ sudo lsof -nP -iTCP:80 -sTCP:LISTEN
+COMMAND   PID   USER   FD   TYPE  DEVICE NODE NAME
+httpd    1234   root    4u  IPv6  0x...  TCP  *:80 (LISTEN)</code></pre>
+<p>Hiçbir şey listelenmiyorsa sunucu çalışmıyordur — ki bu yanlış yapılandırılmış olmakla aynı şey değil, çözümü de farklı. Beklemediğiniz bir şey listeleniyorsa çakışmayı bulmuşsunuz demektir.</p>
+
+<h2>Tek sertifika ikisini de kapsar</h2>
+<p>Sertifikalar ana makine adına bağlanır, porta değil. <code>uygulama.test</code> için üretilmiş sertifika 443'te de 8443'te de aynı ölçüde geçerlidir; sunucuyu standart dışı bir porta taşımak TLS açısından hiçbir şeyi değiştirmez. Sertifikaların nasıl üretilip güvenildiğini <a href="../local-https/">yerel HTTPS rehberinde</a> anlattım.</p>
+<p>Değişen şey, her sunucunun sertifikayı nasıl istediği:</p>
+<pre><code># Apache — sertifika ve anahtar ayrı direktifler
+SSLCertificateFile      /yol/uygulama.test.pem
+SSLCertificateKeyFile   /yol/uygulama.test-key.pem
+
+# Nginx — sertifika dosyasının zinciri içermesi beklenir
+ssl_certificate         /yol/uygulama.test.pem;
+ssl_certificate_key     /yol/uygulama.test-key.pem;</code></pre>
+
+<h2>Ters vekil arkasındaki uygulamalar</h2>
+<p>PHP doğrudan sunulur, ama Node, Python ve .NET uygulamaları kendi portlarında dinler ve alan adının sahibi olan sunucunun arkasında durur. Bu, adı konmaya değer ikinci bir arıza biçimi ekliyor: uygulama kusursuz çalışırken site erişilemez olabilir, çünkü önündeki sunucu durmuştur.</p>
+<p>Başlatma sırasını da tersine çeviriyor. Vekili uygulamadan önce başlatmak, uygulama ayağa kalkana kadar <code>502</code> üretir; önce uygulamayı başlatmak daha temizdir. Bunları sizin yerinize başlatan bir şey varsa, o sıralamayı kontrol etmeye değer.</p>
+<pre><code># Nginx, 3001'deki bir uygulamanın önünde
+location / {
+    proxy_pass         http://127.0.0.1:3001;
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+}</code></pre>
+<p>Bu iki başlık göründüğünden önemli. <code>Host</code> olmadan uygulama <code>127.0.0.1</code>'i görür ve kendini gösteren bağlantılar üretir. <code>X-Forwarded-Proto</code> olmadan, TLS'i vekilde sonlandıran bir çatı isteğin HTTP ile geldiğini sanıp döngüye giren yönlendirme yapabilir.</p>
+
+<h2>Reload tuzağı</h2>
+<p>İki sunucu da yeniden başlatmak yerine reload ile yapılandırmayı yeniden okur ve ikisi de include glob'larını o anda genişletir. Yani yeni eklenen bir sanal sunucu dosyası reload ile <em>alınır</em>; yeniden başlatmaya gerek yoktur.</p>
+<pre><code>nginx.conf:   include sites-available/*.conf;
+httpd.conf:   Include */extra/httpd-vhosts.conf</code></pre>
+<p>Tuzak, reload'u koruyan kontrolde. Betikler genelde sunucunun çalışıp çalışmadığını sınar ve akla ilk gelen sınama Nginx için yanlıştır:</p>
+<pre><code>$ pgrep -x nginx        # çıktı yok — ama Nginx çalışıyor
+$ ps -eo comm= | grep '^nginx'
+nginx: master process /opt/homebrew/opt/nginx/bin/nginx -g daemon off;</code></pre>
+<p>Nginx master süreci kendi başlığını yeniden yazdığı için ada tam eşleşme onu asla bulmaz. Apache etkilenmez — onun süreç adı gerçekten <code>httpd</code>. <code>pgrep -x</code> kullanan bir betik reload'u sessizce atlar, yeni vhost hiç yüklenmez ve belirti şudur: "yeni alan adı ancak Nginx'i elle yeniden başlatınca görünüyor".</p>
+<div class="callout"><p><b>Reload'dan önce mutlaka doğrulayın.</b> <code>apachectl configtest</code> ve <code>nginx -t</code>, çalışan sunucuya dokunmadan sözdizimi hatalarını bildirir. Bozuk bir yapılandırmayı reload etmek sizi duran ve bir daha kalkmayan bir sunucuyla baş başa bırakabilir.</p></div>
+
+<h2>Bozuk göründüğünde</h2>
+<h3>Yanlış site açılıyor</h3>
+<p>Hiçbir <code>ServerName</code> eşleşmediğinde iki sunucu da ilk ya da varsayılan sanal sunucuya düşer. Alakasız bir proje — ya da fabrika karşılama sayfası — görüyorsanız bu genelde ana makine adının hiç eşleşmediği anlamına gelir, vhost'un bozuk olduğu değil.</p>
+<h3>Bir portta çalışıyor, diğerinde çalışmıyor</h3>
+<p>Vhost'un gerçekten test ettiğiniz portu dinlediğini kontrol edin. <code>*:443</code> için tanımlanmış bir blok 8443'te hiçbir şeye yanıt vermez ve tarayıcı yapılandırma hatası değil bağlantı hatası bildirir.</p>
+<h3>Değişiklikler etkisiz</h3>
+<p>Ya reload atlandı (yukarıya bakın) ya da include edilmeyen bir dosyayı düzenlediniz. Sunucunun kendisine sorun: <code>apachectl -S</code> Apache'nin gerçekte yüklediği vhost'ları listeler, <code>nginx -T</code> yürürlükteki yapılandırmanın tamamını yazar.</p>
+
+<h2>BRAMPP bunu nasıl yapıyor</h2>
+<p><a href="../../../">BRAMPP</a> iki sunucuyu bu bölüşümle varsayılan olarak çalıştırıyor ve her alan adı için hangisinin servis edeceğini seçtiriyor. Vhost'u yazıyor, sertifikayı üretiyor, hosts kaydını ekliyor ve doğru sunucuyu yeniden yüklüyor — ayrıca bir alan adının bağlı web sunucusunu arkasındaki uygulamadan önce başlattığı için yukarıdaki ters vekil sıralaması şansa bırakılmıyor.</p>
+<p>MIT lisanslı, ücretsiz ve açık kaynak. Kendi Apache'sini ya da Nginx'ini paketlemiyor; makinenizde zaten kurulu Homebrew formüllerini yönetiyor.</p>
+<a class="backlink" href="../../../">← BRAMPP'e dön</a>

@@ -31,7 +31,10 @@ Key facts:
 
 - [Home page (English)](https://macitkaraca.github.io/brampp/): features, comparison, screenshots, FAQ
 - [Ana sayfa (Türkçe)](https://macitkaraca.github.io/brampp/tr/): the same page in Turkish
-- [Guide: local HTTPS on macOS](https://macitkaraca.github.io/brampp/guides/local-https/): how mkcert, the system trust store and .test vs .local actually work ([Türkçe](https://macitkaraca.github.io/brampp/tr/guides/local-https/))
+- [Guides hub](https://macitkaraca.github.io/brampp/guides/): practical guides on local development ([Türkçe](https://macitkaraca.github.io/brampp/tr/guides/))
+- [Local HTTPS on macOS](https://macitkaraca.github.io/brampp/guides/local-https/): mkcert, the system trust store, .test vs .local
+- [Apache and Nginx side by side](https://macitkaraca.github.io/brampp/guides/apache-nginx-together/): port splitting, per-domain routing, reverse proxies
+- [MCP for local development](https://macitkaraca.github.io/brampp/guides/mcp-local-dev/): scoped permissions and a safe SQL surface
 - [Repository](https://github.com/macitkaraca/brampp): source code, issues, releases
 - [English README](https://github.com/macitkaraca/brampp/blob/main/README.md)
 - [Turkish README](https://github.com/macitkaraca/brampp/blob/main/README.tr.md)

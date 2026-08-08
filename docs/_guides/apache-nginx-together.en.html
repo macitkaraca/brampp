@@ -1,0 +1,74 @@
+<h1>Running Apache and Nginx side by side on one Mac</h1>
+<p class="lede">Only one process can hold port 80. That single fact drives every decision in this setup — and explains most of the ways it goes wrong.</p>
+<p class="meta">A practical guide for macOS developers · ports, per-domain routing, reverse proxies and the reload trap</p>
+
+<h2>Why you would want both</h2>
+<p>Most stacks pick one server and stay there. But a machine that has been used for a few years rarely has one kind of project on it. A legacy WordPress site expects Apache's <code>.htaccess</code> and <code>mod_rewrite</code>. A Next.js or FastAPI app is documented, deployed and debugged against Nginx. Rewriting either one's configuration to match the other server is work with no payoff.</p>
+<p>The alternative is to run both and route each domain to the server it was written for.</p>
+
+<h2>The port problem</h2>
+<p>Ports 80 and 443 can be bound by exactly one process each. Whichever server starts first wins; the second fails with <code>Address already in use</code> and, if you started it through a service manager, may keep retrying quietly in the background.</p>
+<p>The convention that works is to give the well-known ports to one server and move the other up:</p>
+<table>
+<thead><tr><th>Server</th><th>HTTP</th><th>HTTPS</th><th>URL looks like</th></tr></thead>
+<tbody>
+<tr><td>Apache</td><td>80</td><td>443</td><td><code>https://legacy.test</code></td></tr>
+<tr><td>Nginx</td><td>8080</td><td>8443</td><td><code>https://app.test:8443</code></td></tr>
+</tbody>
+</table>
+<p>The visible cost is the port in the URL for the second server's sites. It is cosmetic, but it does leak into anything that generates absolute URLs — frameworks that build links from <code>HTTP_HOST</code> usually handle it, ones that hardcode a scheme and host do not.</p>
+
+<div class="callout"><p><b>Do not try to solve this with a single front proxy unless you need to.</b> Putting Nginx on 80 and proxying some hosts to Apache does remove the port from every URL, but it also means every Apache request now passes through Nginx, and you debug two servers whenever one request misbehaves. For local development that trade is rarely worth it.</p></div>
+
+<h2>Checking what actually holds the port</h2>
+<p>Before changing configuration, find out what is listening. This is the single most useful command in the whole exercise:</p>
+<pre><code>$ sudo lsof -nP -iTCP:80 -sTCP:LISTEN
+COMMAND   PID   USER   FD   TYPE  DEVICE NODE NAME
+httpd    1234   root    4u  IPv6  0x...  TCP  *:80 (LISTEN)</code></pre>
+<p>If nothing is listed, the server is not running — which is not the same as misconfigured, and the fix is different. If something unexpected is listed, you have found your conflict.</p>
+
+<h2>One certificate covers both</h2>
+<p>Certificates bind to hostnames, not ports. A certificate issued for <code>app.test</code> is equally valid on 443 and on 8443, so moving a server to a non-standard port changes nothing about TLS. See the <a href="../local-https/">local HTTPS guide</a> for how the certificates themselves are issued and trusted.</p>
+<p>What does differ is how each server is told about them:</p>
+<pre><code># Apache — certificate and key as separate directives
+SSLCertificateFile      /path/app.test.pem
+SSLCertificateKeyFile   /path/app.test-key.pem
+
+# Nginx — the certificate file is expected to contain the chain
+ssl_certificate         /path/app.test.pem;
+ssl_certificate_key     /path/app.test-key.pem;</code></pre>
+
+<h2>Apps behind a reverse proxy</h2>
+<p>PHP is served directly, but Node, Python and .NET apps listen on their own port and sit behind whichever server owns the domain. That adds a second failure mode worth naming: the app can be running perfectly while the site is unreachable, because the server in front of it is stopped.</p>
+<p>It also inverts the startup order. Starting the proxy before the app produces a <code>502</code> until the app comes up; starting the app first is cleaner. If something starts them for you, that ordering is worth checking.</p>
+<pre><code># Nginx, in front of an app on 3001
+location / {
+    proxy_pass         http://127.0.0.1:3001;
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+}</code></pre>
+<p>Those two headers matter more than they look. Without <code>Host</code>, the app sees <code>127.0.0.1</code> and generates links pointing at itself. Without <code>X-Forwarded-Proto</code>, a framework that terminates TLS at the proxy thinks the request arrived over HTTP and may redirect in a loop.</p>
+
+<h2>The reload trap</h2>
+<p>Both servers re-read their configuration on reload rather than restart, and both expand include globs at that moment. So a newly added virtual host file <em>is</em> picked up by a reload — you do not need to restart.</p>
+<pre><code>nginx.conf:   include sites-available/*.conf;
+httpd.conf:   Include */extra/httpd-vhosts.conf</code></pre>
+<p>The trap is the check that usually guards the reload. Scripts commonly test whether the server is running before reloading it, and the obvious test is wrong for Nginx:</p>
+<pre><code>$ pgrep -x nginx        # no output — but Nginx is running
+$ ps -eo comm= | grep '^nginx'
+nginx: master process /opt/homebrew/opt/nginx/bin/nginx -g daemon off;</code></pre>
+<p>The Nginx master process rewrites its own title, so an exact-name match never finds it. Apache is unaffected — its process really is called <code>httpd</code>. A script using <code>pgrep -x</code> silently skips the reload, the new vhost never loads, and the symptom is "a new domain only appears after I restart Nginx by hand."</p>
+<div class="callout"><p><b>Always validate before reloading.</b> <code>apachectl configtest</code> and <code>nginx -t</code> both report syntax errors without touching the running server. Reloading a broken configuration can leave you with a server that stopped and will not come back.</p></div>
+
+<h2>When it looks broken</h2>
+<h3>The wrong site loads</h3>
+<p>Both servers fall back to their first or default virtual host when no <code>ServerName</code> matches. Seeing an unrelated project — or the stock welcome page — usually means the hostname never matched, not that the vhost is malformed.</p>
+<h3>It works on one port but not the other</h3>
+<p>Check that the vhost actually listens on the port you are testing. A block declared for <code>*:443</code> answers nothing on 8443, and the browser reports a connection failure rather than a configuration error.</p>
+<h3>Changes have no effect</h3>
+<p>Either the reload was skipped (see above) or you edited a file that is not included. Confirm with the server itself: <code>apachectl -S</code> lists the vhosts Apache actually loaded, and <code>nginx -T</code> prints the entire effective configuration.</p>
+
+<h2>How BRAMPP handles it</h2>
+<p><a href="../../">BRAMPP</a> runs both servers with this split by default and lets you choose, per domain, which one serves it. It writes the vhost, issues the certificate, adds the hosts entry and reloads the correct server — and because it starts a domain's bound web server before the app behind it, the reverse-proxy ordering above is handled rather than left to chance.</p>
+<p>Free and open source under the MIT license. It does not bundle its own Apache or Nginx: it drives the Homebrew formulas already installed on your machine.</p>
+<a class="backlink" href="../../">← Back to BRAMPP</a>

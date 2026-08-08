@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Local HTTPS on macOS: mkcert, trust stores and the .local trap</title>
-<meta name="description" content="Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.">
-<link rel="canonical" href="https://macitkaraca.github.io/brampp/guides/local-https/">
-<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/local-https/">
-<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/local-https/">
-<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/local-https/">
+<title>Running Apache and Nginx side by side on one Mac</title>
+<meta name="description" content="Only one process can hold port 80. How to run both web servers at once on macOS, split domains between them, and avoid the mistakes that make it look broken.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/apache-nginx-together/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/">
 <link rel="icon" type="image/png" href="../../assets/icon-256.png">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Local HTTPS on macOS: mkcert, trust stores and the .local trap">
-<meta property="og:description" content="Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.">
-<meta property="og:url" content="https://macitkaraca.github.io/brampp/guides/local-https/">
+<meta property="og:title" content="Running Apache and Nginx side by side on one Mac">
+<meta property="og:description" content="Only one process can hold port 80. How to run both web servers at once on macOS, split domains between them, and avoid the mistakes that make it look broken.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/guides/apache-nginx-together/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -22,8 +22,8 @@
 {
  "@context": "https://schema.org",
  "@type": "TechArticle",
- "headline": "Local HTTPS on macOS: mkcert, trust stores and the .local trap",
- "description": "Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.",
+ "headline": "Running Apache and Nginx side by side on one Mac",
+ "description": "Only one process can hold port 80. How to run both web servers at once on macOS, split domains between them, and avoid the mistakes that make it look broken.",
  "inLanguage": "en",
  "datePublished": "2026-08-08",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
@@ -36,7 +36,7 @@
   "@type": "Organization",
   "name": "Karaca Teknoloji"
  },
- "mainEntityOfPage": "https://macitkaraca.github.io/brampp/guides/local-https/"
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/guides/apache-nginx-together/"
 }
 </script>
 <style>
@@ -481,91 +481,83 @@ main.guide{max-width:760px;margin:0 auto;padding:calc(var(--bar-h) + 48px) var(-
   <a class="brandmark" href="../../" aria-label="BRAMPP"><img src="../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <a class="pill" href="../../tr/guides/local-https/" hreflang="tr" lang="tr">🇹🇷 Türkçe</a>
+    <a class="pill" href="../../tr/guides/apache-nginx-together/" hreflang="tr" lang="tr">🇹🇷 Türkçe</a>
   </div>
 </nav>
 <main class="guide">
-<h1>Local HTTPS on macOS, and why the padlock is harder than it looks</h1>
-<p class="lede">Modern browser APIs refuse to run over plain HTTP. So your local site needs a certificate — but a certificate alone is not enough, and the reason is the part most guides skip.</p>
-<p class="meta">A practical guide for macOS developers · covers mkcert, the system trust store, <code>.local</code> vs <code>.test</code>, and Apache/Nginx differences</p>
+<h1>Running Apache and Nginx side by side on one Mac</h1>
+<p class="lede">Only one process can hold port 80. That single fact drives every decision in this setup — and explains most of the ways it goes wrong.</p>
+<p class="meta">A practical guide for macOS developers · ports, per-domain routing, reverse proxies and the reload trap</p>
 
-<h2>Why you suddenly need HTTPS locally</h2>
-<p>Service workers, the Clipboard API, <code>getUserMedia</code>, Web Crypto's <code>subtle</code> interface, HTTP/2 in practice — all of them are gated behind what browsers call a <strong>secure context</strong>. <code>http://localhost</code> is treated as one by special dispensation. <code>http://myproject.local</code> is not.</p>
-<p>The moment you move off <code>localhost</code> and onto a real hostname — which you do as soon as you have more than one project, or need subdomains, or want cookies scoped the way production scopes them — you need a real certificate.</p>
+<h2>Why you would want both</h2>
+<p>Most stacks pick one server and stay there. But a machine that has been used for a few years rarely has one kind of project on it. A legacy WordPress site expects Apache's <code>.htaccess</code> and <code>mod_rewrite</code>. A Next.js or FastAPI app is documented, deployed and debugged against Nginx. Rewriting either one's configuration to match the other server is work with no payoff.</p>
+<p>The alternative is to run both and route each domain to the server it was written for.</p>
 
-<h2>A self-signed certificate is not the answer</h2>
-<p>The obvious move is <code>openssl req -x509</code>. It produces a certificate, the server accepts it, and the browser rejects it anyway.</p>
-<p>The reason is that browsers do not evaluate certificates on their own merits. They walk a <strong>chain of trust</strong>: this certificate was signed by that authority, which was signed by another, up to a root the operating system already trusts. A self-signed certificate is its own root, and nothing trusts it.</p>
-<p>You can click through the warning. You should not build a habit of it — and service workers will still refuse to register, because a click-through is not the same as a valid chain.</p>
-
-<h2>What actually works: your own certificate authority</h2>
-<p>The fix is to become a certificate authority for your own machine. Create one root certificate, tell macOS to trust it, and then issue as many site certificates as you like from it. Each one chains back to a root the system already accepts, so browsers stop complaining.</p>
-<p><a href="https://github.com/FiloSottile/mkcert">mkcert</a> does exactly this and nothing more. Its root lives in one place:</p>
-<pre><code>$ mkcert -CAROOT
-/Users/you/Library/Application Support/mkcert
-
-$ ls "$(mkcert -CAROOT)"
-rootCA-key.pem    rootCA.pem</code></pre>
-<p><code>rootCA.pem</code> is the public certificate that gets installed into the system trust store. <code>rootCA-key.pem</code> is the private key that signs your site certificates.</p>
-
-<div class="callout"><p><b>Treat that private key like a password.</b> Anyone holding <code>rootCA-key.pem</code> can mint a certificate for any hostname — <code>google.com</code> included — that your Mac will trust without a murmur. It never leaves your machine, never goes in a repository, and never gets copied to a second computer "to save time".</p></div>
-
-<h2>Why macOS asks for your password once</h2>
-<p>Installing the root writes into the <strong>System keychain</strong>, not your login keychain. That is a privileged store, so macOS prompts for an administrator password exactly once, when the CA is first installed. Every certificate issued afterwards is signed locally and needs no prompt at all.</p>
-<p>If you are ever asked repeatedly, something is re-installing the CA on every run — that is a bug in the tooling, not normal behaviour.</p>
-
-<h2>The <code>.local</code> trap</h2>
-<p>Most tutorials tell you to use <code>myproject.local</code>. It usually works on macOS. It is also the one choice with a standards problem underneath it.</p>
-<p><a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> reserves <code>.local</code> for Multicast DNS — Bonjour, the mechanism that finds printers and AirPlay targets on your network. On macOS, an entry in <code>/etc/hosts</code> does take precedence, so it resolves:</p>
-<pre><code>$ ping -c1 myproject.local
-PING myproject.local (127.0.0.1): 56 data bytes</code></pre>
-<p>But you are borrowing a namespace that belongs to something else. On other operating systems, inside containers, or on VPNs that intercept mDNS, the same hostname can resolve slowly or not at all.</p>
-<p><a href="https://www.rfc-editor.org/rfc/rfc6761">RFC 6761</a> reserves <code>.test</code> for exactly this purpose: names that are guaranteed never to be delegated on the public internet, intended for testing. It has no second meaning, no multicast responder listening for it, and no chance of colliding with a real domain you buy later.</p>
-<div class="callout"><p><b>Prefer <code>.test</code> for new projects.</b> <code>myproject.test</code> behaves identically on macOS and avoids the ambiguity everywhere else. Keep <code>.local</code> if an existing project already depends on it — there is no urgency to migrate, only a reason not to start there.</p></div>
-
-<h2>The three pieces that have to line up</h2>
-<p>A working local HTTPS setup is not one thing but three, and a failure in any of them looks the same from the browser:</p>
+<h2>The port problem</h2>
+<p>Ports 80 and 443 can be bound by exactly one process each. Whichever server starts first wins; the second fails with <code>Address already in use</code> and, if you started it through a service manager, may keep retrying quietly in the background.</p>
+<p>The convention that works is to give the well-known ports to one server and move the other up:</p>
 <table>
-<thead><tr><th>Piece</th><th>What it does</th><th>How it fails</th></tr></thead>
+<thead><tr><th>Server</th><th>HTTP</th><th>HTTPS</th><th>URL looks like</th></tr></thead>
 <tbody>
-<tr><td><code>/etc/hosts</code></td><td>Points the hostname at 127.0.0.1</td><td>Browser cannot reach the site at all</td></tr>
-<tr><td>Certificate</td><td>Proves the server is that hostname</td><td>Warning page, or <code>ERR_CERT_COMMON_NAME_INVALID</code></td></tr>
-<tr><td>Virtual host</td><td>Tells the server which files to serve on 443</td><td>Wrong site, or the default page</td></tr>
+<tr><td>Apache</td><td>80</td><td>443</td><td><code>https://legacy.test</code></td></tr>
+<tr><td>Nginx</td><td>8080</td><td>8443</td><td><code>https://app.test:8443</code></td></tr>
 </tbody>
 </table>
-<p>The certificate has to name the host exactly. A certificate for <code>myproject.test</code> does not cover <code>api.myproject.test</code> — you need it listed as an additional name, or a wildcard.</p>
+<p>The visible cost is the port in the URL for the second server's sites. It is cosmetic, but it does leak into anything that generates absolute URLs — frameworks that build links from <code>HTTP_HOST</code> usually handle it, ones that hardcode a scheme and host do not.</p>
 
-<h2>Apache and Nginx do not agree on ports</h2>
-<p>Only one process can hold port 443. If you run both servers — and there are good reasons to, such as keeping a WordPress site on Apache while a Next.js app sits behind Nginx — one of them has to move.</p>
-<p>The usual split is Apache on 80/443 and Nginx on 8080/8443. That works, but it means the Nginx sites carry a port in their URL: <code>https://myapp.test:8443</code>. Certificates do not care about ports, so the same certificate covers both.</p>
-<p>The configuration differs in one detail worth remembering: Apache wants the certificate and key as two separate directives, while Nginx wants the certificate file to already contain the chain.</p>
-<pre><code># Apache
-SSLCertificateFile      /path/myapp.test.pem
-SSLCertificateKeyFile   /path/myapp.test-key.pem
+<div class="callout"><p><b>Do not try to solve this with a single front proxy unless you need to.</b> Putting Nginx on 80 and proxying some hosts to Apache does remove the port from every URL, but it also means every Apache request now passes through Nginx, and you debug two servers whenever one request misbehaves. For local development that trade is rarely worth it.</p></div>
 
-# Nginx
-ssl_certificate         /path/myapp.test.pem;
-ssl_certificate_key     /path/myapp.test-key.pem;</code></pre>
+<h2>Checking what actually holds the port</h2>
+<p>Before changing configuration, find out what is listening. This is the single most useful command in the whole exercise:</p>
+<pre><code>$ sudo lsof -nP -iTCP:80 -sTCP:LISTEN
+COMMAND   PID   USER   FD   TYPE  DEVICE NODE NAME
+httpd    1234   root    4u  IPv6  0x...  TCP  *:80 (LISTEN)</code></pre>
+<p>If nothing is listed, the server is not running — which is not the same as misconfigured, and the fix is different. If something unexpected is listed, you have found your conflict.</p>
 
-<h2>Reading the failures</h2>
-<h3>The browser still warns after installing the CA</h3>
-<p>Almost always a browser that keeps its own trust store, or one that cached the old certificate. Firefox uses its own store by default — mkcert can install into it, but only if Firefox is present when the CA is installed. Restart the browser before assuming the setup is wrong.</p>
-<h3>It works in Safari but not in Chrome</h3>
-<p>Chrome is stricter about certificate lifetime. Certificates valid for more than 398 days are rejected outright. mkcert stays under that limit; hand-rolled OpenSSL commands with <code>-days 3650</code> do not.</p>
-<h3>Service worker still refuses to register</h3>
-<p>A valid certificate is necessary but not sufficient — the page must also be served over HTTPS, with no mixed content. One <code>http://</code> script tag is enough to drop the page out of secure context.</p>
+<h2>One certificate covers both</h2>
+<p>Certificates bind to hostnames, not ports. A certificate issued for <code>app.test</code> is equally valid on 443 and on 8443, so moving a server to a non-standard port changes nothing about TLS. See the <a href="../local-https/">local HTTPS guide</a> for how the certificates themselves are issued and trusted.</p>
+<p>What does differ is how each server is told about them:</p>
+<pre><code># Apache — certificate and key as separate directives
+SSLCertificateFile      /path/app.test.pem
+SSLCertificateKeyFile   /path/app.test-key.pem
 
-<h2>Doing it by hand, once</h2>
-<p>For a single project the whole thing is four commands:</p>
-<pre><code>brew install mkcert
-mkcert -install                    # asks for your password, once
-mkcert myapp.test "*.myapp.test"   # writes the .pem pair here
-sudo sh -c 'echo "127.0.0.1 myapp.test" >> /etc/hosts'</code></pre>
-<p>Then point the vhost at the two files and reload the server. The friction is not in doing it once — it is in doing it for the eleventh project, remembering which certificate belongs to which vhost, and keeping the hosts file honest when projects come and go.</p>
+# Nginx — the certificate file is expected to contain the chain
+ssl_certificate         /path/app.test.pem;
+ssl_certificate_key     /path/app.test-key.pem;</code></pre>
+
+<h2>Apps behind a reverse proxy</h2>
+<p>PHP is served directly, but Node, Python and .NET apps listen on their own port and sit behind whichever server owns the domain. That adds a second failure mode worth naming: the app can be running perfectly while the site is unreachable, because the server in front of it is stopped.</p>
+<p>It also inverts the startup order. Starting the proxy before the app produces a <code>502</code> until the app comes up; starting the app first is cleaner. If something starts them for you, that ordering is worth checking.</p>
+<pre><code># Nginx, in front of an app on 3001
+location / {
+    proxy_pass         http://127.0.0.1:3001;
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+}</code></pre>
+<p>Those two headers matter more than they look. Without <code>Host</code>, the app sees <code>127.0.0.1</code> and generates links pointing at itself. Without <code>X-Forwarded-Proto</code>, a framework that terminates TLS at the proxy thinks the request arrived over HTTP and may redirect in a loop.</p>
+
+<h2>The reload trap</h2>
+<p>Both servers re-read their configuration on reload rather than restart, and both expand include globs at that moment. So a newly added virtual host file <em>is</em> picked up by a reload — you do not need to restart.</p>
+<pre><code>nginx.conf:   include sites-available/*.conf;
+httpd.conf:   Include */extra/httpd-vhosts.conf</code></pre>
+<p>The trap is the check that usually guards the reload. Scripts commonly test whether the server is running before reloading it, and the obvious test is wrong for Nginx:</p>
+<pre><code>$ pgrep -x nginx        # no output — but Nginx is running
+$ ps -eo comm= | grep '^nginx'
+nginx: master process /opt/homebrew/opt/nginx/bin/nginx -g daemon off;</code></pre>
+<p>The Nginx master process rewrites its own title, so an exact-name match never finds it. Apache is unaffected — its process really is called <code>httpd</code>. A script using <code>pgrep -x</code> silently skips the reload, the new vhost never loads, and the symptom is "a new domain only appears after I restart Nginx by hand."</p>
+<div class="callout"><p><b>Always validate before reloading.</b> <code>apachectl configtest</code> and <code>nginx -t</code> both report syntax errors without touching the running server. Reloading a broken configuration can leave you with a server that stopped and will not come back.</p></div>
+
+<h2>When it looks broken</h2>
+<h3>The wrong site loads</h3>
+<p>Both servers fall back to their first or default virtual host when no <code>ServerName</code> matches. Seeing an unrelated project — or the stock welcome page — usually means the hostname never matched, not that the vhost is malformed.</p>
+<h3>It works on one port but not the other</h3>
+<p>Check that the vhost actually listens on the port you are testing. A block declared for <code>*:443</code> answers nothing on 8443, and the browser reports a connection failure rather than a configuration error.</p>
+<h3>Changes have no effect</h3>
+<p>Either the reload was skipped (see above) or you edited a file that is not included. Confirm with the server itself: <code>apachectl -S</code> lists the vhosts Apache actually loaded, and <code>nginx -T</code> prints the entire effective configuration.</p>
 
 <h2>How BRAMPP handles it</h2>
-<p><a href="../../">BRAMPP</a> runs those same steps for you when you add a domain: it creates the vhost, issues the certificate through mkcert, adds the hosts entry, and reloads the right web server. Nothing is hidden — every command it runs is printed in the console as it runs, and the certificates are ordinary mkcert files you can inspect or reuse.</p>
-<p>It is free and open source under the MIT license, and it does not bundle its own Apache, PHP or MySQL: it drives the Homebrew services already on your machine.</p>
+<p><a href="../../">BRAMPP</a> runs both servers with this split by default and lets you choose, per domain, which one serves it. It writes the vhost, issues the certificate, adds the hosts entry and reloads the correct server — and because it starts a domain's bound web server before the app behind it, the reverse-proxy ordering above is handled rather than left to chance.</p>
+<p>Free and open source under the MIT license. It does not bundle its own Apache or Nginx: it drives the Homebrew formulas already installed on your machine.</p>
 <a class="backlink" href="../../">← Back to BRAMPP</a>
 
 </main>

@@ -1,0 +1,14 @@
+<h1>Guides</h1>
+<p class="lede">Longer pieces on the parts of local development that are genuinely fiddly — written from the problems that came up building BRAMPP.</p>
+<p class="meta">Practical, macOS-specific, and honest about the trade-offs</p>
+
+<h2><a href="local-https/">Local HTTPS on macOS</a></h2>
+<p>Why a self-signed certificate is rejected no matter how the server is configured, what a local certificate authority changes, where macOS keeps its trust and why it asks for your password exactly once. Includes the <code>.local</code> trap — the extension most tutorials hand out is the one with a standards problem underneath it.</p>
+
+<h2><a href="apache-nginx-together/">Apache and Nginx side by side</a></h2>
+<p>Only one process can hold port 80, and that single fact drives the whole setup. Port splitting, per-domain routing, the two proxy headers that break framework links when they are missing, and the reload check that silently skips Nginx.</p>
+
+<h2><a href="mcp-local-dev/">An MCP server for local development</a></h2>
+<p>Why handing an assistant a shell is the wrong shape for the job, what scoped permissions look like when they are enforced in two places rather than one, and why a prefix check on SQL fails on the first interesting query.</p>
+
+<a class="backlink" href="../">← Back to BRAMPP</a>

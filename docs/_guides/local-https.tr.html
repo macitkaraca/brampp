@@ -1,0 +1,82 @@
+<h1>macOS'ta yerel HTTPS ve asma kilidin göründüğünden zor olmasının sebebi</h1>
+<p class="lede">Modern tarayıcı API'leri düz HTTP üzerinde çalışmayı reddediyor. Yani yerel siteniz sertifika istiyor — ama tek başına sertifika yetmiyor ve sebebi çoğu rehberin atladığı kısımda.</p>
+<p class="meta">macOS geliştiricileri için pratik rehber · mkcert, sistem güven deposu, <code>.local</code> ile <code>.test</code> farkı ve Apache/Nginx ayrımı</p>
+
+<h2>Yerelde neden birdenbire HTTPS gerekiyor</h2>
+<p>Service worker'lar, Clipboard API, <code>getUserMedia</code>, Web Crypto'nun <code>subtle</code> arayüzü, pratikte HTTP/2 — hepsi tarayıcıların <strong>güvenli bağlam</strong> dediği koşulun arkasında. <code>http://localhost</code> özel bir istisnayla güvenli sayılıyor. <code>http://projem.test</code> sayılmıyor.</p>
+<p><code>localhost</code>'tan çıkıp gerçek bir ana makine adına geçtiğiniz anda — ki birden fazla projeniz olduğunda, alt alan adı gerektiğinde ya da çerezlerin üretimdeki gibi kapsanmasını istediğinizde bu kaçınılmaz — gerçek bir sertifikaya ihtiyacınız var.</p>
+
+<h2>Kendi imzalı sertifika çözüm değil</h2>
+<p>Akla ilk gelen <code>openssl req -x509</code>. Sertifikayı üretir, sunucu kabul eder, tarayıcı yine de reddeder.</p>
+<p>Sebebi şu: tarayıcılar sertifikayı kendi başına değerlendirmez, bir <strong>güven zinciri</strong> yürür. Bu sertifikayı şu otorite imzalamış, onu bir başkası imzalamış, ta ki işletim sisteminin zaten güvendiği bir köke ulaşana kadar. Kendi imzalı sertifika kendi köküdür ve ona kimse güvenmez.</p>
+<p>Uyarıyı tıklayıp geçebilirsiniz. Bunu alışkanlık hâline getirmemelisiniz — üstelik service worker'lar yine kaydolmayı reddeder, çünkü tıklayıp geçmek geçerli bir zincirle aynı şey değildir.</p>
+
+<h2>İşe yarayan yol: kendi sertifika otoriteniz</h2>
+<p>Çözüm, kendi makineniz için sertifika otoritesi olmak. Bir kök sertifika üretirsiniz, macOS'a ona güvenmesini söylersiniz, sonra o kökten istediğiniz kadar site sertifikası çıkarırsınız. Her biri sistemin zaten kabul ettiği bir köke bağlandığı için tarayıcılar susar.</p>
+<p><a href="https://github.com/FiloSottile/mkcert">mkcert</a> tam olarak bunu yapar, fazlasını değil. Kökü tek bir yerde durur:</p>
+<pre><code>$ mkcert -CAROOT
+/Users/siz/Library/Application Support/mkcert
+
+$ ls "$(mkcert -CAROOT)"
+rootCA-key.pem    rootCA.pem</code></pre>
+<p><code>rootCA.pem</code> sistem güven deposuna kurulan açık sertifika. <code>rootCA-key.pem</code> ise site sertifikalarınızı imzalayan özel anahtar.</p>
+
+<div class="callout"><p><b>O özel anahtara parola gibi davranın.</b> <code>rootCA-key.pem</code> elinde olan biri istediği ana makine adı için — <code>google.com</code> dahil — sertifika üretebilir ve Mac'iniz buna itirazsız güvenir. Bu dosya makinenizden çıkmaz, depoya girmez, "zaman kazanmak için" ikinci bir bilgisayara kopyalanmaz.</p></div>
+
+<h2>macOS neden bir kez parola soruyor</h2>
+<p>Kökü kurmak <strong>Sistem anahtar zincirine</strong> yazar, oturum anahtar zincirinize değil. Orası ayrıcalıklı bir depo, bu yüzden macOS yönetici parolasını tam olarak bir kez ister: CA ilk kurulduğunda. Sonrasında üretilen her sertifika yerelde imzalanır ve hiçbir istem çıkmaz.</p>
+<p>Size sürekli parola soruluyorsa, bir şey CA'yı her çalıştırmada yeniden kuruyor demektir — bu araçtaki bir hatadır, olağan davranış değil.</p>
+
+<h2><code>.local</code> tuzağı</h2>
+<p>Rehberlerin çoğu <code>projem.local</code> kullanmanızı söyler. macOS'ta genelde çalışır. Aynı zamanda altında standart sorunu olan tek seçenektir.</p>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a>, <code>.local</code> uzantısını Multicast DNS'e ayırır — yani ağınızdaki yazıcıları ve AirPlay hedeflerini bulan Bonjour'a. macOS'ta <code>/etc/hosts</code> kaydı öncelik aldığı için çözülür:</p>
+<pre><code>$ ping -c1 projem.local
+PING projem.local (127.0.0.1): 56 data bytes</code></pre>
+<p>Ama başkasına ait bir ad alanını ödünç alıyorsunuz. Başka işletim sistemlerinde, konteyner içinde ya da mDNS'i yakalayan VPN'lerde aynı ad yavaş çözülebilir veya hiç çözülmez.</p>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6761">RFC 6761</a> ise <code>.test</code> uzantısını tam bu iş için ayırır: internette asla tahsis edilmeyeceği garanti edilen, test amaçlı adlar. İkinci bir anlamı yok, onu dinleyen bir multicast yanıtlayıcı yok ve ileride satın alacağınız gerçek bir alan adıyla çakışma ihtimali yok.</p>
+<div class="callout"><p><b>Yeni projelerde <code>.test</code> tercih edin.</b> <code>projem.test</code> macOS'ta birebir aynı davranır, diğer her yerde belirsizliği ortadan kaldırır. Mevcut bir proje <code>.local</code>'a bağlıysa taşımak için acele etmeyin — sadece yeni işe oradan başlamamak için bir sebep var.</p></div>
+
+<h2>Hizalanması gereken üç parça</h2>
+<p>Çalışan bir yerel HTTPS kurulumu tek şey değil, üç şeydir; ve herhangi birindeki arıza tarayıcıda aynı görünür:</p>
+<table>
+<thead><tr><th>Parça</th><th>Ne yapar</th><th>Bozulunca</th></tr></thead>
+<tbody>
+<tr><td><code>/etc/hosts</code></td><td>Adı 127.0.0.1'e yönlendirir</td><td>Tarayıcı siteye hiç ulaşamaz</td></tr>
+<tr><td>Sertifika</td><td>Sunucunun o ad olduğunu kanıtlar</td><td>Uyarı sayfası veya <code>ERR_CERT_COMMON_NAME_INVALID</code></td></tr>
+<tr><td>Sanal sunucu</td><td>443'te hangi dosyaların sunulacağını söyler</td><td>Yanlış site ya da varsayılan sayfa</td></tr>
+</tbody>
+</table>
+<p>Sertifika ana makine adını birebir taşımalı. <code>projem.test</code> için üretilmiş sertifika <code>api.projem.test</code>'i kapsamaz — onu ek ad olarak listelemeniz ya da joker karakter kullanmanız gerekir.</p>
+
+<h2>Apache ve Nginx port konusunda anlaşamaz</h2>
+<p>443 portunu aynı anda tek süreç tutabilir. İkisini birden çalıştırıyorsanız — ki bunun iyi sebepleri var, örneğin WordPress'i Apache'de tutup Next.js uygulamasını Nginx'in arkasına almak — birinin taşınması gerekir.</p>
+<p>Alışılmış bölüşüm Apache 80/443, Nginx 8080/8443. Çalışır, ama Nginx siteleri adreslerinde port taşır: <code>https://uygulamam.test:8443</code>. Sertifikalar portu umursamadığı için aynı sertifika ikisini de kapsar.</p>
+<p>Yapılandırmada akılda tutulacak bir fark var: Apache sertifika ve anahtarı iki ayrı direktif olarak ister, Nginx ise sertifika dosyasının zinciri zaten içermesini bekler.</p>
+<pre><code># Apache
+SSLCertificateFile      /yol/uygulamam.test.pem
+SSLCertificateKeyFile   /yol/uygulamam.test-key.pem
+
+# Nginx
+ssl_certificate         /yol/uygulamam.test.pem;
+ssl_certificate_key     /yol/uygulamam.test-key.pem;</code></pre>
+
+<h2>Hataları okumak</h2>
+<h3>CA kurulduğu hâlde tarayıcı hâlâ uyarıyor</h3>
+<p>Neredeyse her zaman kendi güven deposunu tutan bir tarayıcı ya da eski sertifikayı önbelleğe almış bir oturum. Firefox varsayılan olarak kendi deposunu kullanır — mkcert oraya da kurabilir, ama yalnızca CA kurulurken Firefox yüklüyse. Kurulum yanlış demeden önce tarayıcıyı yeniden başlatın.</p>
+<h3>Safari'de çalışıyor, Chrome'da çalışmıyor</h3>
+<p>Chrome sertifika ömrü konusunda daha katı. 398 günden uzun süre geçerli sertifikaları doğrudan reddeder. mkcert bu sınırın altında kalır; elle yazılmış <code>-days 3650</code> içeren OpenSSL komutları kalmaz.</p>
+<h3>Service worker yine kaydolmuyor</h3>
+<p>Geçerli sertifika gerekli ama yeterli değil — sayfanın tamamı HTTPS üzerinden gelmeli, karışık içerik olmamalı. Tek bir <code>http://</code> betik etiketi sayfayı güvenli bağlamın dışına düşürmeye yeter.</p>
+
+<h2>Elle yapmak, bir kereliğine</h2>
+<p>Tek proje için işin tamamı dört komut:</p>
+<pre><code>brew install mkcert
+mkcert -install                          # parolayı bir kez sorar
+mkcert uygulamam.test "*.uygulamam.test" # .pem çiftini buraya yazar
+sudo sh -c 'echo "127.0.0.1 uygulamam.test" >> /etc/hosts'</code></pre>
+<p>Sonra sanal sunucuyu bu iki dosyaya yönlendirip sunucuyu yeniden yüklersiniz. Zorluk bunu bir kez yapmakta değil — on birinci projede yapmakta, hangi sertifikanın hangi vhost'a ait olduğunu hatırlamakta ve projeler gelip giderken hosts dosyasını dürüst tutmakta.</p>
+
+<h2>BRAMPP bunu nasıl yapıyor</h2>
+<p><a href="../../">BRAMPP</a> alan adı eklediğinizde aynı adımları sizin için yürütüyor: vhost'u oluşturuyor, sertifikayı mkcert ile üretiyor, hosts kaydını ekliyor ve doğru web sunucusunu yeniden yüklüyor. Hiçbir şey gizli değil — çalıştırdığı her komut konsola anında yazılıyor ve üretilen sertifikalar inceleyebileceğiniz, başka yerde kullanabileceğiniz sıradan mkcert dosyaları.</p>
+<p>MIT lisanslı, ücretsiz ve açık kaynak; kendi Apache'sini, PHP'sini ya da MySQL'ini paketlemiyor, makinenizde zaten kurulu Homebrew servislerini yönetiyor.</p>
+<a class="backlink" href="../../">← BRAMPP'e dön</a>

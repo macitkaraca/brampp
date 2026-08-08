@@ -1,0 +1,5 @@
+{"published":"2026-08-08",
+ "en":{"title":"Running Apache and Nginx side by side on one Mac",
+       "desc":"Only one process can hold port 80. How to run both web servers at once on macOS, split domains between them, and avoid the mistakes that make it look broken."},
+ "tr":{"title":"Aynı Mac'te Apache ve Nginx'i birlikte çalıştırmak",
+       "desc":"80 portunu aynı anda tek süreç tutabilir. macOS'ta iki web sunucusunu birlikte çalıştırma, alan adlarını bölüştürme ve bozuk göründüren hatalar."}}
