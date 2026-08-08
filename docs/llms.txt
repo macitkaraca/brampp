@@ -13,11 +13,17 @@ Key facts:
 - Databases: MariaDB/MySQL, PostgreSQL (multi-version), Redis; phpMyAdmin/pgAdmin/Adminer installers
 - Languages: English and Turkish UI (runtime switchable)
 - MCP server: built-in Model Context Protocol endpoint (http://127.0.0.1:8765/mcp, loopback only,
-  off by default) with 17 tools — AI assistants (Claude Code, Claude Desktop, ChatGPT Codex) can
+  off by default) with 19 tools — AI assistants (Claude Code, Claude Desktop, ChatGPT Codex) can
   create/update domains, start and stop app servers, control services, read BRAMPP and per-domain
-  logs, manage databases and run read-only SQL; per-scope permissions (Domains, Services, Databases,
-  Logs) grant no access / read / read+write, and disallowed tools never appear to the client;
-  the native UI reflects every change instantly
+  logs, list/create databases, run read-only SQL, and dump or restore databases via mysqldump and
+  pg_dump; per-scope permissions (Domains, Services, Databases, Logs) grant no access / read /
+  read+write, and disallowed tools never appear to the client; the native UI reflects every change
+  instantly. Two skill files ship with the app — mcptools (general) and brampp_mysql (databases)
+- Distribution: signed with a Developer ID Application certificate and notarized by Apple; the
+  notarization ticket is stapled to both the app and the DMG, so it verifies even offline — no
+  Gatekeeper workaround is needed
+- Updates: the app can check GitHub Releases for a newer version on request; it never self-updates,
+  the download stays in the user's browser
 - License: MIT — Copyright Karaca Teknoloji (Macit Karaca)
 - Author: Macit Karaca (https://github.com/macitkaraca), Karaca Technology (https://karacatechnology.com)
 
