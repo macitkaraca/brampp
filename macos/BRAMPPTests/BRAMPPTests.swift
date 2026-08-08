@@ -769,6 +769,87 @@ final class BRAMPPTests: XCTestCase {
         }
     }
 
+    // MARK: - Redis INFO ayrıştırma
+
+    /// Gerçek `redis-cli INFO` çıktısından alınmış örnek (Redis 8.8).
+    private var redisInfoSample: String {
+        """
+        # Server
+        redis_version:8.8.0
+        uptime_in_seconds:3725
+
+        # Clients
+        connected_clients:1
+
+        # Memory
+        used_memory_human:881.94K
+        used_memory_peak_human:882.25K
+        maxmemory_human:0B
+
+        # Stats
+        total_commands_processed:1420
+        expired_keys:3
+        evicted_keys:0
+        keyspace_hits:75
+        keyspace_misses:25
+
+        # Keyspace
+        db0:keys=2,expires=2,avg_ttl=0,subexpiry=0
+        db3:keys=10,expires=0,avg_ttl=0
+        """
+    }
+
+    func testRedisStats_ParsesRealInfoOutput() {
+        let s = RedisStats.parse(redisInfoSample)
+        XCTAssertEqual(s.version, "8.8.0")
+        XCTAssertEqual(s.uptimeSeconds, 3725)
+        XCTAssertEqual(s.connectedClients, 1)
+        XCTAssertEqual(s.usedMemory, "881.94K")
+        XCTAssertEqual(s.commandsProcessed, 1420)
+        // Keyspace: db numarası, anahtar ve expires ayrı ayrı okunmalı
+        XCTAssertEqual(s.keyspace.map(\.db), [0, 3])
+        XCTAssertEqual(s.keyspace.map(\.keys), [2, 10])
+        XCTAssertEqual(s.keyspace.map(\.expires), [2, 0])
+        XCTAssertEqual(s.totalKeys, 12)
+    }
+
+    /// İsabet oranı hiç istek yokken "%0" değil, "veri yok" olmalı.
+    func testRedisStats_HitRateIsNilWithoutTraffic() {
+        let bos = RedisStats.parse("keyspace_hits:0\nkeyspace_misses:0")
+        XCTAssertNil(bos.hitRate, "0/0 için oran hesaplanmamalı")
+
+        let s = RedisStats.parse(redisInfoSample)
+        XCTAssertEqual(s.hitRate ?? 0, 0.75, accuracy: 0.001)
+    }
+
+    /// Bölüm başlıkları, boş satırlar ve bilinmeyen alanlar ayrıştırmayı bozmamalı.
+    func testRedisStats_IgnoresHeadersAndUnknownFields() {
+        let s = RedisStats.parse("""
+        # Server
+
+        redis_version:7.0.0
+        gelecekte_eklenen_alan:42
+        bozuk_satir_iki_nokta_yok
+        db1:keys=5,expires=1,avg_ttl=0
+        """)
+        XCTAssertEqual(s.version, "7.0.0")
+        XCTAssertEqual(s.totalKeys, 5)
+        XCTAssertNil(s.connectedClients)
+    }
+
+    /// maxmemory 0 → sınırsız. Geliştirme makinesinde olağan durum.
+    func testRedisStats_UnlimitedMemory() {
+        XCTAssertTrue(RedisStats.parse("maxmemory_human:0B").isMemoryUnlimited)
+        XCTAssertFalse(RedisStats.parse("maxmemory_human:512.00M").isMemoryUnlimited)
+    }
+
+    func testRedisStats_FormatsUptime() {
+        XCTAssertEqual(RedisStats.formatUptime(45), "45sn")
+        XCTAssertEqual(RedisStats.formatUptime(600), "10dk")
+        XCTAssertEqual(RedisStats.formatUptime(3725), "1s 2dk")
+        XCTAssertEqual(RedisStats.formatUptime(90000), "1g 1s")
+    }
+
     // MARK: - Sürüm karşılaştırma (UpdateChecker)
 
     /// Etiketten sürüm çıkarma: GitHub etiketleri "v1.1" biçiminde, release adı

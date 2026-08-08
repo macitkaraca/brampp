@@ -25,6 +25,11 @@ struct DatabaseTabView: View {
     @State private var pgSettings: [PGSetting] = PGSetting.defaults
     @State private var myCnfSettings: [PGSetting] = PGSetting.mariadbDefaults
     @State private var redisSettings: [PGSetting] = PGSetting.redisDefaults
+    // Redis canlı durumu — talep üzerine `redis-cli INFO` ile okunur.
+    // Otomatik yenileme YOK: sekme açık dururken saniyede bir kabuk çağırmak
+    // pil ve CPU açısından bedelli, üstelik veri o hızda değişmiyor.
+    @State private var redisStats: RedisStats?
+    @State private var redisLoading = false
     @State private var dbToDelete: String? = nil
     @State private var showDropAlert: Bool = false
     /// ServiceManager kurulumu başladığında InstallationProgressSheet'i açar
@@ -140,6 +145,8 @@ struct DatabaseTabView: View {
                     mariadbPanel
                 case .redis:
                     redisPanel
+                        // Sekme açıldığında bir kez oku; sonrası yenile düğmesiyle.
+                        .onAppear { if redisStats == nil { loadRedisStats() } }
                 }
             }
         }
@@ -864,6 +871,40 @@ struct DatabaseTabView: View {
                     .padding(8)
                 }
 
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(loc.t("db.redis.stats")).font(.headline)
+                            Spacer()
+                            Button {
+                                loadRedisStats()
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                            .buttonStyle(.borderless).controlSize(.small)
+                            .disabled(redisLoading)
+                        }
+                        if let s = redisStats {
+                            infoRow(loc.t("db.redis.uptime"),
+                                    value: s.uptimeSeconds.map(RedisStats.formatUptime) ?? "—")
+                            infoRow(loc.t("db.redis.clients"), value: s.connectedClients.map(String.init) ?? "—")
+                            infoRow(loc.t("db.redis.memory"),
+                                    value: (s.usedMemory ?? "—") + (s.isMemoryUnlimited ? " / \(loc.t("db.redis.unlimited"))" : ""))
+                            infoRow(loc.t("db.redis.peak"), value: s.peakMemory ?? "—")
+                            infoRow(loc.t("db.redis.hitRate"),
+                                    value: s.hitRate.map { String(format: "%%%.0f", $0 * 100) } ?? loc.t("db.redis.noData"))
+                            infoRow(loc.t("db.redis.keys"),
+                                    value: s.keyspace.isEmpty ? "0"
+                                         : "\(s.totalKeys)  (" + s.keyspace.map { "db\($0.db): \($0.keys)" }.joined(separator: ", ") + ")")
+                            infoRow(loc.t("db.redis.commands"), value: s.commandsProcessed.map(String.init) ?? "—")
+                        } else {
+                            Text(loc.t(redisLoading ? "common.loading" : "db.redis.stopped"))
+                                .font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(8)
+                }
+
                 GroupBox("redis.conf") {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach($redisSettings) { $setting in
@@ -1471,6 +1512,20 @@ struct DatabaseTabView: View {
     }
 
     /// redis.conf'ta ilgili direktifi günceller (varsa değiştir, yoksa ekle). "directive value" formatı.
+    /// `redis-cli INFO` çıktısını okuyup panele yansıtır.
+    /// Redis kapalıysa komut hata döner; bu durumda istatistik gösterilmez ve
+    /// kullanıcıya "çalışmıyor" denir — boş/sıfır değerler göstermek yanıltıcı olurdu.
+    private func loadRedisStats() {
+        redisLoading = true
+        Task {
+            let r = await Shell.brewBashAsync("redis-cli INFO 2>/dev/null")
+            redisStats = (r.isSuccess && r.output.contains("redis_version"))
+                ? RedisStats.parse(r.output)
+                : nil
+            redisLoading = false
+        }
+    }
+
     private func saveRedisSettings() {
         guard var content = FileHelper.readString(PathConfig.redisConf) else {
             reportDBError(String(format: loc.t("db.redisReadFailed"), PathConfig.redisConf))

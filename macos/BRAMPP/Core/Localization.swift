@@ -205,6 +205,19 @@ enum L10n {
         "db.pgadminOpenHelp": ["tr": "https://localhost/pgadmin4 adresini tarayıcıda açar", "en": "Opens https://localhost/pgadmin4 in the browser"],
         "db.pgadminRemoveHelp": ["tr": "pgAdmin4'ü tamamen kaldır (paket + config + veri)", "en": "Completely remove pgAdmin4 (package + config + data)"],
         "db.myCnfNote":       ["tr": "[mariadbd] bölümüne yazılır; kaydedince MariaDB yeniden başlar.", "en": "Written to the [mariadbd] section; MariaDB restarts on save."],
+        // ── Redis istatistik paneli ──
+        "db.redis.stats":     ["tr": "Canlı Durum",        "en": "Live Status"],
+        "db.redis.uptime":    ["tr": "Çalışma süresi",     "en": "Uptime"],
+        "db.redis.clients":   ["tr": "Bağlı istemci",      "en": "Connected clients"],
+        "db.redis.memory":    ["tr": "Bellek kullanımı",   "en": "Memory used"],
+        "db.redis.peak":      ["tr": "Zirve bellek",       "en": "Peak memory"],
+        "db.redis.hitRate":   ["tr": "İsabet oranı",       "en": "Hit rate"],
+        "db.redis.keys":      ["tr": "Toplam anahtar",     "en": "Total keys"],
+        "db.redis.commands":  ["tr": "İşlenen komut",      "en": "Commands processed"],
+        "db.redis.noData":    ["tr": "henüz istek yok",    "en": "no requests yet"],
+        "db.redis.unlimited": ["tr": "sınırsız",           "en": "unlimited"],
+        "db.redis.stopped":   ["tr": "Redis çalışmıyor — durum okunamıyor",
+                               "en": "Redis is not running — status unavailable"],
         "db.redisNote":       ["tr": "redis.conf'a yazılır; kaydedince Redis yeniden başlar.", "en": "Written to redis.conf; Redis restarts on save."],
 
         // DomainsTabView
@@ -227,6 +240,7 @@ enum L10n {
         "common.close":      ["tr": "Kapat",       "en": "Close"],
         "common.settings":   ["tr": "Ayarlar",     "en": "Settings"],
         "common.installing": ["tr": "Kuruluyor...", "en": "Installing..."],
+        "common.loading":    ["tr": "Okunuyor...",  "en": "Loading..."],
         "common.done":       ["tr": "Tamamlandı",  "en": "Done"],
         "common.brewMissing.title": ["tr": "Homebrew Kurulu Değil", "en": "Homebrew Not Installed"],
         "common.brewMissing.msg":   ["tr": "Servisleri yönetmek için Homebrew gerekiyor. Kurulum sihirbazından kurabilirsiniz.", "en": "Homebrew is required to manage services. You can install it from the setup wizard."],
