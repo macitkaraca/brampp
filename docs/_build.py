@@ -11,6 +11,7 @@ hesaplanır; ana sayfaların menüsü de aynı kaynaktan yamalanır (bkz. --nav)
 
 Kullanım:  python3 docs/_build.py <slug> [<slug> …]
            python3 docs/_build.py --nav          # yalnız ana sayfaların menüsü
+           python3 docs/_build.py --check        # bağlantılar kendi dilinde mi
 Gerekli:   docs/_pages/<slug>.json  +  <slug>.en.html  +  <slug>.tr.html
 """
 import json, os, re, sys
@@ -224,23 +225,29 @@ NAVBTN = ('<button class="navtoggle" type="button" aria-label="Menu" aria-expand
           'aria-controls="sitenav"><span></span><span></span><span></span></button>')
 
 
-def nav_html(lang, up, here=""):
-    """Menü bağlantıları. `up` köke giden göreli önek, `here` etkin sayfanın yolu."""
+def nav_html(lang, base, here=""):
+    """Menü bağlantıları.
+
+    `base` DİL kökünü verir (EN için site kökü, TR için `…/tr/`), site kökünü
+    değil. Site kökü kullanıldığında Türkçe sayfaların menüsü Türkçe etiketlerle
+    İngilizce sayfalara gidiyordu.
+    """
     out = []
     for path, en, tr in NAV:
         label = en if lang == "en" else tr
-        href = up + path if not path.startswith("#") else up + path
         cur = ' aria-current="true"' if path and path == here else ""
-        out.append(f'<a href="{href}"{cur}>{label}</a>')
+        out.append(f'<a href="{base + path}"{cur}>{label}</a>')
     return '<div class="navlinks" id="sitenav">' + "".join(out) + "</div>"
 
 
-def topbar(lang, up, here, tail):
+def topbar(lang, up, base, here, tail):
+    # `up` site kökü — yalnızca dile bağlı olmayan varlıklar (ikon) için.
+    # `base` dil kökü — marka bağlantısı ve menü buradan türetilir.
     icon = up + "assets/icon-256.png"
     dl = "⬇ DMG"
     return f"""<nav class="topbar is-scrolled" aria-label="Site">
-  <a class="brandmark" href="{up or './'}" aria-label="BRAMPP"><img src="{icon}" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  {nav_html(lang, up, here)}
+  <a class="brandmark" href="{base or './'}" aria-label="BRAMPP"><img src="{icon}" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  {nav_html(lang, base, here)}
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">{dl}</a>
     {lang_picker(lang, up, tail, "bar")}
@@ -255,7 +262,8 @@ def render(lang, meta, body, css):
     en_url, tr_url = f"{BASE}/{tail}", f"{BASE}/tr/{tail}"
     canonical = en_url if lang == "en" else tr_url
     depth = len([s for s in path.split("/") if s]) + (0 if lang == "en" else 1)
-    up = "../" * depth
+    up = "../" * depth                       # site kökü — paylaşılan varlıklar için
+    base = up + ("tr/" if lang == "tr" else "")   # dil kökü — sayfa bağlantıları için
     here = meta.get("nav", "")
 
     ld = {
@@ -304,9 +312,9 @@ def render(lang, meta, body, css):
 <style>{css}{ARTICLE_CSS}</style>
 </head>
 <body>
-{topbar(lang, up, here, tail)}
+{topbar(lang, up, base, here, tail)}
 <main class="{cls}">
-{body.replace("{{UP}}", up)}
+{body.replace("{{UP}}", base)}
 </main>
 {footer_html(lang, up, tail)}
 {NAVJS}
@@ -339,7 +347,7 @@ def patch_home_nav():
     for f, lang, up in (("index.html", "en", ""), ("tr/index.html", "tr", "")):
         p = os.path.join(ROOT, f)
         t = open(p, encoding="utf-8").read()
-        new = nav_html(lang, up)
+        new = nav_html(lang, up)  # ana sayfalar kendi dil kökünde: base == ""
         t2, n = re.subn(r'<div class="navlinks">.*?</div>', new, t, count=1, flags=re.S)
         if n == 0:
             print(f"  ! {f}: menü bulunamadı")
@@ -351,8 +359,49 @@ def patch_home_nav():
         print(f"  ✓ {f}: menü eşitlendi ({len(NAV)} bağlantı)")
 
 
+ASSET_RE = re.compile(r"\.(png|webp|jpg|jpeg|svg|ico|css|js|xml|txt)$", re.I)
+
+
+def check_links():
+    """Her iç bağlantının kendi dilinde kaldığını doğrular.
+
+    Bu denetim, "bağlantı çözülüyor mu" denetiminin yakalayamadığı bir hata
+    sınıfı için var: Türkçe bir sayfanın menüsü Türkçe etiketlerle İngilizce
+    sayfalara gidiyordu ve her hedef gerçekten mevcut olduğu için sessiz kaldı.
+    Dil kutusu bilerek karşı dile bağlandığından hariç tutulur.
+    """
+    import glob
+    bad = ok = 0
+    for f in sorted(glob.glob(os.path.join(ROOT, "**", "*.html"), recursive=True)):
+        rel = os.path.relpath(f, ROOT)
+        if rel.startswith("_") or os.sep + "_" in rel:
+            continue
+        d = os.path.dirname(rel) or "."
+        t = open(f, encoding="utf-8").read()
+        page_lang = "tr" if rel.split(os.sep)[0] == "tr" else "en"
+        spans = [(m.start(), m.end()) for m in re.finditer(r'<div class="langmenu".*?</div>', t, re.S)]
+        for m in re.finditer(r'href="((?!https?:|mailto:|#)[^"]+)"', t):
+            if any(s <= m.start() < e for s, e in spans):
+                continue
+            target = m.group(1).split("#")[0]
+            if not target or ASSET_RE.search(target):
+                continue
+            q = os.path.normpath(os.path.join(d, target))
+            q = "" if q == "." else q
+            tgt_lang = "tr" if q == "tr" or q.startswith("tr" + os.sep) else "en"
+            if tgt_lang != page_lang:
+                print(f"  ! {rel}: {page_lang} sayfada {tgt_lang} bağlantısı → {m.group(1)}")
+                bad += 1
+            else:
+                ok += 1
+    print(f"  {'✓ ' + str(ok) + ' bağlantı kendi dilinde' if not bad else str(bad) + ' bağlantı yanlış dilde'}")
+    return bad == 0
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if "--check" in args:
+        sys.exit(0 if check_links() else 1)
     if "--nav" in args:
         patch_home_nav()
         args = [a for a in args if a != "--nav"]
