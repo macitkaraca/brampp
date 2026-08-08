@@ -811,6 +811,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     </div>
     <div class="faq">
       <details><summary>Bu, Mac'te XAMPP'in yerini tutar mı?</summary><p>Evet — tasarım hedefi tam olarak bu. XAMPP/MAMP akışını karşılar, üstüne Nginx, PostgreSQL, Redis, Node.js, Python ve ASP.NET Core ekler. XAMPP'ten farklı olarak ikili dosya paketlemez; mevcut Homebrew servislerinizi yönetir.</p></details>
+      <p style="margin-top:22px"><a href="guides/local-https/" style="color:var(--amber-hi)">Yerel HTTPS nasıl çalışır →</a></p>
       <details><summary>Mevcut Homebrew kurulumumla kavga eder mi?</summary><p>Hayır — zaten <i>o</i> sizin Homebrew kurulumunuz. BRAMPP hiçbir şeyin ikinci bir kopyasını kurmaz.</p></details>
       <details><summary>Uygulama imzalı ve noter onaylı mı?</summary><p>Evet. Yayın sürümleri Developer ID Application sertifikasıyla imzalanır ve Apple noter onayından geçer; bilet hem DMG'ye hem uygulamaya zımbalanır, böylece ilk açılışta internet olmasa bile doğrulanır. <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> komutu <code>source=Notarized Developer ID</code> demeli. Proje tümüyle açık kaynaktır; dilerseniz kendiniz derleyin.</p></details>
       <details><summary>Şifremi ne için soruyor?</summary><p>Yalnızca <code>/etc/hosts</code> düzenlemeleri için (<code>127.0.0.1 projem.local</code> satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir.</p></details>

@@ -811,6 +811,7 @@ footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
     </div>
     <div class="faq">
       <details><summary>Is this a XAMPP replacement for Mac?</summary><p>Yes — that's the design goal. It covers the XAMPP/MAMP workflow and adds Nginx, PostgreSQL, Redis, Node.js, Python and ASP.NET Core. Unlike XAMPP it manages your existing Homebrew services instead of bundling binaries.</p></details>
+      <p style="margin-top:22px"><a href="guides/local-https/" style="color:var(--amber-hi)">How local HTTPS works →</a></p>
       <details><summary>Will it fight my existing Homebrew setup?</summary><p>No — it <i>is</i> your Homebrew setup. BRAMPP never installs a parallel copy of anything.</p></details>
       <details><summary>Is the app signed and notarized?</summary><p>Yes. Releases are signed with a Developer ID Application certificate and notarized by Apple; the ticket is stapled to both the DMG and the app, so it verifies even if the first launch is offline. Run <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> and you should see <code>source=Notarized Developer ID</code>. The project is fully open source — build it yourself if you prefer.</p></details>
       <details><summary>What asks for my password?</summary><p>Only <code>/etc/hosts</code> edits (adding <code>127.0.0.1 myproject.local</code>). Each operation asks separately and shows the exact command first.</p></details>

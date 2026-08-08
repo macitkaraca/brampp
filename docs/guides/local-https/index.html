@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Local HTTPS on macOS: mkcert, trust stores and the .local trap</title>
+<meta name="description" content="Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/guides/local-https/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/guides/local-https/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/guides/local-https/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/guides/local-https/">
+<link rel="icon" type="image/png" href="../../assets/icon-256.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Local HTTPS on macOS: mkcert, trust stores and the .local trap">
+<meta property="og:description" content="Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/guides/local-https/">
+<meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Local HTTPS on macOS: mkcert, trust stores and the .local trap",
+ "description": "Why a self-signed certificate is not enough for local development on macOS, how a local certificate authority fixes it, and why .test beats .local.",
+ "inLanguage": "en",
+ "datePublished": "2026-08-08",
+ "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
+ "author": {
+  "@type": "Person",
+  "name": "Macit Karaca",
+  "url": "https://github.com/macitkaraca"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "Karaca Teknoloji"
+ },
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/guides/local-https/"
+}
+</script>
+<style>
+/* ══ tokens ═════════════════════════════════════════════ */
+:root{
+  --bg:#0b1526; --bg-2:#122540; --bg-3:#0e1c31;
+  --fg:#eaf1fa; --fg-2:#c6d5e8; --muted:#9db1c9; --dim:#7d92ad;
+  --amber:#f59e0b; --amber-lo:#d97706; --amber-hi:#fbbf24;
+  --card:#13233c; --card-2:#101d33; --panel:#0f1e35;
+  --line:#22365a; --line-soft:#1b2d4c; --line-hair:rgba(120,155,200,.14);
+  --green:#34d399;
+  --r-xs:9px; --r-sm:12px; --r-md:16px; --r-lg:22px;
+  --shadow-lg:0 28px 64px -28px rgba(0,0,0,.85);
+  --shadow-md:0 16px 36px -22px rgba(0,0,0,.9);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
+  --maxw:1120px;
+  --pad:26px;
+  --bar-h:66px;
+}
+
+/* ══ base ═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar-h) + 16px);-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  font-size:clamp(16px,0.98rem + 0.12vw,17.5px);
+  line-height:1.7;
+  color:var(--fg);
+  background:var(--bg);
+  background-image:
+    radial-gradient(1200px 680px at 50% -220px,rgba(245,158,11,.15),transparent 68%),
+    radial-gradient(900px 520px at 88% 12%,rgba(56,110,180,.14),transparent 70%),
+    linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 58%,var(--bg-3) 100%);
+  background-attachment:scroll,scroll,fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--amber);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--amber-hi)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{
+  background:rgba(6,14,27,.75);border:1px solid rgba(90,130,180,.22);
+  padding:1.5px 7px;border-radius:7px;color:var(--amber-hi);white-space:nowrap;
+}
+:focus-visible{outline:2.5px solid var(--amber-hi);outline-offset:3px;border-radius:8px}
+::selection{background:rgba(245,158,11,.28)}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);width:100%}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ══ fixed top bar ══════════════════════════════════════ */
+/* Bölüm menüsü — sabit çubuğun ortasında. Dar ekranda gizlenir: indirme ve
+   dil düğmeleri her zaman erişilebilir kalmalı, menü ikincil. */
+.navlinks{display:flex;align-items:center;gap:2px;flex:1;justify-content:center;
+  overflow:hidden}
+.navlinks a{color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:500;
+  padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+.navlinks a:hover{color:var(--fg);background:rgba(255,255,255,.07)}
+.navlinks a[aria-current="true"]{color:var(--amber-hi);background:rgba(245,158,11,.12)}
+@media (max-width:900px){.navlinks{display:none}}
+.topbar{
+  position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:var(--bar-h);
+  padding:12px max(14px,calc((100vw - var(--maxw))/2 + var(--pad)));
+  pointer-events:none;
+}
+/* Marka bloğu — solda logo + isim. Çubuğun kimliğini taşır, kaydırmadan
+   bağımsız her zaman görünür. */
+.brandmark{display:flex;align-items:center;gap:9px;text-decoration:none;flex:0 0 auto}
+.brandmark img{width:26px;height:26px;border-radius:6px;display:block}
+.brandmark b{font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--fg)}
+.brandmark b i{font-style:normal;color:var(--amber-hi)}
+.barcta{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+@media (max-width:620px){.brandmark b{display:none}}
+.topbar::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:rgba(11,21,38,.78);
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);
+  backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid var(--line-soft);
+  opacity:0;transition:opacity .22s ease;
+}
+/* Zemin yalnızca kaydırınca gelir: hero'nun üstünde kutu görünmesin, ama
+   içerik menünün altından geçerken yazılar okunaksız kalmasın. */
+.topbar.is-scrolled::before{opacity:1}
+@media (prefers-reduced-motion:reduce){.topbar::before{transition:none}}
+.topbar>*{pointer-events:auto;min-width:0}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;flex:0 1 auto;
+  font-size:13.5px;font-weight:600;line-height:1;letter-spacing:.1px;
+  text-decoration:none;white-space:nowrap;
+  padding:10px 16px;border-radius:999px;
+  border:1px solid rgba(130,165,210,.3);
+  background:rgba(11,21,38,.7);color:var(--fg);
+  -webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px);
+  box-shadow:0 8px 26px -12px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:border-color .2s ease,background .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.pill:hover{color:var(--fg);border-color:rgba(245,158,11,.6);transform:translateY(-1px)}
+.pill-dl{
+  background:linear-gradient(135deg,rgba(217,119,6,.96),rgba(245,158,11,.96));
+  color:#1b1206;border-color:rgba(251,191,36,.55);
+  box-shadow:0 10px 28px -14px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.pill-dl:hover{color:#1b1206;border-color:rgba(255,255,255,.6)}
+.pill .ov{overflow:hidden;text-overflow:ellipsis}
+.sticky-dl{
+  opacity:0;visibility:hidden;transform:translateY(-14px) scale(.95);
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear .32s;
+}
+.sticky-dl.is-visible{
+  opacity:1;visibility:visible;transform:none;
+  transition:opacity .32s ease,transform .32s ease,visibility 0s linear 0s;
+}
+
+/* ══ hero ═══════════════════════════════════════════════ */
+.hero{padding-top:calc(var(--bar-h) + 42px);padding-bottom:6px;text-align:center}
+.hero-icon{
+  width:116px;height:116px;margin-inline:auto;border-radius:26px;
+  filter:drop-shadow(0 20px 42px rgba(0,0,0,.62)) drop-shadow(0 0 34px rgba(245,158,11,.18));
+}
+h1{
+  font-size:clamp(44px,8.4vw,74px);line-height:1.0;font-weight:800;
+  letter-spacing:-.035em;margin:24px 0 0;
+}
+h1 .amber{
+  background:linear-gradient(112deg,var(--amber-hi) 8%,var(--amber-lo) 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.h1sub{
+  display:block;margin-top:16px;
+  font-size:clamp(17px,2.5vw,24px);line-height:1.35;font-weight:600;
+  letter-spacing:-.015em;color:var(--fg-2);
+}
+.tag{
+  font-size:clamp(16.5px,1.9vw,19.5px);line-height:1.62;color:var(--muted);
+  max-width:660px;margin:20px auto 0;
+}
+.tag b{color:var(--fg);font-weight:600}
+.cta{margin-top:36px;display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:15px 30px;border-radius:14px;text-decoration:none;
+  font-weight:650;font-size:16.5px;line-height:1.2;white-space:nowrap;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber) 60%,var(--amber-hi));
+  color:#1b1206;
+  box-shadow:0 16px 36px -16px rgba(245,158,11,.9),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-primary:hover{color:#1b1206;transform:translateY(-2px);box-shadow:0 24px 46px -16px rgba(245,158,11,1),inset 0 1px 0 rgba(255,255,255,.34)}
+.btn-ghost{
+  border:1.5px solid rgba(120,160,210,.32);color:var(--fg);
+  background:rgba(19,35,60,.55);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.btn-ghost:hover{color:var(--fg);transform:translateY(-2px);border-color:rgba(150,190,235,.5);background:rgba(24,43,73,.78)}
+.trust{margin-top:22px;font-size:14px;letter-spacing:.25px;color:var(--dim)}
+.trust b{color:var(--fg-2);font-weight:650}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:32px auto 0;max-width:740px}
+.chips span{
+  background:rgba(19,35,60,.6);border:1px solid var(--line-soft);border-radius:10px;
+  padding:6px 12px;font-size:13px;line-height:1.2;color:var(--muted);
+}
+.chips b{color:var(--amber);font-weight:750}
+
+/* ══ proof shot ═════════════════════════════════════════ */
+.proof{padding-top:48px}
+.frame{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--shadow-lg);
+}
+.frame-bar{
+  display:flex;gap:7px;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,#13233c,#0e1c31);
+}
+.frame-bar i{width:11px;height:11px;border-radius:50%;background:#2b4166;display:block}
+.frame-bar i:first-child{background:#3f5a80}
+.proof-cap{text-align:center;color:var(--dim);font-size:14.5px;margin-top:18px}
+
+/* ══ sections ═══════════════════════════════════════════ */
+section{padding-block:clamp(58px,7.2vw,100px)}
+.band{
+  background:linear-gradient(180deg,rgba(9,17,31,.5),rgba(9,17,31,.16));
+  border-top:1px solid var(--line-hair);border-bottom:1px solid var(--line-hair);
+}
+.shead{text-align:center;max-width:760px;margin-inline:auto}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:750;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+  padding:5px 12px;border-radius:999px;
+  border:1px solid rgba(245,158,11,.26);background:rgba(245,158,11,.07);
+  margin-bottom:16px;
+}
+h2{font-size:clamp(27px,3.6vw,41px);line-height:1.14;letter-spacing:-.028em;font-weight:750;margin:0}
+.lede{color:var(--muted);font-size:clamp(16px,1.6vw,17.5px);line-height:1.68;margin-top:16px}
+.lede b{color:var(--fg);font-weight:600}
+.sub-h{
+  font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);text-align:center;margin:40px 0 16px;
+}
+
+/* ══ problem / solution ═════════════════════════════════ */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:38px}
+.vs-card{
+  border-radius:var(--r-md);padding:26px 24px;
+  border:1px solid var(--line-soft);
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.vs-card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+.vs-card p{color:var(--muted);font-size:15.5px;line-height:1.68}
+.vs-card .kicker{
+  display:block;font-size:11.5px;font-weight:750;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.vs-old .kicker{color:var(--dim)}
+.vs-new{border-color:rgba(245,158,11,.3);background:linear-gradient(165deg,rgba(37,32,18,.9),var(--card-2))}
+.vs-new .kicker{color:var(--amber)}
+
+/* ══ tables ═════════════════════════════════════════════ */
+.tscroll{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border-radius:var(--r-md);border:1px solid var(--line-soft);
+  background:var(--card);box-shadow:var(--shadow-md);
+}
+table{width:100%;border-collapse:collapse;min-width:580px}
+th,td{padding:15px 18px;text-align:left;font-size:15px;line-height:1.55;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child th,tr:last-child td{border-bottom:0}
+thead th{
+  background:var(--panel);font-weight:700;font-size:13.5px;
+  letter-spacing:.05em;color:var(--fg);white-space:nowrap;
+}
+tbody th{font-weight:600;color:var(--fg);width:24%}
+td{color:var(--muted)}
+td.win{color:var(--fg);font-weight:600;background:rgba(245,158,11,.055)}
+.cmp thead th:last-child{color:var(--amber-hi);background:rgba(245,158,11,.09)}
+
+/* ══ feature cards ══════════════════════════════════════ */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:40px}
+.card{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:26px 24px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(150,190,235,.34);box-shadow:0 22px 40px -26px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.06)}
+.card .ico{
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  font-size:20px;line-height:1;margin-bottom:15px;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(245,158,11,.24),rgba(245,158,11,.06));
+  border:1px solid rgba(245,158,11,.24);
+}
+.card h3{font-size:17.5px;font-weight:680;letter-spacing:-.012em;margin-bottom:9px}
+.card p{color:var(--muted);font-size:15px;line-height:1.66}
+
+/* ══ tour ═══════════════════════════════════════════════ */
+.tour{display:grid;gap:clamp(40px,5vw,64px);margin-top:44px}
+.tour figure{margin:0}
+.tour .frame{margin-bottom:18px}
+.tour figcaption{color:var(--muted);font-size:15.5px;line-height:1.68;max-width:860px}
+.tour figcaption b{color:var(--fg);display:block;font-size:17.5px;font-weight:680;letter-spacing:-.01em;margin-bottom:6px}
+.tour .n{
+  display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+  color:var(--amber);background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.24);border-radius:999px;
+  padding:4px 11px;margin-bottom:12px;
+}
+
+/* ══ install ════════════════════════════════════════════ */
+.steps{counter-reset:s;list-style:none;margin:40px auto 0;max-width:780px;display:grid;gap:14px}
+.steps li{
+  position:relative;counter-increment:s;
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:19px 24px 19px 68px;color:var(--muted);font-size:15.5px;line-height:1.66;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.steps li::before{
+  content:counter(s);position:absolute;left:22px;top:18px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber-lo),var(--amber-hi));color:#1b1206;
+  font-size:14px;font-weight:750;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px -8px rgba(245,158,11,.9);
+}
+.steps b{color:var(--fg);font-weight:650}
+.gate{
+  max-width:860px;margin:40px auto 0;overflow:hidden;
+  border:1px solid rgba(180,140,50,.34);border-radius:var(--r-md);
+  background:linear-gradient(165deg,#1e1a10,#141f33);
+  box-shadow:var(--shadow-md);
+}
+.gate-h{
+  margin:0;padding:17px 24px;border-bottom:1px solid rgba(180,140,50,.26);
+  font-size:16.5px;font-weight:680;letter-spacing:-.01em;
+  display:flex;gap:10px;align-items:center;
+}
+.gate-b{padding:22px 24px}
+.gate-b>p{color:var(--muted);font-size:15px;line-height:1.68;margin-bottom:18px}
+.gate .tscroll{background:#111e33;border-color:rgba(160,130,60,.24);box-shadow:none}
+.gate table{min-width:540px}
+.gate thead th{background:#17243b}
+.gate tbody th{width:32%;color:var(--amber-hi);font-weight:680}
+.note{
+  margin-top:18px;padding:14px 18px;border-left:3px solid var(--amber);
+  background:rgba(245,158,11,.08);border-radius:0 var(--r-xs) var(--r-xs) 0;
+  color:var(--muted);font-size:14.5px;line-height:1.66;
+}
+.note b{color:var(--fg)}
+
+/* ══ mcp ════════════════════════════════════════════════ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:14px;margin-top:40px}
+.stat{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px 16px;text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.stat .num{
+  display:block;font-size:30px;font-weight:780;line-height:1.15;
+  letter-spacing:-.03em;color:var(--amber-hi);
+}
+.stat .lbl{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}
+.perms{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.perms span{
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px 16px;font-size:13.5px;line-height:1.3;
+  color:var(--muted);background:rgba(19,35,60,.55);
+}
+.perms b{color:var(--fg);font-weight:680}
+.clients{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:16px}
+.client{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);
+  padding:20px;text-align:center;font-weight:650;font-size:15.5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.client small{display:block;color:var(--dim);font-weight:400;font-size:13.5px;margin-top:5px}
+.endpoint{text-align:center;margin-top:26px;color:var(--dim);font-size:14.5px;line-height:1.7}
+
+/* ══ faq ════════════════════════════════════════════════ */
+.faq{max-width:820px;margin:40px auto 0;display:grid;gap:10px}
+details{
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--line-soft);border-radius:var(--r-md);overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+  transition:border-color .2s ease;
+}
+details[open]{border-color:rgba(150,190,235,.32)}
+summary{
+  cursor:pointer;font-weight:650;font-size:16.5px;line-height:1.5;
+  padding:18px 52px 18px 22px;position:relative;list-style:none;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"";position:absolute;right:22px;top:26px;width:9px;height:9px;
+  border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);
+  transform:rotate(45deg);transition:transform .22s ease;
+}
+details[open] summary::after{transform:rotate(-135deg);top:29px}
+details p{color:var(--muted);font-size:15.5px;line-height:1.7;padding:0 22px 20px}
+
+/* ══ footer ═════════════════════════════════════════════ */
+footer{
+  border-top:1px solid var(--line-hair);
+  padding-top:52px;padding-bottom:72px;
+  text-align:center;color:var(--dim);font-size:14.5px;line-height:1.75;
+}
+footer p+p{margin-top:10px}
+footer b{color:var(--fg-2);font-weight:650}
+footer .fine{font-size:13px;color:#8ea3bd;margin-top:16px}
+
+/* ══ responsive ═════════════════════════════════════════ */
+@media (max-width:1200px){:root{--maxw:980px}}
+@media (max-width:900px){
+  :root{--maxw:760px}
+  .vs{grid-template-columns:1fr}
+  .hero{padding-top:calc(var(--bar-h) + 30px)}
+}
+@media (max-width:600px){
+  :root{--pad:18px;--bar-h:58px}
+  .topbar{padding:10px 14px;gap:8px}
+  .pill{font-size:12.5px;padding:9px 13px;gap:6px}
+  .hero{padding-top:calc(var(--bar-h) + 26px)}
+  .hero-icon{width:92px;height:92px;border-radius:21px}
+  h1{letter-spacing:-.03em}
+  .btn{padding:14px 24px;font-size:15.5px;flex:1 1 100%;justify-content:center}
+  .cta{gap:10px}
+  .card,.vs-card{padding:22px 19px}
+  .steps li{padding:17px 19px 17px 60px;font-size:15px}
+  .steps li::before{left:18px}
+  .gate-h,.gate-b{padding-inline:17px}
+  summary{font-size:15.5px;padding:16px 44px 16px 18px}
+  summary::after{right:18px}
+  details p{padding:0 18px 18px;font-size:15px}
+  .frame-bar{padding:10px 13px}
+  .frame-bar i{width:9px;height:9px}
+  .hide-sm{display:none}
+  th,td{padding:13px 15px;font-size:14.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .sticky-dl{transition:none!important}
+}
+
+/* Rehber sayfası — ana sayfadan yalnızca temel kurallar devralınır; hero,
+   karşılaştırma tablosu ve kart stilleri buraya gerekmez. */
+main.guide{max-width:760px;margin:0 auto;padding:calc(var(--bar-h) + 48px) var(--pad) 96px}
+.guide h1{font-size:clamp(30px,4.4vw,42px);line-height:1.15;letter-spacing:-.8px;margin:0 0 14px}
+.guide .lede{font-size:19px;color:var(--muted);line-height:1.65;margin:0 0 10px}
+.guide .meta{font-size:13px;color:var(--dim);margin:0 0 40px}
+.guide h2{font-size:25px;letter-spacing:-.3px;margin:44px 0 12px;scroll-margin-top:90px}
+.guide h3{font-size:19px;margin:28px 0 8px}
+.guide p{margin:0 0 17px}
+.guide h2+p,.guide h3+p{margin-top:0}
+.guide .lede{margin-bottom:12px}
+.guide p,.guide li{font-size:17px;line-height:1.72;color:#cfdcec}
+.guide ul,.guide ol{padding-left:22px;margin:12px 0}
+.guide li{margin:7px 0}
+.guide strong{color:var(--fg)}
+.guide pre{background:#0a1424;border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;overflow-x:auto;margin:16px 0}
+.guide pre code{background:none;padding:0;font-size:13.5px;line-height:1.6;color:#d7e5f7}
+.guide code{background:rgba(255,255,255,.07);border:1px solid var(--line-soft);
+  border-radius:5px;padding:1px 6px;font-size:14.5px}
+.callout{border:1px solid var(--line);border-left:3px solid var(--amber);
+  background:rgba(245,158,11,.06);border-radius:10px;padding:14px 18px;margin:22px 0}
+.callout p{margin:0;font-size:16px}
+.callout b{color:var(--amber-hi)}
+.guide table{width:100%;border-collapse:collapse;margin:18px 0;font-size:15.5px}
+.guide th,.guide td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+.guide th{background:rgba(255,255,255,.04);font-weight:600}
+.backlink{display:inline-block;margin-top:48px;color:var(--muted);text-decoration:none;font-size:15px}
+.backlink:hover{color:var(--amber-hi)}
+</style>
+</head>
+<body>
+<nav class="topbar is-scrolled" aria-label="Site">
+  <a class="brandmark" href="../../" aria-label="BRAMPP"><img src="../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="barcta">
+    <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
+    <a class="pill" href="../../tr/guides/local-https/" hreflang="tr" lang="tr">🇹🇷 Türkçe</a>
+  </div>
+</nav>
+<main class="guide">
+<h1>Local HTTPS on macOS, and why the padlock is harder than it looks</h1>
+<p class="lede">Modern browser APIs refuse to run over plain HTTP. So your local site needs a certificate — but a certificate alone is not enough, and the reason is the part most guides skip.</p>
+<p class="meta">A practical guide for macOS developers · covers mkcert, the system trust store, <code>.local</code> vs <code>.test</code>, and Apache/Nginx differences</p>
+
+<h2>Why you suddenly need HTTPS locally</h2>
+<p>Service workers, the Clipboard API, <code>getUserMedia</code>, Web Crypto's <code>subtle</code> interface, HTTP/2 in practice — all of them are gated behind what browsers call a <strong>secure context</strong>. <code>http://localhost</code> is treated as one by special dispensation. <code>http://myproject.local</code> is not.</p>
+<p>The moment you move off <code>localhost</code> and onto a real hostname — which you do as soon as you have more than one project, or need subdomains, or want cookies scoped the way production scopes them — you need a real certificate.</p>
+
+<h2>A self-signed certificate is not the answer</h2>
+<p>The obvious move is <code>openssl req -x509</code>. It produces a certificate, the server accepts it, and the browser rejects it anyway.</p>
+<p>The reason is that browsers do not evaluate certificates on their own merits. They walk a <strong>chain of trust</strong>: this certificate was signed by that authority, which was signed by another, up to a root the operating system already trusts. A self-signed certificate is its own root, and nothing trusts it.</p>
+<p>You can click through the warning. You should not build a habit of it — and service workers will still refuse to register, because a click-through is not the same as a valid chain.</p>
+
+<h2>What actually works: your own certificate authority</h2>
+<p>The fix is to become a certificate authority for your own machine. Create one root certificate, tell macOS to trust it, and then issue as many site certificates as you like from it. Each one chains back to a root the system already accepts, so browsers stop complaining.</p>
+<p><a href="https://github.com/FiloSottile/mkcert">mkcert</a> does exactly this and nothing more. Its root lives in one place:</p>
+<pre><code>$ mkcert -CAROOT
+/Users/you/Library/Application Support/mkcert
+
+$ ls "$(mkcert -CAROOT)"
+rootCA-key.pem    rootCA.pem</code></pre>
+<p><code>rootCA.pem</code> is the public certificate that gets installed into the system trust store. <code>rootCA-key.pem</code> is the private key that signs your site certificates.</p>
+
+<div class="callout"><p><b>Treat that private key like a password.</b> Anyone holding <code>rootCA-key.pem</code> can mint a certificate for any hostname — <code>google.com</code> included — that your Mac will trust without a murmur. It never leaves your machine, never goes in a repository, and never gets copied to a second computer "to save time".</p></div>
+
+<h2>Why macOS asks for your password once</h2>
+<p>Installing the root writes into the <strong>System keychain</strong>, not your login keychain. That is a privileged store, so macOS prompts for an administrator password exactly once, when the CA is first installed. Every certificate issued afterwards is signed locally and needs no prompt at all.</p>
+<p>If you are ever asked repeatedly, something is re-installing the CA on every run — that is a bug in the tooling, not normal behaviour.</p>
+
+<h2>The <code>.local</code> trap</h2>
+<p>Most tutorials tell you to use <code>myproject.local</code>. It usually works on macOS. It is also the one choice with a standards problem underneath it.</p>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> reserves <code>.local</code> for Multicast DNS — Bonjour, the mechanism that finds printers and AirPlay targets on your network. On macOS, an entry in <code>/etc/hosts</code> does take precedence, so it resolves:</p>
+<pre><code>$ ping -c1 myproject.local
+PING myproject.local (127.0.0.1): 56 data bytes</code></pre>
+<p>But you are borrowing a namespace that belongs to something else. On other operating systems, inside containers, or on VPNs that intercept mDNS, the same hostname can resolve slowly or not at all.</p>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6761">RFC 6761</a> reserves <code>.test</code> for exactly this purpose: names that are guaranteed never to be delegated on the public internet, intended for testing. It has no second meaning, no multicast responder listening for it, and no chance of colliding with a real domain you buy later.</p>
+<div class="callout"><p><b>Prefer <code>.test</code> for new projects.</b> <code>myproject.test</code> behaves identically on macOS and avoids the ambiguity everywhere else. Keep <code>.local</code> if an existing project already depends on it — there is no urgency to migrate, only a reason not to start there.</p></div>
+
+<h2>The three pieces that have to line up</h2>
+<p>A working local HTTPS setup is not one thing but three, and a failure in any of them looks the same from the browser:</p>
+<table>
+<thead><tr><th>Piece</th><th>What it does</th><th>How it fails</th></tr></thead>
+<tbody>
+<tr><td><code>/etc/hosts</code></td><td>Points the hostname at 127.0.0.1</td><td>Browser cannot reach the site at all</td></tr>
+<tr><td>Certificate</td><td>Proves the server is that hostname</td><td>Warning page, or <code>ERR_CERT_COMMON_NAME_INVALID</code></td></tr>
+<tr><td>Virtual host</td><td>Tells the server which files to serve on 443</td><td>Wrong site, or the default page</td></tr>
+</tbody>
+</table>
+<p>The certificate has to name the host exactly. A certificate for <code>myproject.test</code> does not cover <code>api.myproject.test</code> — you need it listed as an additional name, or a wildcard.</p>
+
+<h2>Apache and Nginx do not agree on ports</h2>
+<p>Only one process can hold port 443. If you run both servers — and there are good reasons to, such as keeping a WordPress site on Apache while a Next.js app sits behind Nginx — one of them has to move.</p>
+<p>The usual split is Apache on 80/443 and Nginx on 8080/8443. That works, but it means the Nginx sites carry a port in their URL: <code>https://myapp.test:8443</code>. Certificates do not care about ports, so the same certificate covers both.</p>
+<p>The configuration differs in one detail worth remembering: Apache wants the certificate and key as two separate directives, while Nginx wants the certificate file to already contain the chain.</p>
+<pre><code># Apache
+SSLCertificateFile      /path/myapp.test.pem
+SSLCertificateKeyFile   /path/myapp.test-key.pem
+
+# Nginx
+ssl_certificate         /path/myapp.test.pem;
+ssl_certificate_key     /path/myapp.test-key.pem;</code></pre>
+
+<h2>Reading the failures</h2>
+<h3>The browser still warns after installing the CA</h3>
+<p>Almost always a browser that keeps its own trust store, or one that cached the old certificate. Firefox uses its own store by default — mkcert can install into it, but only if Firefox is present when the CA is installed. Restart the browser before assuming the setup is wrong.</p>
+<h3>It works in Safari but not in Chrome</h3>
+<p>Chrome is stricter about certificate lifetime. Certificates valid for more than 398 days are rejected outright. mkcert stays under that limit; hand-rolled OpenSSL commands with <code>-days 3650</code> do not.</p>
+<h3>Service worker still refuses to register</h3>
+<p>A valid certificate is necessary but not sufficient — the page must also be served over HTTPS, with no mixed content. One <code>http://</code> script tag is enough to drop the page out of secure context.</p>
+
+<h2>Doing it by hand, once</h2>
+<p>For a single project the whole thing is four commands:</p>
+<pre><code>brew install mkcert
+mkcert -install                    # asks for your password, once
+mkcert myapp.test "*.myapp.test"   # writes the .pem pair here
+sudo sh -c 'echo "127.0.0.1 myapp.test" >> /etc/hosts'</code></pre>
+<p>Then point the vhost at the two files and reload the server. The friction is not in doing it once — it is in doing it for the eleventh project, remembering which certificate belongs to which vhost, and keeping the hosts file honest when projects come and go.</p>
+
+<h2>How BRAMPP handles it</h2>
+<p><a href="../../">BRAMPP</a> runs those same steps for you when you add a domain: it creates the vhost, issues the certificate through mkcert, adds the hosts entry, and reloads the right web server. Nothing is hidden — every command it runs is printed in the console as it runs, and the certificates are ordinary mkcert files you can inspect or reuse.</p>
+<p>It is free and open source under the MIT license, and it does not bundle its own Apache, PHP or MySQL: it drives the Homebrew services already on your machine.</p>
+<a class="backlink" href="../../">← Back to BRAMPP</a>
+
+</main>
+</body>
+</html>
