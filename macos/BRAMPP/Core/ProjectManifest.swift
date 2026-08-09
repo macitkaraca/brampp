@@ -118,6 +118,67 @@ struct ProjectManifest: Equatable {
             buildCommand: scalars["build"])
     }
 
+    // MARK: - Alan adı dönüşümü
+
+    /// Bir alan adından manifest üretir.
+    ///
+    /// Belge kökü PROJE KÖKÜNE GÖRE yazılır: mutlak yol başka makinede anlamsız olurdu
+    /// (kullanıcı adı ve Sites klasörü farklı olabilir).
+    static func from(domain: Domain, services: [String] = []) -> ProjectManifest {
+        var relRoot: String?
+        if let custom = domain.customDocumentRoot, !custom.isEmpty {
+            let base = "\(PathConfig.sites)/\(domain.name)"
+            if custom.hasPrefix(base + "/") {
+                relRoot = String(custom.dropFirst(base.count + 1))
+            }
+            // Sites dışındaki mutlak bir kök taşınabilir değil — yazılmaz.
+        }
+        return ProjectManifest(
+            name: domain.name,
+            platform: domain.platform.rawValue,
+            webServer: domain.webServer.rawValue,
+            phpVersion: domain.phpVersion?.rawValue,
+            documentRoot: relRoot,
+            port: domain.port,
+            ssl: domain.sslEnabled,
+            services: services,
+            runCommand: domain.appCommand,
+            buildCommand: domain.buildCommand)
+    }
+
+    /// Manifesti var olan bir alan adına uygular; DEĞİŞENLERİ döndürür.
+    ///
+    /// Ad değiştirilmez: alan adını yeniden adlandırmak vhost, hosts kaydı ve sertifika
+    /// zincirini ilgilendirir ve manifest uygulamanın yan etkisi olmamalı.
+    static func apply(_ m: ProjectManifest, to domain: inout Domain) -> [String] {
+        var changed: [String] = []
+        if let ws = m.webServer, let v = WebServer(rawValue: ws), v != domain.webServer {
+            domain.webServer = v; changed.append("web sunucusu → \(v.displayName)")
+        }
+        if let php = m.phpVersion, let v = PHPVersion(rawValue: php), v != domain.phpVersion {
+            domain.phpVersion = v; changed.append("PHP → \(php)")
+        }
+        if let p = m.port, p != domain.port {
+            domain.port = p; changed.append("port → \(p)")
+        }
+        if m.ssl != domain.sslEnabled {
+            domain.sslEnabled = m.ssl; changed.append("SSL → \(m.ssl ? "açık" : "kapalı")")
+        }
+        if let run = m.runCommand, run != domain.appCommand {
+            domain.appCommand = run; changed.append("çalıştırma komutu")
+        }
+        if let build = m.buildCommand, build != domain.buildCommand {
+            domain.buildCommand = build; changed.append("derleme komutu")
+        }
+        if let rel = m.documentRoot, !rel.isEmpty {
+            let abs = "\(PathConfig.sites)/\(domain.name)/\(rel)"
+            if abs != domain.customDocumentRoot {
+                domain.customDocumentRoot = abs; changed.append("belge kökü → \(rel)")
+            }
+        }
+        return changed
+    }
+
     private static func unquote(_ s: String) -> String {
         var v = s
         // Satır sonu yorumu: `port: 3000  # geliştirme`

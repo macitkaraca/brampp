@@ -694,6 +694,164 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(cf.brewName, "cloudflared")
     }
 
+
+    // MARK: - Framework algılama
+
+    /// `public/` klasörünün varlığı TEK BAŞINA belge kökünü değiştirmek için yeterli
+    /// değil. Laravel'de kök gerçekten public/ ama düz bir PHP sitesinde public/ yalnızca
+    /// varlık klasörü olabilir — kökü oraya taşımak siteyi bozar. Bu makinedeki gerçek
+    /// projelerin çoğunda public/ var ve hiçbiri Laravel değil.
+    func testFramework_PublicFolderAloneDoesNotMoveDocumentRoot() {
+        let düzPHP = FrameworkDetector.detect(
+            files: ["index.php", "public", "composer.json"],
+            composerJSON: "{\"require\":{\"php\":\"^8.2\"}}")
+        XCTAssertEqual(düzPHP?.platform, .php)
+        XCTAssertNil(düzPHP?.documentRootSuffix, "framework tanınmadan kök taşınmamalı")
+
+        let laravel = FrameworkDetector.detect(files: ["artisan", "composer.json", "public"])
+        XCTAssertEqual(laravel?.framework, "Laravel")
+        XCTAssertEqual(laravel?.documentRootSuffix, "public", "Laravel'de kök public/")
+        XCTAssertEqual(laravel?.confidence, .certain)
+    }
+
+    func testFramework_RecognisesSignatureFiles() {
+        XCTAssertEqual(FrameworkDetector.detect(files: ["wp-config.php", "wp-content"])?.framework,
+                       "WordPress")
+        XCTAssertEqual(FrameworkDetector.detect(files: ["manage.py"])?.platform, .python)
+        XCTAssertEqual(FrameworkDetector.detect(files: ["Api.csproj", "Program.cs"])?.platform,
+                       .dotnet)
+        // WordPress kökü taşınmaz — index.php köktedir
+        XCTAssertNil(FrameworkDetector.detect(files: ["wp-config.php"])?.documentRootSuffix)
+    }
+
+    /// Node projelerinde ayrım BAĞIMLILIKTAN gelir; package.json'ın varlığı yetmez.
+    func testFramework_TellsNodeFrameworksApartByDependency() {
+        let next = FrameworkDetector.detect(
+            files: ["package.json"], packageJSON: "{\"dependencies\":{\"next\":\"14\"}}")
+        XCTAssertEqual(next?.framework, "Next.js")
+        XCTAssertEqual(next?.runCommand, "npm run dev")
+
+        // Vite/SPA süreç istemez — derleme çıktısı statik sunulur
+        let spa = FrameworkDetector.detect(
+            files: ["package.json", "dist"],
+            packageJSON: "{\"devDependencies\":{\"vite\":\"5\"}}")
+        XCTAssertEqual(spa?.platform, .static_)
+        XCTAssertEqual(spa?.documentRootSuffix, "dist")
+
+        let bilinmeyen = FrameworkDetector.detect(
+            files: ["package.json"], packageJSON: "{\"dependencies\":{\"lodash\":\"4\"}}")
+        XCTAssertEqual(bilinmeyen?.platform, .nodejs)
+        XCTAssertEqual(bilinmeyen?.confidence, .guess, "tahmin olduğu söylenmeli")
+    }
+
+    func testFramework_ReturnsNilWhenNothingRecognisable() {
+        XCTAssertNil(FrameworkDetector.detect(files: ["README.md", ".git"]))
+        XCTAssertNil(FrameworkDetector.detect(files: []))
+    }
+
+    // MARK: - brampp.yml
+
+    /// Yazılan dosya geri okunduğunda AYNI yapılandırmayı vermeli — manifestin tüm
+    /// değeri bu: depoyu başka makinede açınca ortam aynı kurulsun.
+    func testManifest_RoundTrips() {
+        let m = ProjectManifest(
+            name: "shop.test", platform: "php", webServer: "nginx", phpVersion: "8.4",
+            documentRoot: "public", port: nil, ssl: true,
+            services: ["mariadb", "redis"],
+            runCommand: nil, buildCommand: nil)
+        let geri = ProjectManifest.parse(m.yaml())
+        XCTAssertEqual(geri, m)
+    }
+
+    /// Boşluk içeren komutlar tırnaklanmazsa geri okunamaz.
+    func testManifest_QuotesCommandsWithSpaces() {
+        let m = ProjectManifest(
+            name: "api.test", platform: "nodejs", webServer: nil, phpVersion: nil,
+            documentRoot: nil, port: 3001, ssl: false, services: [],
+            runCommand: "npm run dev", buildCommand: "npm run build")
+        let geri = ProjectManifest.parse(m.yaml())
+        XCTAssertEqual(geri?.runCommand, "npm run dev")
+        XCTAssertEqual(geri?.buildCommand, "npm run build")
+        XCTAssertEqual(geri?.port, 3001)
+        XCTAssertFalse(geri?.ssl ?? true)
+    }
+
+    /// SSL belirtilmemişse AÇIK sayılır: BRAMPP alan adlarını böyle kuruyor, sessizce
+    /// HTTP'ye düşmek beklenmedik olurdu.
+    func testManifest_DefaultsSSLOnWhenUnspecified() {
+        let m = ProjectManifest.parse("name: x.test\nplatform: php\n")
+        XCTAssertTrue(m?.ssl ?? false)
+    }
+
+    /// Ad ya da platform yoksa manifest bir işe yaramaz.
+    func testManifest_RejectsIncompleteFiles() {
+        XCTAssertNil(ProjectManifest.parse("platform: php"))
+        XCTAssertNil(ProjectManifest.parse("name: x.test"))
+        XCTAssertNil(ProjectManifest.parse(""))
+        XCTAssertNil(ProjectManifest.parse("# yalnızca yorum"))
+    }
+
+    /// Elle yazılmış dosyalar her zaman düzgün değil: yorumlar, satır sonu yorumları,
+    /// akış biçimli liste ve desteklenmeyen iç içe yapı çökertmemeli.
+    func testManifest_SurvivesHandWrittenFiles() {
+        let yaml = """
+        # projemin ayarları
+        name: blog.test   # alan adı
+        platform: php
+        php: "8.3"
+        ssl: yes
+        services: [mariadb, redis]
+        nested:
+          key: value
+        """
+        let m = ProjectManifest.parse(yaml)
+        XCTAssertEqual(m?.name, "blog.test", "satır sonu yorumu ada karışmamalı")
+        XCTAssertEqual(m?.phpVersion, "8.3")
+        XCTAssertTrue(m?.ssl ?? false, "yes de doğru sayılmalı")
+        XCTAssertEqual(m?.services, ["mariadb", "redis"], "akış biçimli liste okunmalı")
+    }
+
+
+    /// Belge kökü PROJE KÖKÜNE GÖRE yazılmalı: mutlak yol başka makinede anlamsız,
+    /// kullanıcı adı ve Sites klasörü farklı olabilir.
+    func testManifest_WritesDocumentRootRelativeToProject() {
+        var d = Domain(name: "shop.test", platform: .php, sslEnabled: true, webServer: .apache)
+        d.customDocumentRoot = "\(PathConfig.sites)/shop.test/public"
+        XCTAssertEqual(ProjectManifest.from(domain: d).documentRoot, "public")
+
+        // Sites DIŞINDAKİ bir kök taşınabilir değil — yazılmamalı
+        d.customDocumentRoot = "/Users/baskasi/Projeler/x/public"
+        XCTAssertNil(ProjectManifest.from(domain: d).documentRoot)
+    }
+
+    /// Manifest uygulamak alan adını YENİDEN ADLANDIRMAMALI — ad değişimi vhost,
+    /// hosts kaydı ve sertifika zincirini ilgilendirir, yan etki olamaz.
+    func testManifest_ApplyNeverRenamesTheDomain() {
+        var d = Domain(name: "mevcut.test", platform: .php, sslEnabled: true, webServer: .apache)
+        let m = ProjectManifest(name: "bambaska.test", platform: "php", webServer: "nginx",
+                                phpVersion: nil, documentRoot: nil, port: nil, ssl: true,
+                                services: [], runCommand: nil, buildCommand: nil)
+        _ = ProjectManifest.apply(m, to: &d)
+        XCTAssertEqual(d.name, "mevcut.test", "ad korunmalı")
+        XCTAssertEqual(d.webServer, .nginx, "diğer alanlar uygulanmalı")
+    }
+
+    /// Uygulanan değişiklikler raporlanmalı; aynıysa hiçbir şey yapılmamalı.
+    func testManifest_ReportsOnlyRealChanges() {
+        var d = Domain(name: "x.test", platform: .php, sslEnabled: true, webServer: .apache)
+        let aynı = ProjectManifest(name: "x.test", platform: "php", webServer: "apache",
+                                   phpVersion: nil, documentRoot: nil, port: nil, ssl: true,
+                                   services: [], runCommand: nil, buildCommand: nil)
+        XCTAssertTrue(ProjectManifest.apply(aynı, to: &d).isEmpty,
+                      "değişiklik yoksa boş liste dönmeli")
+
+        let farklı = ProjectManifest(name: "x.test", platform: "php", webServer: "nginx",
+                                     phpVersion: nil, documentRoot: nil, port: nil, ssl: false,
+                                     services: [], runCommand: nil, buildCommand: nil)
+        let changes = ProjectManifest.apply(farklı, to: &d)
+        XCTAssertEqual(changes.count, 2, "web sunucusu ve SSL değişti: \(changes)")
+    }
+
     // MARK: - Proje eylemleri
 
     /// CLI kurulu OLMAYABİLİR ama editör duruyordur — bu makinede `code` komutu yok,
