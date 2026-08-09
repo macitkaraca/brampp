@@ -463,6 +463,17 @@ Issue ve PR'lar açıktır.
 - **Pull request:** `macos/BRAMPP.xcodeproj` dosyasını Xcode'da açın; uygulama klasörüne eklenen yeni `.swift` dosyaları otomatik derlenir. Kod yorumları Türkçedir, arayüz metinleri `Localizer` kataloğundan geçer — iki dili birden ekleyin, yoksa uygulama anahtarın kendisini gösterir.
 - **Özellik fikri:** önce bir issue açın. Projenin geçmemeye çalıştığı çizgi şu: "Homebrew servislerini yönetir". "Kendi paket yöneticisi olur" menüde yok.
 
+## Platformlar
+
+BRAMPP bugün macOS için var. Windows ve Linux tasarım aşamasında — geliştirilmiyor.
+Her birinin önce vermesi gereken kararlar [`windows/README.md`](windows/README.md) ve
+[`linux/README.md`](linux/README.md) dosyalarında.
+
+Üçü arasında paylaşılan kod yok. Onları bir arada tutan şey [`spec/`](spec/) altında
+yazılı: [MCP araç sözleşmesi](spec/mcp-tools.md),
+[`brampp.yml` manifesti](spec/brampp-yml.md) ve
+[güncelleme manifesti](spec/update-manifest.md). Bir yapı, bunları uyguladığında BRAMPP'tır.
+
 ## Lisans
 
 [MIT](LICENSE) © 2023–2026 Karaca Teknoloji

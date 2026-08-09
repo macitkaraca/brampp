@@ -461,6 +461,17 @@ Issues and PRs welcome.
 - **Pull requests:** open the Xcode project at `macos/BRAMPP.xcodeproj`; new `.swift` files inside the app folder are picked up automatically. Code comments in the codebase are Turkish, UI strings go through the `Localizer` catalog in both languages — add both, or the app falls back to the key.
 - **Feature ideas:** open an issue first. "It manages Homebrew services" is the line the project tries not to cross; "it becomes its own package manager" is not on the menu.
 
+## Platforms
+
+BRAMPP ships for macOS today. Windows and Linux are at the design stage, not in progress —
+see [`windows/README.md`](windows/README.md) and [`linux/README.md`](linux/README.md) for
+the decisions each one has to make first.
+
+Nothing compiles across the three. What holds them together is written down in
+[`spec/`](spec/): the [MCP tool contract](spec/mcp-tools.md), the
+[`brampp.yml` manifest](spec/brampp-yml.md) and the
+[update manifest](spec/update-manifest.md). A build is BRAMPP when it implements those.
+
 ## License
 
 [MIT](LICENSE) © 2023–2026 Karaca Teknoloji

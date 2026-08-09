@@ -1,0 +1,10 @@
+{
+  "version": null,
+  "channel": "stable",
+  "published": null,
+  "release": null,
+  "mandatory": false,
+  "blockedVersions": [],
+  "downloads": {},
+  "note": "No windows build has been released yet. See windows/README.md in the repository."
+}
