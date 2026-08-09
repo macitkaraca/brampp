@@ -152,7 +152,7 @@
       "name": "Can AI tools like Claude control BRAMPP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 22 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs, Sharing) let you grant no access, read or read + write — tools you disallow never appear to the client. It binds to 127.0.0.1 only and is off by default."
+        "text": "Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 23 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs, Sharing) let you grant no access, read or read + write — tools you disallow never appear to the client. It binds to 127.0.0.1 only and is off by default."
       }
     },
     {
@@ -746,7 +746,7 @@ pre code{white-space:pre;overflow-wrap:normal}
           <tr><th scope="row">Databases</th><td>XAMPP: MariaDB · MAMP: MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
           <tr><th scope="row">Local HTTPS</th><td>Manual pain</td><td class="win">Automatic via mkcert</td></tr>
           <tr><th scope="row"><code>brew upgrade</code> friendly</th><td>Not really</td><td class="win">That's the whole point</td></tr>
-          <tr><th scope="row">AI assistant access</th><td>—</td><td class="win">Built-in MCP server, 22 tools</td></tr>
+          <tr><th scope="row">AI assistant access</th><td>—</td><td class="win">Built-in MCP server, 23 tools</td></tr>
           <tr><th scope="row">End-to-end arm64</th><td>Varies by product and installer</td><td class="win">The app <i>and</i> every service it manages, natively</td></tr>
           <tr><th scope="row">Price</th><td>XAMPP free · MAMP PRO paid</td><td class="win">Free, MIT, open source</td></tr>
         </tbody>
@@ -868,7 +868,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <details><summary>Can BRAMPP run my Node.js / Python / ASP.NET app?</summary><p>Yes — each app runs under a zero-dependency supervisor with auto-restart and combined logs, behind Apache or Nginx as a reverse proxy (WebSocket, SSE, HTTP/2 and gRPC options included). You can declare service dependencies (e.g. MariaDB + Redis) that start automatically first.</p></details>
       <details><summary>Which PHP versions are supported?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 and 8.5 side by side — each domain can pin its own version, and the extension manager works per version.</p></details>
       <details><summary>Which Macs does BRAMPP run on?</summary><p>Apple Silicon only. The shipped build is a native <code>arm64</code> binary and requires macOS 14 (Sonoma) or newer — Intel Macs are not supported. The Homebrew prefix (<code>/opt/homebrew</code>) is detected automatically.</p></details>
-      <details><summary>Can AI tools like Claude control BRAMPP?</summary><p>Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 22 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs, Sharing) let you grant <i>no access</i>, <i>read</i> or <i>read + write</i> — tools you disallow never appear to the client. It binds to <code>127.0.0.1</code> only and is off by default.</p></details>
+      <details><summary>Can AI tools like Claude control BRAMPP?</summary><p>Yes — enable the built-in MCP server (Settings → MCP) and any MCP-capable client gets 23 tools: list/create/update domains, start/stop app servers, service status and start/stop/restart, read BRAMPP and per-domain logs, list/create databases, run read-only SQL, and dump &amp; restore with mysqldump/pg_dump. Per-area permissions (Domains, Services, Databases, Logs, Sharing) let you grant <i>no access</i>, <i>read</i> or <i>read + write</i> — tools you disallow never appear to the client. It binds to <code>127.0.0.1</code> only and is off by default.</p></details>
       <details><summary>How do I uninstall?</summary><p>Quit BRAMPP, delete the app and remove <code>~/Library/Application Support/BRAMPP</code>. Your Homebrew services and site folders remain untouched.</p></details>
     </div>
   </div>

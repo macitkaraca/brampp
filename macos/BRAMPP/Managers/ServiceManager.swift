@@ -2083,6 +2083,11 @@ class ServiceManager: BaseManager {
                 }
             }
             return nil
+        case .sharing:
+            // brew opt yolu değil doğrudan bin: cloudflared tek bir ikili olarak kurulur
+            // ve sürüm satırı "cloudflared version 2026.7.3 (…)" biçimindedir.
+            let bin = "\(PathConfig.brewBin)/\(svc.brewName ?? svc.id)"
+            return await Shell.getVersionAsync(bin)
         default: return nil
         }
     }

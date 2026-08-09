@@ -401,5 +401,10 @@ final class TunnelManager: BaseManager {
             }
             _ = FileHelper.remove(path)
         }
+        // Ölü tünellerin logları da kalmasın: hiçbir tünel açık değilken bu dosyalar
+        // yalnızca eski oturumlardan artakalır ve zamanla birikir.
+        for name in FileHelper.contentsOfDirectory(PathConfig.tunnels) where name.hasSuffix(".log") {
+            _ = FileHelper.remove("\(PathConfig.tunnels)/\(name)")
+        }
     }
 }

@@ -14,7 +14,7 @@ Key facts:
 - PHP profiler: drives Xdebug's profile mode from the UI; cachegrind output collected in one folder; trigger mode by default so only marked requests are measured
 - Languages: English and Turkish UI (runtime switchable)
 - MCP server: built-in Model Context Protocol endpoint (http://127.0.0.1:8765/mcp, loopback only,
-  off by default) with 22 tools — AI assistants (Claude Code, Claude Desktop, ChatGPT Codex) can
+  off by default) with 23 tools — AI assistants (Claude Code, Claude Desktop, ChatGPT Codex) can
   create/update domains, start and stop app servers, control services, read BRAMPP and per-domain
   logs, list/create databases, run read-only SQL, and dump or restore databases via mysqldump and
   pg_dump; per-scope permissions (Domains, Services, Databases, Logs, Sharing) grant no access / read /
@@ -37,7 +37,7 @@ for example `/features/` and `/tr/features/`. The two versions are linked with h
 - [Ana sayfa (Türkçe)](https://macitkaraca.github.io/brampp/tr/): the same page in Turkish
 - [Features](https://macitkaraca.github.io/brampp/features/): the full reference — service control, local domains, HTTPS, databases, PHP extensions, app-server supervisor, backups
 - [Install](https://macitkaraca.github.io/brampp/install/): requirements, the four setup steps, signature verification, building from source, troubleshooting
-- [MCP server](https://macitkaraca.github.io/brampp/mcp/): all 22 tools by area, the permission model, and how to connect a client
+- [MCP server](https://macitkaraca.github.io/brampp/mcp/): all 23 tools by area, the permission model, and how to connect a client
 - [Comparison](https://macitkaraca.github.io/brampp/compare/): bundled stacks, PHP-only tools and containers — including when each of those is the better choice
 - [Changelog](https://macitkaraca.github.io/brampp/changelog/): what each release added, changed and fixed, in plain terms
 - [Guides hub](https://macitkaraca.github.io/brampp/guides/): practical guides on local development ([Türkçe](https://macitkaraca.github.io/brampp/tr/guides/))

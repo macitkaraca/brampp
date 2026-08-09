@@ -80,7 +80,7 @@ If you searched for **"XAMPP alternative for Mac"** or **"MAMP alternative macOS
 | Databases | MySQL | MariaDB/MySQL, PostgreSQL, Redis |
 | Local HTTPS | Manual pain | Automatic via mkcert |
 | `brew upgrade` friendly | 😬 | That's the whole point |
-| AI assistant access | — | Built-in MCP server, 22 tools |
+| AI assistant access | — | Built-in MCP server, 23 tools |
 | End-to-end `arm64` | Varies by product and installer | The app **and** every service it manages, natively |
 | Price | XAMPP free · MAMP PRO paid | Free, MIT, open source |
 
@@ -116,7 +116,7 @@ Being clear about the edges saves you an evening:
 - **Backups** — one click backs up domains, settings, vhosts, SSL certs and php.ini files; partial backups are detected and never silently restored.
 - **PHP profiler** — drives Xdebug's profile mode without hand-editing `php.ini`, collects the cachegrind output in one folder and lists it. Only requests carrying `XDEBUG_TRIGGER` are measured unless you ask for all of them.
 - **Share a site temporarily** — one click opens a Cloudflare Quick Tunnel and returns a public `trycloudflare.com` address, for showing a client or opening the site on a phone. No Cloudflare account; every tunnel closes when BRAMPP quits.
-- **MCP server for AI tools** — a built-in [Model Context Protocol](https://modelcontextprotocol.io) endpoint (127.0.0.1 only, off by default). Claude, Codex and friends get **22 tools** behind **per-scope permissions** — and every change they make appears in the BRAMPP window instantly. → [details](#using-brampp-from-ai-tools-mcp)
+- **MCP server for AI tools** — a built-in [Model Context Protocol](https://modelcontextprotocol.io) endpoint (127.0.0.1 only, off by default). Claude, Codex and friends get **23 tools** behind **per-scope permissions** — and every change they make appears in the BRAMPP window instantly. → [details](#using-brampp-from-ai-tools-mcp)
 - **Menu bar app** — the whole stack lives in your menu bar. Turkish & English UI, live-switchable.
 
 ## Screenshots — a tour of the app
@@ -280,7 +280,7 @@ Before **every** write the existing file is copied to `<file>.bak-YYYYMMDD-HHmms
 
 ### Tools
 
-22 tools, grouped by the scope that governs them:
+23 tools, grouped by the scope that governs them:
 
 **Domains**
 
@@ -302,6 +302,7 @@ Before **every** write the existing file is copied to `<file>.bak-YYYYMMDD-HHmms
 | `service_status` | Status of every service (id, name, state, port, version) | read |
 | `start_service` | Starts a brew service (`httpd`, `nginx`, `mariadb`, `php@8.3`, `redis`…) | write |
 | `stop_service` | Stops a brew service | write |
+| `install_service` | Installs a service from BRAMPP's catalogue through Homebrew. An arbitrary formula name is refused | write |
 | `restart_service` | Restarts a service to apply a config change (expect a short outage) | write |
 
 **Databases**

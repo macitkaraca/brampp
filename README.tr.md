@@ -78,7 +78,7 @@ XAMPP ve MAMP kendi Apache/PHP/MySQL kopyalarını kurar ve makinenizdeki her ş
 | Veritabanları | MySQL | MariaDB/MySQL, PostgreSQL, Redis |
 | Yerel HTTPS | Elle, zahmetli | mkcert ile otomatik |
 | `brew upgrade` uyumu | 😬 | Zaten bütün mesele bu |
-| Yapay zekâ erişimi | — | Yerleşik MCP sunucusu, 22 araç |
+| Yapay zekâ erişimi | — | Yerleşik MCP sunucusu, 23 araç |
 | Uçtan uca `arm64` | Ürüne ve kuruluma göre değişir | Uygulama **ve** yönettiği tüm servisler, native |
 | Fiyat | XAMPP ücretsiz · MAMP PRO ücretli | Ücretsiz, MIT, açık kaynak |
 
@@ -282,7 +282,7 @@ Beceri genel (global) kurulur; yalnızca bu projede değil, her projede geçerli
 
 ### Araçlar
 
-22 araç, bağlı oldukları erişim alanına göre gruplanmış hâlde:
+23 araç, bağlı oldukları erişim alanına göre gruplanmış hâlde:
 
 **Alan Adları**
 
@@ -304,6 +304,7 @@ Beceri genel (global) kurulur; yalnızca bu projede değil, her projede geçerli
 | `service_status` | Tüm servislerin durumu (id, ad, durum, port, sürüm) | okuma |
 | `start_service` | Bir brew servisini başlatır (`httpd`, `nginx`, `mariadb`, `php@8.3`, `redis`…) | yazma |
 | `stop_service` | Bir brew servisini durdurur | yazma |
+| `install_service` | BRAMPP kataloğundaki bir servisi Homebrew ile kurar. Katalog dışı formül adı reddedilir | yazma |
 | `restart_service` | Yapılandırma değişikliğini uygulamak için servisi yeniden başlatır (kısa bir kesinti olur) | yazma |
 
 **Veritabanları**

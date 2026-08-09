@@ -22,7 +22,7 @@
 <div class="callout"><p><b>The cost is a dependency.</b> If the app is closed there is no endpoint. That is worth stating plainly rather than papering over — the fix is to have the app start with your session, not to move the server out of it.</p></div>
 
 <h2>Scoped permissions matter more than tool count</h2>
-<p>"22 tools" tells you nothing about safety. What matters is whether you can decide, per area, what the assistant is allowed to do — and whether that decision is enforced in more than one place.</p>
+<p>"23 tools" tells you nothing about safety. What matters is whether you can decide, per area, what the assistant is allowed to do — and whether that decision is enforced in more than one place.</p>
 <p>A workable model groups tools into scopes and gives each scope three levels:</p>
 <table>
 <thead><tr><th>Scope</th><th>No access</th><th>Read</th><th>Read + write</th></tr></thead>
@@ -60,6 +60,6 @@ SELECT updated_at FROM orders;   -- contains UPDATE as a substring</code></pre>
 <p>The useful content is the part a schema cannot express — take a backup before importing a dump; confirm destructive SQL with the user first; do not guess a database name, list them; if a tool is missing it is a permission setting, not a reason to fall back to the shell.</p>
 
 <h2>How BRAMPP does it</h2>
-<p><a href="{{UP}}">BRAMPP</a> publishes an MCP server from inside the running app on <code>127.0.0.1</code>, off until you enable it. It exposes 22 tools across the five scopes above, with the two-layer permission model and the SQL rules described here, and ships two skill files so the assistant knows how to use them.</p>
+<p><a href="{{UP}}">BRAMPP</a> publishes an MCP server from inside the running app on <code>127.0.0.1</code>, off until you enable it. It exposes 23 tools across the five scopes above, with the two-layer permission model and the SQL rules described here, and ships two skill files so the assistant knows how to use them.</p>
 <p>Free and open source under the MIT license — the server, the permission checks and the SQL filter are all in the repository if you want to see exactly where the boundaries are.</p>
 <a class="backlink" href="{{UP}}">← Back to BRAMPP</a>

@@ -669,6 +669,31 @@ final class BRAMPPTests: XCTestCase {
 
 
 
+
+    /// Yeni bir servis KATEGORİSİ eklendiğinde kurulu denetimi de eklenmezse servis
+    /// hiçbir zaman "kurulu" görünemez. cloudflared tam olarak böyle kaybolmuştu:
+    /// `.sharing` kategorisi `getInstalledVersion` içindeki `default: return nil`
+    /// dalına düşüyordu. Bu test, kurulu denetimi olan kategorileri kayıt altına alır.
+    func testServiceCatalog_RuntimeCategoriesHaveInstallDetection() {
+        let runtimeCategories = Set(
+            Service.defaultServices.filter { $0.type == .runtime }.map(\.category))
+        // getInstalledVersion içinde açıkça ele alınan kategoriler
+        let handled: Set<ServiceCategory> = [.nodejs, .python, .dotnet, .sharing]
+        let missing = runtimeCategories.subtracting(handled)
+        XCTAssertTrue(missing.isEmpty,
+                      "bu kategorilerin kurulu denetimi yok, hep 'kurulu değil' görünürler: \(missing)")
+    }
+
+    /// Paylaşım servisi kataloğa gerçekten girmiş olmalı.
+    func testServiceCatalog_ContainsCloudflaredAsRuntime() {
+        guard let cf = Service.defaultServices.first(where: { $0.id == "cloudflared" }) else {
+            return XCTFail("cloudflared katalogda yok")
+        }
+        XCTAssertEqual(cf.type, .runtime, "brew services onu yönetmez — daemon değil")
+        XCTAssertEqual(cf.category, .sharing)
+        XCTAssertEqual(cf.brewName, "cloudflared")
+    }
+
     // MARK: - Proje eylemleri
 
     /// CLI kurulu OLMAYABİLİR ama editör duruyordur — bu makinede `code` komutu yok,

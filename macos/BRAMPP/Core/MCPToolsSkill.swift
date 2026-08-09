@@ -76,7 +76,7 @@ enum MCPToolsSkill {
     | Scope | Read tools | Write tools |
     | --- | --- | --- |
     | Domains | `list_domains` | `create_domain`, `update_domain`, `set_domain_enabled`, `start_app`, `stop_app` |
-    | Services | `service_status`, `health_check`, `app_status` | `start_service`, `stop_service`, `restart_service` |
+    | Services | `service_status`, `health_check`, `app_status` | `start_service`, `stop_service`, `restart_service`, `install_service` |
     | Databases | `db_list`, `db_query` | `db_create`, `db_export`, `db_import` |
     | Logs | `read_log`, `read_domain_log` | — |
     | Sharing | `list_shares` | `start_share`, `stop_share` |
@@ -136,6 +136,21 @@ enum MCPToolsSkill {
 
     > Example: `{"id": "mariadb"}`
 
+    ### `install_service`
+    Installs a service that is not present yet, through Homebrew. — *Services: write*
+
+    | Argument | Type | Description |
+    | --- | --- | --- |
+    | `name` | string | **Required.** Service id from `service_status` |
+
+    Only services in BRAMPP's own catalogue can be installed — an arbitrary formula name is
+    refused, so this is not a way to run `brew install` on anything. The call returns as soon
+    as the install starts; it can take minutes, progress shows in the BRAMPP window, and
+    `service_status` tells you when it is done.
+
+    Reach for this when a tool reports something missing: sharing needs `cloudflared`, catching
+    mail needs `mailpit`.
+
     ### `stop_service`
     Stops a brew service. Same argument as `start_service`. — *Services: write*
 
@@ -189,6 +204,9 @@ enum MCPToolsSkill {
     Database and cache ports (3306, 5432, 6379, 11211, 27017) are refused. A Quick Tunnel
     carries HTTP only, so a database client could not connect through it anyway — and these
     services usually run without a password on a development machine.
+
+    If sharing reports that cloudflared is missing, install it with
+    `install_service name="cloudflared"` and try again.
 
     **Do not call this unless the user asked for it.** It takes a site that was reachable only
     on this machine and puts it on the open internet: anyone holding the address can browse it,

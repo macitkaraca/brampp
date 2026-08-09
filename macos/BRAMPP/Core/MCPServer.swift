@@ -577,6 +577,10 @@ final class MCPServer: ObservableObject {
             "source": property("string", "memory = canlı tampon (son ~300 satır), file = diskteki günlük geçmiş",
                                allowed: ["memory", "file"])
         ]
+        let installProperties: [String: Any] = [
+            "name": property("string", "Servis kimliği — service_status çıktısındaki id "
+                             + "(ör. cloudflared, mailpit, redis, php@8.4)")
+        ]
         let shareProperties: [String: Any] = [
             "name": property("string", "Alan adı, ör. myapp.test")
         ]
@@ -670,6 +674,13 @@ final class MCPServer: ObservableObject {
                      description: "Bir brew servisini durdurur (ör. httpd, nginx, mariadb, php@8.3, redis).",
                      schema: schema(serviceProperties, required: ["id"]),
                      scope: .services, needsWrite: true, destructive: true),
+            ToolSpec("install_service",
+                     title: "Servis Kur",
+                     description: "Kurulu olmayan bir servisi Homebrew ile kurar (brew install). "
+                         + "Dakikalar sürebilir; ilerleme BRAMPP penceresinde görünür. Yalnızca "
+                         + "KATALOGDAKİ servisler kurulabilir — rastgele formül adı kabul edilmez.",
+                     schema: schema(installProperties, required: ["name"]),
+                     scope: .services, needsWrite: true, readOnly: false, destructive: false),
             ToolSpec("restart_service",
                      title: "Servisi Yeniden Başlat",
                      description: "Bir brew servisini yeniden başlatır — yapılandırma değişikliğini uygulamak için (kısa bir kesinti oluşur).",
@@ -825,6 +836,7 @@ final class MCPServer: ObservableObject {
         case "start_service":      return toolControlService(arguments, action: .start)
         case "stop_service":       return toolControlService(arguments, action: .stop)
         case "restart_service":    return toolControlService(arguments, action: .restart)
+        case "install_service":    return await toolInstallService(arguments)
         case "read_log":           return toolReadLog(arguments)
         case "read_domain_log":    return await toolReadDomainLog(arguments)
         case "list_shares":        return await toolListShares()
@@ -1415,6 +1427,27 @@ final class MCPServer: ObservableObject {
         return .text(matched.suffix(count)
             .map { "\($0.formattedTime) \($0.type.icon) \($0.text)" }
             .joined(separator: "\n"))
+    }
+
+    private func toolInstallService(_ arguments: [String: Any]) async -> ToolOutcome {
+        guard let manager = serviceManager else { return .failure("ServiceManager hazır değil") }
+        guard let name = (arguments["name"] as? String)?
+            .trimmingCharacters(in: .whitespaces), !name.isEmpty else {
+            return .invalidParams("'name' zorunlu")
+        }
+        // Yalnızca KATALOGDAKİ servisler: rastgele formül adı kabul etmek, ajanın
+        // makineye istediği paketi kurabilmesi demek olurdu.
+        guard let svc = manager.services.first(where: { $0.id == name }) else {
+            let ids = manager.services.map(\.id).sorted().joined(separator: ", ")
+            return .invalidParams("'\(name)' katalogda yok. Kurulabilir servisler: \(ids)")
+        }
+        guard svc.status == .notInstalled else {
+            return .text("'\(svc.name)' zaten kurulu.")
+        }
+        manager.installService(svc)
+        return .text("'\(svc.name)' kurulumu başlatıldı — brew install \(svc.brewName ?? svc.id).\n\n"
+                     + "Dakikalar sürebilir ve ilerleme BRAMPP penceresinde görünür. "
+                     + "Bitip bitmediğini service_status ile kontrol edin.")
     }
 
     // MARK: - Paylaşım Araçları
