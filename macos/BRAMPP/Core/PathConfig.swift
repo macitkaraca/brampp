@@ -11,6 +11,19 @@ struct PathConfig {
     static let node: String     = "\(brewBin)/node"
     static let dotnet: String   = "\(brewBin)/dotnet"
     static let cloudflared: String = "\(brewBin)/cloudflared"
+
+    /// composer / npm — birden çok yerde bulunabilir; ilk var olan döner, yoksa boş.
+    /// Node sürümleri Homebrew'da `node@22/bin` gibi ayrı öneklerde durabiliyor.
+    static var composer: String { firstExisting(["\(brewBin)/composer", "/usr/local/bin/composer"]) }
+    static var npm: String {
+        firstExisting(["\(brewBin)/npm", "\(brewBase)/opt/node@22/bin/npm",
+                       "\(brewBase)/opt/node@20/bin/npm", "\(brewBase)/opt/node/bin/npm",
+                       "/usr/local/bin/npm"])
+    }
+
+    private static func firstExisting(_ paths: [String]) -> String {
+        paths.first { FileManager.default.isExecutableFile(atPath: $0) } ?? ""
+    }
     static let psql: String     = "\(brewBin)/psql"
 
     // MARK: - Kullanıcı

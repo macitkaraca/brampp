@@ -12,6 +12,8 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
     case cache = "cache"
     /// Paylaşım araçları — brew services yönetmez, yalnızca kurulu olmaları gerekir
     case sharing = "sharing"
+    /// Geliştirme postası — gönderilen e-postaları yakalar, dışarı çıkarmaz
+    case mail = "mail"
 
     var id: String { rawValue }
 
@@ -21,6 +23,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         case .webServer: return "cat.webServer"
         case .database:  return "cat.database"
         case .sharing:   return "cat.sharing"
+        case .mail:      return "cat.mail"
         default:         return nil
         }
     }
@@ -36,6 +39,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         case .database: return "Veritabanı"
         case .cache: return "Cache"
         case .sharing: return "Paylaşım"
+        case .mail: return "Posta"
         }
     }
 
@@ -50,6 +54,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         case .database: return "🗄️"
         case .cache: return "📦"
         case .sharing: return "📡"
+        case .mail: return "✉️"
         }
     }
 }
@@ -214,6 +219,11 @@ extension Service {
         // Cache
         Service(id: "redis", name: "Redis", category: .cache, type: .brewService, port: 6379),
         Service(id: "memcached", name: "Memcached", category: .cache, type: .brewService, port: 11211),
+
+        // Mailpit — geliştirme postası yakalayıcısı. cloudflared'in aksine GERÇEK bir
+        // daemon: sürekli çalışır, `brew services` yönetir. SMTP 1025, web arayüzü 8025.
+        // Port alanına SMTP yazılır; durum denetimi onu dinler.
+        Service(id: "mailpit", name: "Mailpit", category: .mail, type: .brewService, port: 1025),
 
         // Paylaşım — cloudflared bir brew SERVİSİ DEĞİLDİR: kalıcı bir daemon olarak
         // çalışmaz, yalnızca bir tünel açıkken yaşar. Bu yüzden Node/Python gibi

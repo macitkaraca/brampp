@@ -668,6 +668,76 @@ final class BRAMPPTests: XCTestCase {
 
 
 
+
+    // MARK: - Proje eylemleri
+
+    /// CLI kurulu OLMAYABİLİR ama editör duruyordur — bu makinede `code` komutu yok,
+    /// Visual Studio Code.app var. Komuta bakan bir denetim editörü kaçırırdı.
+    func testProjectActions_FindsEditorsByAppBundleNotCLI() {
+        let kurulu = Set(["/Applications/Visual Studio Code.app", "/Applications/PhpStorm.app"])
+        let found = ProjectActions.installedEditors { kurulu.contains($0) }
+        XCTAssertEqual(found.map(\.name).sorted(), ["PhpStorm", "VS Code"])
+
+        XCTAssertTrue(ProjectActions.installedEditors { _ in false }.isEmpty,
+                      "hiçbiri kurulu değilse liste boş olmalı")
+    }
+
+    /// Tıklayınca hata veren menü ögesi, hiç olmamasından kötüdür.
+    func testProjectActions_HidesTasksWithoutTheirFileOrTool() {
+        // composer.json var ama composer kurulu değil
+        XCTAssertTrue(ProjectActions.availableTasks(
+            hasComposerJSON: true, packageJSON: nil,
+            composerInstalled: false, npmInstalled: true).isEmpty)
+
+        // composer kurulu ama projede composer.json yok
+        XCTAssertTrue(ProjectActions.availableTasks(
+            hasComposerJSON: false, packageJSON: nil,
+            composerInstalled: true, npmInstalled: true).isEmpty)
+
+        // ikisi de varsa görünür
+        let t = ProjectActions.availableTasks(
+            hasComposerJSON: true, packageJSON: nil,
+            composerInstalled: true, npmInstalled: false)
+        XCTAssertEqual(t, [.composerInstall, .composerUpdate])
+    }
+
+    /// `npm run dev` yalnızca package.json'da GERÇEKTEN dev script'i varsa gösterilmeli.
+    func testProjectActions_OnlyOffersScriptsThatExist() {
+        let pkg = """
+        {"name":"x","scripts":{"build":"vite build","dev":"vite","lint":"eslint ."}}
+        """
+        let tasks = ProjectActions.availableTasks(
+            hasComposerJSON: false, packageJSON: pkg,
+            composerInstalled: false, npmInstalled: true)
+        XCTAssertEqual(tasks.first, .npmInstall)
+        XCTAssertTrue(tasks.contains(.npmScript("dev")))
+        XCTAssertTrue(tasks.contains(.npmScript("build")))
+        XCTAssertFalse(tasks.contains(.npmScript("serve")), "olmayan script önerilmemeli")
+
+        // scripts bloğu olmayan package.json → yalnızca install
+        let bare = ProjectActions.availableTasks(
+            hasComposerJSON: false, packageJSON: "{\"name\":\"x\"}",
+            composerInstalled: false, npmInstalled: true)
+        XCTAssertEqual(bare, [.npmInstall])
+    }
+
+    /// Yaygın script'ler üste gelmeli — menüde "dev" aranırken dibe düşmesin.
+    func testProjectActions_OrdersCommonScriptsFirst() {
+        let pkg = """
+        {"scripts":{"zebra":"x","build":"x","dev":"x","alpha":"x"}}
+        """
+        let s = ProjectActions.npmScripts(inPackageJSON: pkg)
+        XCTAssertEqual(Array(s.prefix(2)), ["dev", "build"])
+        XCTAssertEqual(Array(s.suffix(2)), ["alpha", "zebra"], "gerisi alfabetik")
+    }
+
+    /// Bozuk package.json çökertmemeli — kullanıcının dosyası her zaman geçerli değil.
+    func testProjectActions_SurvivesMalformedPackageJSON() {
+        XCTAssertTrue(ProjectActions.npmScripts(inPackageJSON: "{ bozuk").isEmpty)
+        XCTAssertTrue(ProjectActions.npmScripts(inPackageJSON: "").isEmpty)
+        XCTAssertTrue(ProjectActions.npmScripts(inPackageJSON: "[]").isEmpty)
+    }
+
     // MARK: - Teşhis
 
     /// "Port kullanımda" demek yetmez — KİMİN kullandığı söylenmeli, çünkü kullanıcının

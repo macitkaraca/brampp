@@ -205,6 +205,57 @@ struct DomainRowView: View {
     @State private var showShare:     Bool   = false
 
     /// Bu alan adı şu anda yayında mı — satırdaki simgenin rengi buna bağlı.
+    /// Proje klasöründe yapılabilecek işler — editörde aç, terminal, composer, npm.
+    ///
+    /// İçerik her açılışta yeniden hesaplanır: kullanıcı arada `composer.json` ekleyebilir
+    /// ya da bir editör kurabilir. Menü boşsa hiç gösterilmez.
+    @ViewBuilder
+    private var projectActionsMenu: some View {
+        let editors = ProjectActions.installedEditors { FileHelper.exists($0) }
+        let site = domain.sitePath
+        let pkgPath = "\(site)/package.json"
+        let tasks = ProjectActions.availableTasks(
+            hasComposerJSON: FileHelper.exists("\(site)/composer.json"),
+            packageJSON: FileHelper.readString(pkgPath),
+            composerInstalled: !PathConfig.composer.isEmpty,
+            npmInstalled: !PathConfig.npm.isEmpty)
+
+        Menu {
+            ForEach(editors) { e in
+                Button(String(format: loc.t("dom.act.openIn"), e.name)) {
+                    NSWorkspace.shared.open(
+                        [URL(fileURLWithPath: site)],
+                        withApplicationAt: URL(fileURLWithPath: "/Applications/\(e.bundleName).app"),
+                        configuration: NSWorkspace.OpenConfiguration())
+                }
+            }
+            Button(loc.t("dom.act.terminal")) {
+                TerminalHelper.runInNewWindow("cd \(Shell.quote(site)) && clear",
+                                              title: domain.name)
+            }
+            if !tasks.isEmpty {
+                Divider()
+                ForEach(tasks) { task in
+                    Button(task.label) {
+                        // Terminalde çalıştırılır: composer/npm dakikalarca sürebilir ve
+                        // çıktısı canlı görünmeli — sessiz bir arka plan işi olarak
+                        // koşturmak kullanıcıyı neyin olduğundan habersiz bırakırdı.
+                        TerminalHelper.runInNewWindow(
+                            "cd \(Shell.quote(site)) && "
+                            + task.command(npmBin: PathConfig.npm, composerBin: PathConfig.composer),
+                            title: "\(domain.name) — \(task.label)")
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "hammer")
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .frame(width: 22)
+        .help(loc.t("dom.act.menu"))
+    }
+
     private var isSharing: Bool {
         tunnelManager.tunnel(for: domain.name)?.isLive == true
     }
@@ -328,6 +379,7 @@ struct DomainRowView: View {
 
                 Button(action: onFinder)   { Image(systemName: "folder") }
                     .help(loc.t("dom.finder"))
+                projectActionsMenu
                 Button(action: onConfig)   { Image(systemName: "doc.text") }
                     .help("VHost Config")
                 Button(action: onEdit)     { Image(systemName: "slider.horizontal.3") }

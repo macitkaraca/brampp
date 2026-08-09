@@ -230,6 +230,15 @@ struct ServiceRowView: View {
                 phpMyAdminButton
                 adminerButton
             }
+            // Mailpit satırında web arayüzü — SMTP portu 1025, arayüz 8025
+            if service.id == "mailpit", service.status == .running {
+                Button(action: {
+                    if let u = URL(string: "http://127.0.0.1:8025") { NSWorkspace.shared.open(u) }
+                }) {
+                    Image(systemName: "envelope.open")
+                }
+                .help(loc.t("svc.mailpit.open"))
+            }
             // PostgreSQL satırlarında pgAdmin + Adminer butonları
             if service.id.hasPrefix("postgresql@") {
                 pgAdminButton
