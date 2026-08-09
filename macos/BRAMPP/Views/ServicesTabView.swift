@@ -23,6 +23,8 @@ struct ServicesTabView: View {
     @State private var sortOption: SortOption = .category
     /// Kurulum log panelini aç/kapat
     @State private var showInstallLog: Bool = false
+
+    @State private var showDiagnostics = false
     /// Kurulu olmayan servisleri de göster (varsayılan: gizli — liste sade kalsın)
     @State private var showInstallable: Bool = false
 
@@ -66,6 +68,9 @@ struct ServicesTabView: View {
         .onChange(of: serviceManager.isInstalling) { _, installing in
             if installing { showInstallLog = true }
         }
+        .sheet(isPresented: $showDiagnostics) {
+            DiagnosticsSheetView()
+        }
         .sheet(isPresented: $showInstallLog) {
             InstallationProgressSheet(serviceManager: serviceManager, isPresented: $showInstallLog)
         }
@@ -86,6 +91,11 @@ struct ServicesTabView: View {
             .labelsHidden()
             .frame(width: 210)
             Divider().frame(height: 20)
+            Button(action: { showDiagnostics = true }) {
+                Label(loc.t("diag.menu"), systemImage: "stethoscope")
+            }
+            .buttonStyle(.bordered)
+            .help(loc.t("diag.sub"))
             Button(action: { serviceManager.startAll() }) {
                 Label(loc.t("menu.startAll"), systemImage: "play.fill")
             }

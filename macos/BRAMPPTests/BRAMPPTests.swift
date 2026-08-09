@@ -667,6 +667,100 @@ final class BRAMPPTests: XCTestCase {
 
 
 
+
+    // MARK: - Teşhis
+
+    /// "Port kullanımda" demek yetmez — KİMİN kullandığı söylenmeli, çünkü kullanıcının
+    /// atacağı adım buna bağlı (durdur / port değiştir).
+    func testDiagnostics_NamesTheProcessHoldingThePort() {
+        let f = Diagnostics.portConflict(port: 80, expectedProcess: "httpd",
+                                         actualProcess: "nginx", actualPID: 4821)
+        XCTAssertEqual(f.level, .fail)
+        XCTAssertTrue(f.detail.contains("nginx"), "çakışan sürecin adı görünmeli")
+        XCTAssertTrue(f.detail.contains("4821"), "PID görünmeli")
+        XCTAssertNotNil(f.remedy, "sorunlu bulguda ne yapılacağı yazmalı")
+    }
+
+    /// `lsof` komut adını tam yolla verebilir; son bileşene bakılmazsa kendi
+    /// sürecimizi yabancı sanardık.
+    func testDiagnostics_MatchesOwnProcessByBasename() {
+        let f = Diagnostics.portConflict(port: 8080, expectedProcess: "nginx",
+                                         actualProcess: "/opt/homebrew/bin/nginx", actualPID: 12)
+        XCTAssertEqual(f.level, .pass)
+        XCTAssertNil(f.remedy)
+    }
+
+    func testDiagnostics_FreePortIsNotAProblem() {
+        let f = Diagnostics.portConflict(port: 443, expectedProcess: "httpd",
+                                         actualProcess: nil, actualPID: nil)
+        XCTAssertEqual(f.level, .pass)
+    }
+
+    /// apachectl ve nginx başarıyı FARKLI yazar ve ikisi de uyarıyı stderr'e döker;
+    /// yalnızca çıkış koduna bakmak yanıltıcı.
+    func testDiagnostics_ReadsBothConfigSuccessPhrasings() {
+        XCTAssertEqual(Diagnostics.configVerdict(server: "Apache",
+                                                 output: "Syntax OK", exitOK: false).level, .pass)
+        XCTAssertEqual(Diagnostics.configVerdict(server: "Nginx",
+                                                 output: "configuration file ... syntax is ok",
+                                                 exitOK: false).level, .pass)
+    }
+
+    /// Apache uyarıyı MODÜL ETİKETİYLE yazar ve "warning" sözcüğü hiç geçmez.
+    /// Yalnızca "warning" arandığında gerçek uyarılar "sorun yok" diye raporlanıyordu —
+    /// bu çıktı makinedeki gerçek `apachectl configtest` sonucundan alındı.
+    func testDiagnostics_DetectsApacheModuleTaggedWarning() {
+        let real = """
+        [Mon Aug 10 01:24:16.530841 2026] [alias:warn] [pid 34128] AH00671: The Alias \
+        directive in /opt/homebrew/etc/httpd/extra/phpmyadmin.conf at line 7 will \
+        probably never match because it overlaps an earlier Alias.
+        Syntax OK
+        """
+        let f = Diagnostics.configVerdict(server: "Apache", output: real, exitOK: true)
+        XCTAssertEqual(f.level, .warn, "modül etiketli uyarı yakalanmalı")
+        XCTAssertNotNil(f.remedy)
+        XCTAssertTrue(f.remedy?.contains("AH00671") == true,
+                      "zaman damgası ve PID atılıp mesaj gösterilmeli: \(f.remedy ?? "-")")
+        XCTAssertFalse(f.remedy?.contains("pid 34128") == true, "PID gürültüsü atılmalı")
+    }
+
+    /// Nginx uyarıyı `nginx: [warn]` biçiminde yazar.
+    func testDiagnostics_DetectsNginxBracketWarning() {
+        let out = """
+        nginx: [warn] conflicting server name "x.test" on 0.0.0.0:8080, ignored
+        nginx: configuration file /opt/homebrew/etc/nginx/nginx.conf test is successful
+        """
+        XCTAssertEqual(Diagnostics.configVerdict(server: "Nginx", output: out, exitOK: true).level,
+                       .warn)
+    }
+
+    /// Uyarı hata değildir: sunucu başlar ama kullanıcı bilmeli.
+    func testDiagnostics_WarningIsNotFailure() {
+        let warn = Diagnostics.configVerdict(
+            server: "Apache",
+            output: "Warning: DocumentRoot does not exist\nSyntax OK", exitOK: true)
+        XCTAssertEqual(warn.level, .warn)
+        XCTAssertNotNil(warn.remedy)
+
+        let bad = Diagnostics.configVerdict(
+            server: "Nginx",
+            output: "nginx: [emerg] unknown directive \"servr\" in /x.conf:3", exitOK: false)
+        XCTAssertEqual(bad.level, .fail)
+    }
+
+    /// Sorunlar üste gelmeli; aynı seviyedekiler özgün sırasını korumalı.
+    func testDiagnostics_SortsProblemsFirstAndStably() {
+        let input = [
+            Diagnostics.Finding(id: "a", title: "A", level: .pass, detail: "", remedy: nil),
+            Diagnostics.Finding(id: "b", title: "B", level: .fail, detail: "", remedy: nil),
+            Diagnostics.Finding(id: "c", title: "C", level: .pass, detail: "", remedy: nil),
+            Diagnostics.Finding(id: "d", title: "D", level: .warn, detail: "", remedy: nil),
+        ]
+        XCTAssertEqual(Diagnostics.sorted(input).map(\.id), ["b", "d", "a", "c"])
+        XCTAssertEqual(Diagnostics.summary(input), .fail)
+        XCTAssertEqual(Diagnostics.summary([input[0], input[2]]), .pass)
+    }
+
     // MARK: - PHP Profilleyici
 
     /// Blok eklenip çıkarıldığında kullanıcının php.ini'si BOZULMAMALI.

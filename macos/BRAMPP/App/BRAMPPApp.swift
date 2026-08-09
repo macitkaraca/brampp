@@ -189,6 +189,8 @@ class AppState: ObservableObject {
     let backupRestoreManager: BackupRestoreManager
     /// Cloudflare Quick Tunnel yönetimi — hiçbir tünel kalıcı değildir
     let tunnelManager: TunnelManager
+    /// Ortam teşhisi — portlar, yapılandırma, sertifika
+    let diagnosticsManager: DiagnosticsManager
     /// Uygulama içi MCP sunucusu — manager'lar bootstrapManagers()'ta enjekte edilir
     let mcpServer = MCPServer()
 
@@ -224,6 +226,7 @@ class AppState: ObservableObject {
         self.phpExtensionManager = PHPExtensionManager(consoleStore: store)
         self.backupRestoreManager = BackupRestoreManager(consoleStore: store)
         self.tunnelManager = TunnelManager(consoleStore: store)
+        self.diagnosticsManager = DiagnosticsManager(consoleStore: store)
 
         serviceManager.objectWillChange
             .receive(on: DispatchQueue.main)

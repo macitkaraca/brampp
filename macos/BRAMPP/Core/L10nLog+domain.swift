@@ -15,6 +15,12 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.diag.clean":
+            ["tr": "Teşhis tamamlandı — sorun bulunamadı",
+             "en": "Diagnostics finished — nothing wrong found"],
+        "log.diag.issues":
+            ["tr": "Teşhis tamamlandı — %@ bulgu var",
+             "en": "Diagnostics finished — %@ findings"],
         "log.tunnel.portRange":
             ["tr": "❌ %@ geçerli bir port değil (1–65535)",
              "en": "❌ %@ is not a valid port (1–65535)"],
