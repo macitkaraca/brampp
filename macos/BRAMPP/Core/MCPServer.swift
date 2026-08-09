@@ -580,6 +580,11 @@ final class MCPServer: ObservableObject {
         let shareProperties: [String: Any] = [
             "name": property("string", "Alan adı, ör. myapp.test")
         ]
+        let startShareProperties: [String: Any] = [
+            "name": property("string", "Paylaşılacak alan adı — 'port' verilmezse zorunlu"),
+            "port": property("integer", "Alan adı yerine YEREL BİR HTTP PORTU paylaş "
+                             + "(ör. 5173 — npm run dev). Veritabanı/önbellek portları reddedilir.")
+        ]
         let dbListProperties: [String: Any] = [
             "engine": property("string", "Varsayılan: mysql", allowed: dbEngines)
         ]
@@ -716,11 +721,12 @@ final class MCPServer: ObservableObject {
                      schema: schema(), scope: .sharing, needsWrite: false),
             ToolSpec("start_share",
                      title: "Paylaşımı Başlat",
-                     description: "Bir alan adı için Cloudflare Quick Tunnel açar ve HERKESE AÇIK bir "
-                         + "https://<rastgele>.trycloudflare.com adresi döndürür. UYARI: bu adresi bilen "
-                         + "herkes siteye erişebilir; sitede kimlik doğrulaması yoksa verileri de görür. "
-                         + "Kullanıcı açıkça istemeden ÇAĞIRMA. Adres geçicidir, paylaşım durunca ölür.",
-                     schema: schema(shareProperties, required: ["name"]),
+                     description: "Bir alan adı (veya 'port' ile yerel bir HTTP portu) için Cloudflare "
+                         + "Quick Tunnel açar ve HERKESE AÇIK bir https://<rastgele>.trycloudflare.com "
+                         + "adresi döndürür. UYARI: bu adresi bilen herkes siteye erişebilir; sitede "
+                         + "kimlik doğrulaması yoksa verileri de görür. Kullanıcı açıkça istemeden "
+                         + "ÇAĞIRMA. Adres geçicidir, paylaşım durunca ölür.",
+                     schema: schema(startShareProperties),
                      scope: .sharing, needsWrite: true, readOnly: false, destructive: false),
             ToolSpec("stop_share",
                      title: "Paylaşımı Durdur",
@@ -1425,6 +1431,34 @@ final class MCPServer: ObservableObject {
 
     private func toolStartShare(_ arguments: [String: Any]) async -> ToolOutcome {
         guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
+
+        // Alan adı yerine düz bir yerel port paylaşımı — BRAMPP'ta kayıtlı olmayan
+        // bir geliştirme sunucusu (npm run dev gibi) için.
+        if let port = arguments["port"] as? Int {
+            guard await manager.startPort(port) else {
+                switch manager.lastPortRefusal {
+                case .outOfRange:
+                    return .invalidParams("'\(port)' geçerli bir port değil (1–65535).")
+                case .reservedService(let name):
+                    return .failure("Port \(port) paylaşılamaz — \(name) servisi. Veritabanı ve "
+                                    + "önbellek servisleri internete açılmaz; Quick Tunnel zaten "
+                                    + "yalnızca HTTP taşır.")
+                case .notListening:
+                    return .failure("Port \(port) dinlenmiyor — paylaşılan adres boş dönerdi. "
+                                    + "Önce sunucuyu başlatın.")
+                case nil:
+                    return .failure("Port \(port) için tünel açılamadı — ayrıntı için read_log.")
+                }
+            }
+            let key = TunnelManager.portKey(port)
+            guard let url = manager.tunnel(for: key)?.publicURL else {
+                return .failure("Tünel açıldı ama adres alınamadı.")
+            }
+            return .text("127.0.0.1:\(port) ARTIK HERKESE AÇIK: \(url)\n\n"
+                         + "Bu adresi bilen herkes erişebilir. Kapatmak için: "
+                         + "stop_share name=\"\(key)\"")
+        }
+
         let domain: Domain
         switch resolveDomain(arguments) {
         case .failure(let outcome): return outcome

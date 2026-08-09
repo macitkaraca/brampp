@@ -665,6 +665,45 @@ final class BRAMPPTests: XCTestCase {
     }
 
 
+
+    // MARK: - Log akışı (LogTailer)
+
+    /// Dosya küçüldüyse tutulan okuma konumu geçersizdir.
+    ///
+    /// `> dosya` ile boşaltma ya da gözetmenin logu yeniden yaratması bu duruma yol açar.
+    /// Fark körlemesine hesaplansaydı `UInt64` taşar ve devasa bir okuma denenirdi.
+    func testLogTailer_DetectsTruncation() {
+        XCTAssertEqual(LogTailer.resolvedOffset(fileSize: 50, currentOffset: 500), 0,
+                       "dosya küçüldü — baştan okunmalı")
+        XCTAssertEqual(LogTailer.resolvedOffset(fileSize: 500, currentOffset: 500), 500,
+                       "değişmemişse konum korunur")
+        XCTAssertEqual(LogTailer.resolvedOffset(fileSize: 900, currentOffset: 500), 500,
+                       "büyümüşse konumdan devam edilir")
+        XCTAssertEqual(LogTailer.resolvedOffset(fileSize: 0, currentOffset: 0), 0)
+    }
+
+    /// Sonsuza kadar biriken log pencereyi şişirir; son N satır tutulur.
+    func testLogTailer_CapsLineCount() {
+        let text = (1...100).map { "satır \($0)" }.joined(separator: "\n")
+        let capped = LogTailer.capped(text, maxLines: 10)
+        let lines = capped.split(separator: "\n")
+        XCTAssertEqual(lines.count, 10)
+        XCTAssertEqual(lines.first, "satır 91", "en ESKİ değil en YENİ satırlar kalmalı")
+        XCTAssertEqual(lines.last, "satır 100")
+
+        // Tavanın altındaki metin olduğu gibi kalır
+        XCTAssertEqual(LogTailer.capped("a\nb", maxLines: 10), "a\nb")
+        XCTAssertEqual(LogTailer.capped("a\nb", maxLines: 0), "")
+    }
+
+    /// Boş satırlar korunmalı: log çıktısındaki boşluklar okunabilirliğin parçası.
+    func testLogTailer_PreservesBlankLines() {
+        let text = "bir\n\niki\n\n\nüç"
+        XCTAssertEqual(LogTailer.capped(text, maxLines: 100), text)
+        XCTAssertEqual(LogTailer.capped(text, maxLines: 3).split(separator: "\n",
+                                                                omittingEmptySubsequences: false).count, 3)
+    }
+
     // MARK: - Tünel (Cloudflare Quick Tunnel)
 
     /// cloudflared adresi bir kutu çiziminin İÇİNDE, satır ortasında yazar.
@@ -767,6 +806,36 @@ final class BRAMPPTests: XCTestCase {
                                            webServerName: "Nginx",
                                            isAppPlatform: true, appRunning: false),
             .webServerDown("Nginx"))
+    }
+
+
+    /// Veritabanı/önbellek portları paylaşıma KAPALI.
+    ///
+    /// Quick Tunnel yalnızca HTTP taşıdığı için bir MySQL istemcisi zaten bağlanamaz;
+    /// asıl mesele bu servislerin geliştirme makinesinde çoğunlukla parolasız durması.
+    /// Port elle girildiğinden yanlış yazım gerçek bir ihtimal.
+    func testPortShare_RefusesDatabaseAndCachePorts() {
+        for (port, name) in [(3306, "MariaDB/MySQL"), (5432, "PostgreSQL"),
+                             (6379, "Redis"), (11211, "Memcached"), (27017, "MongoDB")] {
+            XCTAssertEqual(TunnelManager.portRefusal(port: port, isListening: true),
+                           .reservedService(name), "port \(port) reddedilmeli")
+        }
+    }
+
+    func testPortShare_RefusesClosedAndInvalidPorts() {
+        XCTAssertEqual(TunnelManager.portRefusal(port: 5173, isListening: false), .notListening,
+                       "dinlenmeyen port boş adres verirdi")
+        XCTAssertEqual(TunnelManager.portRefusal(port: 0, isListening: true), .outOfRange)
+        XCTAssertEqual(TunnelManager.portRefusal(port: 70000, isListening: true), .outOfRange)
+        // Sıra: aralık denetimi önce — 99999 aynı zamanda dinlenmiyor ama asıl sorun aralık
+        XCTAssertEqual(TunnelManager.portRefusal(port: 99999, isListening: false), .outOfRange)
+    }
+
+    func testPortShare_AllowsOrdinaryDevPort() {
+        XCTAssertNil(TunnelManager.portRefusal(port: 5173, isListening: true))
+        XCTAssertNil(TunnelManager.portRefusal(port: 3000, isListening: true))
+        XCTAssertEqual(TunnelManager.portKey(5173), ":5173",
+                       "port paylaşımları alan adı olmadığı için sentetik anahtar kullanır")
     }
 
     // MARK: - Konsol log dosyası

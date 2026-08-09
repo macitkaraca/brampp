@@ -15,6 +15,15 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.tunnel.portRange":
+            ["tr": "❌ %@ geçerli bir port değil (1–65535)",
+             "en": "❌ %@ is not a valid port (1–65535)"],
+        "log.tunnel.portReserved":
+            ["tr": "❌ Port %@ paylaşılamaz — %@ servisi. Veritabanı ve önbellek servisleri internete açılmaz",
+             "en": "❌ port %@ cannot be shared — it is %@. Database and cache services are not put on the internet"],
+        "log.tunnel.portClosed":
+            ["tr": "❌ Port %@ dinlenmiyor — paylaşılan adres boş dönerdi",
+             "en": "❌ nothing is listening on port %@ — the shared address would return nothing"],
         "log.tunnel.blockDisabled":
             ["tr": "❌ %@ paylaşılamaz — alan adı devre dışı, vhost'u yok",
              "en": "❌ cannot share %@ — the domain is disabled and has no vhost"],

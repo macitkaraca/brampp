@@ -11,6 +11,7 @@ struct DomainsTabView: View {
     @EnvironmentObject var domainManager: DomainManager
     @EnvironmentObject var serviceManager: ServiceManager
     @State private var showAddSheet: Bool = false
+    @State private var showPortShare: Bool = false
     @State private var selectedEditDomain: Domain?
     @State private var selectedLogDomain: Domain?
     @State private var showDeleteAlert: Bool = false
@@ -35,6 +36,9 @@ struct DomainsTabView: View {
         }
         .onAppear { missingHosts = domainManager.missingHostsEntries() }
         .onChange(of: domainManager.domains) { missingHosts = domainManager.missingHostsEntries() }
+        .sheet(isPresented: $showPortShare) {
+            SharePortSheetView()
+        }
         .sheet(isPresented: $showAddSheet)           { AddDomainSheet() }
         .sheet(item: $selectedEditDomain)  { d in EditDomainSheet(domain: d) }
         .sheet(item: $selectedLogDomain)   { d in DomainLogSheet(domain: d) }
@@ -103,6 +107,10 @@ struct DomainsTabView: View {
             let count = searchText.isEmpty ? domainManager.domains.count : filteredDomains.count
             Text("(\(count))").foregroundColor(.secondary)
             Spacer()
+            Button(action: { showPortShare = true }) {
+                Label(loc.t("share.port.menu"), systemImage: "antenna.radiowaves.left.and.right")
+            }
+            .buttonStyle(.bordered)
             Button(action: { showAddSheet = true }) { Label(loc.t("dom.new"), systemImage: "plus") }
                 .buttonStyle(.borderedProminent)
         }
@@ -457,8 +465,11 @@ struct AppLogSheet: View {
     let domain: Domain
     @Environment(\.dismiss) var dismiss
 
-    @State private var logContent:  String  = ""
+    /// Log içeriği artık ÇEKİLMİYOR, akıtılıyor — dosya izleyici anında günceller.
+    @StateObject private var tailer = LogTailer()
     @State private var isLoading:   Bool    = false
+    /// Zamanlayıcı yalnızca CPU/bellek/PID çubuğu için: `ps` çıktısının izlenecek
+    /// bir dosyası yok, o yüzden orada yoklama kaçınılmaz — ama artık seyrek.
     @State private var autoRefresh: Bool    = false
     @State private var timer:       Timer?  = nil
     @State private var procInfo:    NativeProcessManager.AppProcessInfo? = nil
@@ -484,7 +495,7 @@ struct AppLogSheet: View {
                 Toggle(loc.t("dom.autoRefresh"), isOn: $autoRefresh)
                     .toggleStyle(.switch).controlSize(.small)
 
-                Button(action: loadLogs) {
+                Button(action: refreshProcessInfo) {
                     Label(loc.t("common.refresh"), systemImage: "arrow.clockwise")
                 }.buttonStyle(.borderless)
                 .disabled(isLoading)
@@ -514,7 +525,7 @@ struct AppLogSheet: View {
             // Log içerik
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(logContent)
+                    Text(tailer.text)
                         .font(.system(.caption, design: .monospaced))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
@@ -522,18 +533,28 @@ struct AppLogSheet: View {
                         .id("bottom")
                 }
                 .background(Color(NSColor.textBackgroundColor))
-                .onChange(of: logContent) {
+                .onChange(of: tailer.text) {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
         }
         .frame(width: 740, height: 500)
-        .onAppear  { loadLogs() }
-        .onDisappear { timer?.invalidate(); timer = nil }
+        .onAppear {
+            tailer.start(path: NativeProcessManager.logFile(for: domain),
+                         placeholder: loc.t("dom.log.empty"))
+            refreshProcessInfo()
+        }
+        .onDisappear {
+            tailer.stop()
+            timer?.invalidate(); timer = nil
+        }
         .onChange(of: autoRefresh) { _, on in
             timer?.invalidate(); timer = nil
             if on {
-                timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in loadLogs() }
+                // 5 sn yerine 3 sn: artık tek işi süreç istatistikleri, log değil.
+                timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
+                    Task { @MainActor in refreshProcessInfo() }
+                }
             }
         }
     }
@@ -579,21 +600,20 @@ struct AppLogSheet: View {
         }
     }
 
-    private func loadLogs() {
+    /// Yalnızca CPU/bellek/PID çubuğunu tazeler — log kendi başına akıyor.
+    private func refreshProcessInfo() {
         guard !isLoading else { return }
         isLoading = true
         Task {
-            async let logs = domainManager.readAppLog(for: domain)
-            async let info = NativeProcessManager.processInfo(for: domain)
-            logContent = await logs
-            procInfo   = await info
+            procInfo = await NativeProcessManager.processInfo(for: domain)
             isLoading = false
         }
     }
 
     private func clearLogs() {
         NativeProcessManager.clearLogs(for: domain)
-        loadLogs()
+        tailer.reset()
+        refreshProcessInfo()
     }
 
     private func openInTerminal() {

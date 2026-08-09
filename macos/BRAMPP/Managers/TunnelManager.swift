@@ -19,6 +19,8 @@ final class TunnelManager: BaseManager {
 
     /// Son başlatma denemesinin engellenme nedeni — arayüz bunu gösterir.
     @Published private(set) var lastBlock: ShareBlock?
+    /// Son port paylaşımı denemesinin reddedilme nedeni.
+    @Published private(set) var lastPortRefusal: PortRefusal?
 
     /// Adresin log dosyasında belirmesi için beklenecek süre.
     static let urlTimeout: TimeInterval = 30
@@ -136,6 +138,36 @@ final class TunnelManager: BaseManager {
     /// Node.js/Python/.NET — önünde ters vekil olan, ayrı süreç isteyen platformlar.
     static let appPlatforms: Set<Platform> = [.nodejs, .python, .dotnet]
 
+    /// Paylaşımı REDDEDİLEN portlar — veritabanı ve önbellek servisleri.
+    ///
+    /// Quick Tunnel yalnızca HTTP konuşur, bu yüzden bir MySQL istemcisi verilen adrese
+    /// zaten bağlanamaz. Asıl mesele bu değil: bu servisler geliştirme makinesinde
+    /// çoğunlukla parolasız durur (Homebrew Redis'te `requirepass` yok, MariaDB kökü
+    /// boş olabilir). Yanlışlıkla açılmış bir tünel, parolasız veritabanını internete
+    /// koyar. Teknik olarak işe yaramayacak bir şeyi ayrıca yasaklamak fazladan görünür
+    /// — ama port numarası elle girildiği için "yanlış yazdım" hâli gerçek.
+    static let refusedPorts: [Int: String] = [
+        3306: "MariaDB/MySQL", 5432: "PostgreSQL", 6379: "Redis",
+        11211: "Memcached", 27017: "MongoDB",
+    ]
+
+    /// Elle girilen bir portun paylaşılabilirliği.
+    ///
+    /// Saf fonksiyon — kabuk çağırmaz, doğrudan test edilir.
+    enum PortRefusal: Equatable {
+        case outOfRange
+        case reservedService(String)
+        case notListening
+    }
+
+    static func portRefusal(port: Int, isListening: Bool) -> PortRefusal? {
+        guard (1...65535).contains(port) else { return .outOfRange }
+        if let service = refusedPorts[port] { return .reservedService(service) }
+        // Dinlenmeyen portu paylaşmak, alan adı durumunda olduğu gibi, boş adres verir.
+        guard isListening else { return .notListening }
+        return nil
+    }
+
     /// Gerçek durumu toplayıp kararı verir.
     static func shareBlockReason(for domain: Domain) async -> ShareBlock? {
         let process = domain.webServer == .apache ? "httpd" : "nginx"
@@ -227,6 +259,81 @@ final class TunnelManager: BaseManager {
             try? await Task.sleep(nanoseconds: 400_000_000)
         }
         return nil
+    }
+
+    // MARK: - Rastgele port paylaşımı
+
+    /// Bir tünel kaydının anahtarı olarak kullanılan ad — port paylaşımları için
+    /// alan adı yok, bu yüzden ":5173" biçiminde sentetik bir ad üretilir.
+    static func portKey(_ port: Int) -> String { ":\(port)" }
+
+    /// BRAMPP'ta alan adı olarak kayıtlı OLMAYAN bir yerel HTTP portunu paylaşır.
+    ///
+    /// Kullanım hâli: `npm run dev` 5173'te ayakta ama proje henüz bir alan adına
+    /// bağlanmamış. Alan adı akışından farkı yalnızca hedefin `127.0.0.1:<port>`
+    /// olması; `--http-host-header` verilmez çünkü eşleşecek bir vhost yoktur.
+    @discardableResult
+    func startPort(_ port: Int) async -> Bool {
+        guard Self.isCloudflaredInstalled else {
+            log(key: "log.tunnel.notInstalled", type: .error)
+            return false
+        }
+        let key = Self.portKey(port)
+        if let existing = tunnels[key], existing.isLive {
+            log(key: "log.tunnel.already", args: [key], type: .warning)
+            return true
+        }
+
+        let listening = await Shell.isPortOpenFast(port)
+        if let refusal = Self.portRefusal(port: port, isListening: listening) {
+            switch refusal {
+            case .outOfRange:
+                log(key: "log.tunnel.portRange", args: ["\(port)"], type: .error)
+            case .reservedService(let name):
+                log(key: "log.tunnel.portReserved", args: ["\(port)", name], type: .error)
+            case .notListening:
+                log(key: "log.tunnel.portClosed", args: ["\(port)"], type: .error)
+            }
+            lastPortRefusal = refusal
+            return false
+        }
+        lastPortRefusal = nil
+
+        _ = FileHelper.createDirectory(PathConfig.tunnels)
+        let logPath = PathConfig.tunnelLog(domain: key)
+        _ = FileHelper.remove(logPath)
+
+        let origin = "http://127.0.0.1:\(port)"
+        let cmd = [
+            Shell.quote(PathConfig.cloudflared), "tunnel",
+            "--url", Shell.quote(origin),
+            "--logfile", Shell.quote(logPath),
+            "--loglevel", "info", "--metrics", "127.0.0.1:0",
+        ].joined(separator: " ")
+
+        log(key: "log.tunnel.starting", args: [key], type: .command)
+        tunnels[key] = Tunnel(domainName: key, origin: origin, publicURL: nil,
+                              pid: nil, startedAt: Date(), state: .starting)
+
+        let r = await Shell.bashAsync("nohup \(cmd) >/dev/null 2>&1 & echo $!")
+        guard r.isSuccess,
+              let pid = Int(r.output.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            tunnels[key]?.state = .failed("cloudflared başlatılamadı")
+            log(key: "log.tunnel.startFailed", args: [key], type: .error)
+            return false
+        }
+        _ = FileHelper.write("\(pid)", to: PathConfig.tunnelPid(domain: key))
+        tunnels[key]?.pid = pid
+
+        guard let url = await waitForURL(domain: key) else {
+            await stop(domainName: key)
+            log(key: "log.tunnel.urlTimeout", args: [key], type: .error)
+            return false
+        }
+        tunnels[key]?.publicURL = url
+        tunnels[key]?.state = .active
+        log(key: "log.tunnel.live", args: [key, url], type: .success)
+        return true
     }
 
     func stop(domainName: String) async {

@@ -4,10 +4,10 @@ import Combine
 struct LogsTabView: View {
     @EnvironmentObject var loc: Localizer
     @State private var selectedLogType: LogType = .apache
-    @State private var logContent: String = ""
+    /// Log artık çekilmiyor, akıtılıyor — 5 saniyede bir `tail -n 500` yerine
+    /// dosya izleyici yalnızca eklenen baytları okur (Core/LogTailer.swift).
+    @StateObject private var tailer = LogTailer(maxLines: 3000, initialLines: 500)
     @State private var isLoading: Bool = false
-    @State private var autoRefresh: Bool = false
-    @State private var refreshTimer: Timer?
     @State private var searchText: String = ""
 
     enum LogType: String, CaseIterable {
@@ -23,8 +23,8 @@ struct LogsTabView: View {
 
     /// Arama filtresi uygulanmış log içeriği
     private var filteredContent: String {
-        guard !searchText.isEmpty else { return logContent }
-        let lines = logContent.components(separatedBy: "\n")
+        guard !searchText.isEmpty else { return tailer.text }
+        let lines = tailer.text.components(separatedBy: "\n")
         let matched = lines.filter { $0.localizedCaseInsensitiveContains(searchText) }
         return matched.joined(separator: "\n")
     }
@@ -35,8 +35,8 @@ struct LogsTabView: View {
     }
 
     private var totalLineCount: Int {
-        guard !logContent.isEmpty else { return 0 }
-        return logContent.components(separatedBy: "\n").count
+        guard !tailer.text.isEmpty else { return 0 }
+        return tailer.text.components(separatedBy: "\n").count
     }
 
     var body: some View {
@@ -54,7 +54,7 @@ struct LogsTabView: View {
             }
         }
         .onAppear { if Shell.isBrewInstalled { loadLog() } }
-        .onDisappear { stopAutoRefresh() }
+        .onDisappear { tailer.stop() }
     }
 
     private var toolbar: some View {
@@ -69,11 +69,9 @@ struct LogsTabView: View {
             .onChange(of: selectedLogType) { loadLog() }
             .disabled(!brewOK)
 
-            Toggle(loc.t("logs.auto"), isOn: $autoRefresh).fixedSize()
-                .toggleStyle(.switch)
-                .onChange(of: autoRefresh) { _, on in on ? startAutoRefresh() : stopAutoRefresh() }
-                .disabled(!brewOK)
-
+            // "Otomatik Yenile" anahtarı KALDIRILDI: log artık dosya izleyiciyle
+            // canlı akıyor, yenilenecek bir şey yok. Yenile düğmesi izleyiciyi
+            // baştan kurar — dosya dışarıdan taşınmışsa işe yarar.
             Button(action: loadLog) { Image(systemName: "arrow.clockwise") }.buttonStyle(.bordered).disabled(!brewOK)
             Button(action: openInFinder) { Image(systemName: "folder") }.buttonStyle(.bordered).disabled(!brewOK)
             Button(action: clearLog) { Image(systemName: "trash") }.buttonStyle(.bordered).disabled(!brewOK)
@@ -92,7 +90,7 @@ struct LogsTabView: View {
                 .buttonStyle(.plain)
             }
             Spacer()
-            if !logContent.isEmpty {
+            if !tailer.text.isEmpty {
                 let countText = searchText.isEmpty
                     ? String(format: loc.t("logs.lineCount"), totalLineCount)
                     : String(format: loc.t("logs.lineCountFiltered"), filteredLineCount, totalLineCount)
@@ -119,7 +117,7 @@ struct LogsTabView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
-                } else if logContent.isEmpty {
+                } else if tailer.text.isEmpty {
                     EmptyStateView(icon: "doc.text", title: loc.t("logs.empty"))
                 } else {
                     Text(filteredContent)
@@ -131,24 +129,21 @@ struct LogsTabView: View {
                 }
             }
             .background(Color(NSColor.textBackgroundColor))
-            .onChange(of: logContent) { withAnimation { proxy.scrollTo("logEnd", anchor: .bottom) } }
+            .onChange(of: tailer.text) { withAnimation { proxy.scrollTo("logEnd", anchor: .bottom) } }
         }
     }
 
+    /// Seçili log dosyasını izlemeye başlar (tür değişince yeniden çağrılır).
     private func loadLog() {
         guard Shell.isBrewInstalled else { return }
-        isLoading = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            let path = selectedLogType.path
-            let content = FileHelper.exists(path) ? Shell.bash("tail -n 500 '\(path)'").output : "Log bulunamadı: \(path)"
-            DispatchQueue.main.async { logContent = content; isLoading = false }
-        }
+        let path = selectedLogType.path
+        tailer.start(path: path, placeholder: "Log bulunamadı: \(path)")
     }
 
     private func clearLog() {
         Shell.sudo("echo '' > '\(selectedLogType.path)'") { r in
             if r.isUserCancelled { return }
-            if r.isSuccess { loadLog() }
+            if r.isSuccess { tailer.reset() }
         }
     }
 
@@ -156,12 +151,6 @@ struct LogsTabView: View {
         let path = selectedLogType.path
         if FileHelper.exists(path) { NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "") }
     }
-
-    private func startAutoRefresh() {
-        guard Shell.isBrewInstalled else { return }
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in loadLog() }
-    }
-    private func stopAutoRefresh() { refreshTimer?.invalidate(); refreshTimer = nil }
 }
 
 #Preview {

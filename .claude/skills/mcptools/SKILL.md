@@ -150,7 +150,12 @@ Opens a Cloudflare Quick Tunnel for a domain and returns a **public**
 
 | Argument | Type | Description |
 | --- | --- | --- |
-| `name` | string | **Required.** Domain name |
+| `name` | string | Domain name — required unless you pass `port` |
+| `port` | integer | Share a plain local HTTP port instead of a domain, e.g. `5173` for a `npm run dev` server that has no BRAMPP domain |
+
+Database and cache ports (3306, 5432, 6379, 11211, 27017) are refused. A Quick Tunnel
+carries HTTP only, so a database client could not connect through it anyway — and these
+services usually run without a password on a development machine.
 
 **Do not call this unless the user asked for it.** It takes a site that was reachable only
 on this machine and puts it on the open internet: anyone holding the address can browse it,
@@ -161,7 +166,8 @@ Before calling it, say plainly what will become public and get a yes. Afterwards
 user the address and remind them it stays open until `stop_share`, or until BRAMPP quits.
 
 A site that is not currently serving cannot be shared, and the call is refused rather than
-handing back an address that returns nothing. The refusal names the cause: the domain is
+handing back an address that returns nothing. The same applies to `port`: nothing listening
+on it means no tunnel. The refusal names the cause: the domain is
 disabled, its web server is stopped, or — for a Node.js/Python/.NET domain — the app behind
 the reverse proxy is not running. Fix that first (`start_service`, `start_app`, or
 `set_domain_enabled`), then call `start_share` again.
