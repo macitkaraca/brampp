@@ -17,6 +17,9 @@ final class TunnelManager: BaseManager {
     /// Alan adı → tünel. Yalnızca bellekte; diske YAZILMAZ.
     @Published private(set) var tunnels: [String: Tunnel] = [:]
 
+    /// Son başlatma denemesinin engellenme nedeni — arayüz bunu gösterir.
+    @Published private(set) var lastBlock: ShareBlock?
+
     /// Adresin log dosyasında belirmesi için beklenecek süre.
     static let urlTimeout: TimeInterval = 30
 
@@ -86,6 +89,68 @@ final class TunnelManager: BaseManager {
         return String(log[r])
     }
 
+    // MARK: - Önkoşullar
+
+    /// Paylaşımın engellenme nedeni.
+    ///
+    /// Çalışmayan bir siteyi paylaşmak ziyaretçiye 502/503 gönderir: adres canlıdır ama
+    /// içerik yoktur. Bu, paylaşan için sessiz bir hatadır — bağlantıyı gönderdikten
+    /// sonra öğrenir. Bu yüzden tünel açılmadan ÖNCE engellenir.
+    enum ShareBlock: Equatable {
+        /// Alan adı devre dışı — vhost'u yok, hiçbir şey sunulmuyor
+        case domainDisabled
+        /// Öndeki web sunucusu (Apache/Nginx) kapalı
+        case webServerDown(String)
+        /// Node.js/Python/.NET arka plan uygulaması çalışmıyor → ters vekil 502 döner
+        case appDown
+
+        var logKey: String {
+            switch self {
+            case .domainDisabled: return "log.tunnel.blockDisabled"
+            case .webServerDown:  return "log.tunnel.blockWebServer"
+            case .appDown:        return "log.tunnel.blockApp"
+            }
+        }
+
+        var logArgs: [String] {
+            if case .webServerDown(let name) = self { return [name] }
+            return []
+        }
+    }
+
+    /// Saf karar — kabuk çağrısı yapmaz, doğrudan test edilir.
+    ///
+    /// Sıra ÖNEMLİ: en temeldeki eksik önce bildirilir. Web sunucusu kapalıyken
+    /// "uygulama çalışmıyor" demek kullanıcıyı yanlış yere bakmaya gönderir.
+    static func shareBlockReason(isEnabled: Bool,
+                                 webServerRunning: Bool,
+                                 webServerName: String,
+                                 isAppPlatform: Bool,
+                                 appRunning: Bool) -> ShareBlock? {
+        if !isEnabled { return .domainDisabled }
+        if !webServerRunning { return .webServerDown(webServerName) }
+        if isAppPlatform && !appRunning { return .appDown }
+        return nil
+    }
+
+    /// Node.js/Python/.NET — önünde ters vekil olan, ayrı süreç isteyen platformlar.
+    static let appPlatforms: Set<Platform> = [.nodejs, .python, .dotnet]
+
+    /// Gerçek durumu toplayıp kararı verir.
+    static func shareBlockReason(for domain: Domain) async -> ShareBlock? {
+        let process = domain.webServer == .apache ? "httpd" : "nginx"
+        let serverUp = await Shell.isProcessAlive(process)
+        let isApp = appPlatforms.contains(domain.platform)
+        // Web sunucusu kapalıysa uygulama durumunu sormaya gerek yok — hem gereksiz
+        // kabuk çağrısı hem de zaten bildirilmeyecek bir bilgi.
+        let appUp = (isApp && serverUp) ? await NativeProcessManager.isRunning(domain: domain) : false
+        return shareBlockReason(isEnabled: domain.isEnabled,
+                                webServerRunning: serverUp,
+                                webServerName: domain.webServer.displayName,
+                                isAppPlatform: isApp,
+                                appRunning: appUp)
+    }
+
     // MARK: - Başlat / Durdur
 
     /// cloudflared kurulu mu?
@@ -101,6 +166,13 @@ final class TunnelManager: BaseManager {
             log(key: "log.tunnel.already", args: [domain.name], type: .warning)
             return true
         }
+        // Çalışmayan siteyi paylaşmak ziyaretçiye boş bir adres verir; engelle.
+        if let block = await Self.shareBlockReason(for: domain) {
+            log(key: block.logKey, args: [domain.name] + block.logArgs, type: .error)
+            lastBlock = block
+            return false
+        }
+        lastBlock = nil
 
         _ = FileHelper.createDirectory(PathConfig.tunnels)
         // Eski log SİLİNİR: bir önceki oturumun adresi dosyada duruyorsa yeni tünelin

@@ -16,8 +16,26 @@ struct ShareSheetView: View {
 
     @State private var isWorking = false
     @State private var isInstalling = false
+    /// Önkoşul denetimi: sayfa açılır açılmaz koşar, düğme buna göre kilitlenir.
+    @State private var block: TunnelManager.ShareBlock?
+    @State private var isChecking = true
 
     private var tunnel: Tunnel? { tunnelManager.tunnel(for: domain.name) }
+
+    /// Engel nedeninin okunur karşılığı.
+    private func blockText(_ b: TunnelManager.ShareBlock) -> String {
+        switch b {
+        case .domainDisabled:        return loc.t("dom.share.blockDisabled")
+        case .webServerDown(let n):  return String(format: loc.t("dom.share.blockServer"), n)
+        case .appDown:               return loc.t("dom.share.blockApp")
+        }
+    }
+
+    private func recheck() async {
+        isChecking = true
+        block = await TunnelManager.shareBlockReason(for: domain)
+        isChecking = false
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -46,8 +64,23 @@ struct ShareSheetView: View {
 
     private var consent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(loc.t("dom.share.warn"))
-                .font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            if let b = block {
+                // Çalışmayan siteyi paylaşmak ziyaretçiye boş bir adres verir; bu,
+                // bağlantıyı gönderdikten sonra fark edilen sessiz bir hatadır.
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(loc.t("dom.share.blocked"), systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout.bold()).foregroundColor(.orange)
+                    Text(blockText(b)).font(.callout).foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12)
+                .background(Color.orange.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                Text(loc.t("dom.share.warn"))
+                    .font(.callout).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             LabeledContent(loc.t("dom.share.target")) {
                 Text(TunnelManager.origin(for: domain)).font(.system(.footnote, design: .monospaced))
@@ -55,17 +88,28 @@ struct ShareSheetView: View {
 
             HStack {
                 Button(loc.t("common.cancel")) { dismiss() }
+                if block != nil {
+                    Button(loc.t("dom.share.recheck")) { Task { await recheck() } }
+                        .disabled(isChecking)
+                }
                 Spacer()
                 Button(loc.t("dom.share.start")) {
                     Task {
                         isWorking = true
                         await tunnelManager.start(domain: domain)
                         isWorking = false
+                        // Başlatma yine de engellenirse (durum arada değişmiş olabilir)
+                        // nedeni göster — sayfa sessizce kapanmasın.
+                        if tunnelManager.tunnel(for: domain.name)?.publicURL == nil {
+                            await recheck()
+                        }
                     }
                 }
                 .keyboardShortcut(.defaultAction)
+                .disabled(block != nil || isChecking)
             }
         }
+        .task { await recheck() }
     }
 
     private var starting: some View {

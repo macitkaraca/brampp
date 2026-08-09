@@ -1433,8 +1433,23 @@ final class MCPServer: ObservableObject {
         guard TunnelManager.isCloudflaredInstalled else {
             return .failure("cloudflared kurulu değil. Kurulum: brew install cloudflared")
         }
+        // Önkoşul denetimi TEK yerde: TunnelManager.start(). Burada ikinci bir kopya
+        // tutmak, MCP yolundan gelen reddin konsola iz bırakmamasına yol açıyordu —
+        // oysa paylaşım güvenlikle ilgili ve her denemesi görünür olmalı.
         guard await manager.start(domain: domain) else {
-            return .failure("'\(domain.name)' için tünel açılamadı — ayrıntı için read_log.")
+            switch manager.lastBlock {
+            case .domainDisabled:
+                return .failure("'\(domain.name)' devre dışı — vhost'u yok, paylaşılamaz. "
+                                + "Önce set_domain_enabled ile etkinleştirin.")
+            case .webServerDown(let name):
+                return .failure("'\(domain.name)' paylaşılamaz: \(name) çalışmıyor, siteyi "
+                                + "sunacak bir sunucu yok. start_service ile başlatın.")
+            case .appDown:
+                return .failure("'\(domain.name)' paylaşılamaz: arka plan uygulaması çalışmıyor, "
+                                + "ziyaretçi 502 görürdü. start_app ile başlatıp tekrar deneyin.")
+            case nil:
+                return .failure("'\(domain.name)' için tünel açılamadı — ayrıntı için read_log.")
+            }
         }
         guard let url = manager.tunnel(for: domain.name)?.publicURL else {
             return .failure("Tünel açıldı ama adres alınamadı.")

@@ -369,10 +369,10 @@ enum MCPSetupPage {
           <h2><em>3</em><span data-lang="tr">Erişim İzinleri</span><span data-lang="en">Access Permissions</span></h2>
           <div class="card">
             <p data-lang="tr">Yapay zekâ istemcisinin hangi araçları görebileceğine siz karar verirsiniz.
-            <b>BRAMPP → Ayarlar → MCP → Erişim İzinleri</b> bölümünde dört alanın her birine ayrı bir düzey
+            <b>BRAMPP → Ayarlar → MCP → Erişim İzinleri</b> bölümünde beş alanın her birine ayrı bir düzey
             atanır:</p>
             <p data-lang="en">You decide which tools the AI client can see. Under
-            <b>BRAMPP → Settings → MCP → Access Permissions</b> each of the four areas gets its own level:</p>
+            <b>BRAMPP → Settings → MCP → Access Permissions</b> each of the five areas gets its own level:</p>
             <div class="perm">
               <div>
                 <strong data-lang="tr">Alan Adları</strong><strong data-lang="en">Domains</strong>
@@ -393,6 +393,11 @@ enum MCPSetupPage {
                 <strong data-lang="tr">Loglar</strong><strong data-lang="en">Logs</strong>
                 <span data-lang="tr">BRAMPP konsolu ve alan adı logları (hata/erişim/uygulama)</span>
                 <span data-lang="en">BRAMPP console and domain logs (error/access/app)</span>
+              </div>
+              <div>
+                <strong data-lang="tr">Paylaşım</strong><strong data-lang="en">Sharing</strong>
+                <span data-lang="tr">Cloudflare tüneli açma/kapatma — siteyi HERKESE AÇIK bir adrese çıkarır, varsayılanı kapalıdır</span>
+                <span data-lang="en">Open and close a Cloudflare tunnel — puts the site on a PUBLIC address; defaults to off</span>
               </div>
             </div>
             <div class="levels">

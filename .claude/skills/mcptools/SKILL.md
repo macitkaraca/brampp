@@ -160,6 +160,12 @@ can read its data too. There is no password on the tunnel itself.
 Before calling it, say plainly what will become public and get a yes. Afterwards, give the
 user the address and remind them it stays open until `stop_share`, or until BRAMPP quits.
 
+A site that is not currently serving cannot be shared, and the call is refused rather than
+handing back an address that returns nothing. The refusal names the cause: the domain is
+disabled, its web server is stopped, or — for a Node.js/Python/.NET domain — the app behind
+the reverse proxy is not running. Fix that first (`start_service`, `start_app`, or
+`set_domain_enabled`), then call `start_share` again.
+
 ### `stop_share`
 Closes the domain's tunnel; the public address dies immediately. — *Sharing: write*
 

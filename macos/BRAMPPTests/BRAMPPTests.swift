@@ -715,6 +715,60 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertTrue(cmd.contains("--http-host-header"))
     }
 
+
+    /// Çalışmayan siteyi paylaşmak ziyaretçiye 502/503 gönderir: adres canlı, içerik yok.
+    /// Bu sessiz bir hatadır — paylaşan kişi ancak bağlantıyı gönderdikten sonra öğrenir.
+    func testShareBlock_RefusesWhenNothingIsServing() {
+        // Node.js alan adı, web sunucusu ayakta ama arka plan uygulaması kapalı
+        XCTAssertEqual(
+            TunnelManager.shareBlockReason(isEnabled: true, webServerRunning: true,
+                                           webServerName: "Nginx",
+                                           isAppPlatform: true, appRunning: false),
+            .appDown)
+
+        // Web sunucusu kapalı — platform ne olursa olsun engellenir
+        XCTAssertEqual(
+            TunnelManager.shareBlockReason(isEnabled: true, webServerRunning: false,
+                                           webServerName: "Apache",
+                                           isAppPlatform: false, appRunning: false),
+            .webServerDown("Apache"))
+
+        // Devre dışı alan adının vhost'u yok
+        XCTAssertEqual(
+            TunnelManager.shareBlockReason(isEnabled: false, webServerRunning: true,
+                                           webServerName: "Apache",
+                                           isAppPlatform: false, appRunning: false),
+            .domainDisabled)
+    }
+
+    /// Her şey yerindeyse engel YOK — PHP/statik alan adları uygulama süreci istemez.
+    func testShareBlock_AllowsWhenReady() {
+        XCTAssertNil(TunnelManager.shareBlockReason(isEnabled: true, webServerRunning: true,
+                                                    webServerName: "Apache",
+                                                    isAppPlatform: false, appRunning: false),
+                     "PHP/statik için uygulama süreci gerekmez")
+        XCTAssertNil(TunnelManager.shareBlockReason(isEnabled: true, webServerRunning: true,
+                                                    webServerName: "Nginx",
+                                                    isAppPlatform: true, appRunning: true))
+    }
+
+    /// Sıra önemli: en temeldeki eksik önce bildirilmeli. Web sunucusu kapalıyken
+    /// "uygulama çalışmıyor" demek kullanıcıyı yanlış yere bakmaya gönderir.
+    func testShareBlock_ReportsMostFundamentalCauseFirst() {
+        // Üçü de eksik → devre dışı olduğu bildirilmeli
+        XCTAssertEqual(
+            TunnelManager.shareBlockReason(isEnabled: false, webServerRunning: false,
+                                           webServerName: "Nginx",
+                                           isAppPlatform: true, appRunning: false),
+            .domainDisabled)
+        // Etkin ama sunucu ve uygulama kapalı → sunucu bildirilmeli, uygulama değil
+        XCTAssertEqual(
+            TunnelManager.shareBlockReason(isEnabled: true, webServerRunning: false,
+                                           webServerName: "Nginx",
+                                           isAppPlatform: true, appRunning: false),
+            .webServerDown("Nginx"))
+    }
+
     // MARK: - Konsol log dosyası
 
     /// `.progress` YAZILMAZ: brew'un ilerleme çubuğu saniyede onlarca satır üretir,

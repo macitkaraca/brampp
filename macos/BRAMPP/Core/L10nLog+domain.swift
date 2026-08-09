@@ -15,6 +15,15 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.tunnel.blockDisabled":
+            ["tr": "❌ %@ paylaşılamaz — alan adı devre dışı, vhost'u yok",
+             "en": "❌ cannot share %@ — the domain is disabled and has no vhost"],
+        "log.tunnel.blockWebServer":
+            ["tr": "❌ %@ paylaşılamaz — %@ çalışmıyor, siteyi sunacak bir sunucu yok",
+             "en": "❌ cannot share %@ — %@ is not running, so nothing serves the site"],
+        "log.tunnel.blockApp":
+            ["tr": "❌ %@ paylaşılamaz — arka plan uygulaması çalışmıyor, ziyaretçi 502 görür",
+             "en": "❌ cannot share %@ — its app is not running, so visitors would get a 502"],
         "log.tunnel.notInstalled":
             ["tr": "cloudflared kurulu değil — paylaşım için: brew install cloudflared",
              "en": "cloudflared is not installed — for sharing: brew install cloudflared"],
