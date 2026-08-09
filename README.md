@@ -114,6 +114,7 @@ Being clear about the edges saves you an evening:
 - **Process manager for app servers** — Node/Python/.NET apps run under a zero-dependency supervisor: auto-restart, combined logs, safe stop that never kills a process it doesn't own.
 - **Setup wizard** — checks and configures Apache ports, PHP-FPM, mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to `https://localhost` without touching a config file.
 - **Backups** — one click backs up domains, settings, vhosts, SSL certs and php.ini files; partial backups are detected and never silently restored.
+- **PHP profiler** — drives Xdebug's profile mode without hand-editing `php.ini`, collects the cachegrind output in one folder and lists it. Only requests carrying `XDEBUG_TRIGGER` are measured unless you ask for all of them.
 - **Share a site temporarily** — one click opens a Cloudflare Quick Tunnel and returns a public `trycloudflare.com` address, for showing a client or opening the site on a phone. No Cloudflare account; every tunnel closes when BRAMPP quits.
 - **MCP server for AI tools** — a built-in [Model Context Protocol](https://modelcontextprotocol.io) endpoint (127.0.0.1 only, off by default). Claude, Codex and friends get **22 tools** behind **per-scope permissions** — and every change they make appears in the BRAMPP window instantly. → [details](#using-brampp-from-ai-tools-mcp)
 - **Menu bar app** — the whole stack lives in your menu bar. Turkish & English UI, live-switchable.

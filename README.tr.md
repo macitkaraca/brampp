@@ -114,6 +114,7 @@ Sınırları baştan bilmek bir akşamınızı kurtarır:
 - **Uygulama süreç yöneticisi** — Node/Python/.NET uygulamaları sıfır bağımlılıklı bir süpervizörle: otomatik yeniden başlatma, birleşik loglar, sahibi olmadığı süreci ASLA öldürmeyen güvenli durdurma.
 - **Kurulum sihirbazı** — Apache portları, PHP-FPM, mkcert CA, localhost SSL, MariaDB root erişimi ve phpMyAdmin'i adım adım yapılandırır. Tek bir config dosyasına dokunmadan `https://localhost`.
 - **Yedekleme** — alan adları, ayarlar, vhost'lar, SSL sertifikaları ve php.ini'ler tek tıkla; eksik yedek asla sessizce geri yüklenmez.
+- **PHP profilleyici** — Xdebug'ın profil kipini `php.ini` elle düzenlenmeden yönetir, cachegrind çıktılarını tek klasörde toplar ve listeler. Siz istemedikçe yalnızca `XDEBUG_TRIGGER` taşıyan istekler ölçülür.
 - **Siteyi geçici olarak paylaşın** — tek tıkla Cloudflare Quick Tunnel açılır ve herkese açık bir `trycloudflare.com` adresi döner; müşteriye göstermek ya da telefondan açmak için. Cloudflare hesabı gerekmez; BRAMPP kapanınca tüneller kapanır.
 - **Yapay zekâ araçları için MCP sunucusu** — yerleşik [Model Context Protocol](https://modelcontextprotocol.io) uç noktası (yalnızca 127.0.0.1, varsayılan kapalı). Claude, Codex ve arkadaşları **alan bazlı izinlerin** arkasındaki **19 araca** erişir; yaptıkları her değişiklik BRAMPP penceresine anında yansır. → [ayrıntılar](#bramppi-yapay-zekâ-araçlarından-kullanmak-mcp)
 - **Menü çubuğu** — tüm stack menü çubuğunuzda. Türkçe & İngilizce arayüz, çalışırken değiştirilebilir.
