@@ -110,7 +110,7 @@ Being clear about the edges saves you an evening:
 - **Every stack, one app** — PHP (per-domain PHP version), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, static sites & SPAs (history-mode fallback included).
 - **Real HTTPS locally** — one-click [mkcert](https://github.com/FiloSottile/mkcert) integration: local CA, per-domain certificates, HTTP→HTTPS redirect. The green padlock, at home.
 - **Databases without the CLI** — create/drop databases, dump & restore (single-transaction for PostgreSQL), phpMyAdmin / pgAdmin / Adminer installers, `my.cnf` / `postgresql.conf` / `redis.conf` editors with safe writes.
-- **PHP extension manager** — 50+ extensions (xdebug, redis, imagick…), toggle on/off, PECL install, `php.ini` quick settings.
+- **PHP extension manager** — 26 curated extensions (xdebug, redis, imagick…), toggle on/off, PECL install, `php.ini` quick settings.
 - **Process manager for app servers** — Node/Python/.NET apps run under a zero-dependency supervisor: auto-restart, combined logs, safe stop that never kills a process it doesn't own.
 - **Setup wizard** — checks and configures Apache ports, PHP-FPM, mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to `https://localhost` without touching a config file.
 - **Backups** — one click backs up domains, settings, vhosts, SSL certs and php.ini files; partial backups are detected and never silently restored.
@@ -141,7 +141,7 @@ MariaDB, PostgreSQL and Redis panels with copy-ready connection info. BRAMPP det
 
 ### 🧩 PHP Extensions
 
-50+ extensions per PHP version — xdebug, redis, imagick and friends — with one-click enable/disable, PECL install and `php.ini` quick settings.
+26 curated extensions per PHP version — xdebug, redis, imagick and friends — with one-click enable/disable, PECL install and `php.ini` quick settings.
 
 ![PHP extensions tab — per-version extension manager](screenshots/en/phpExtensions.png)
 

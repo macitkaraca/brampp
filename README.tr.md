@@ -110,7 +110,7 @@ Sınırları baştan bilmek bir akşamınızı kurtarır:
 - **Her stack** — PHP (alan adı başına sürüm), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, statik site & SPA (history-mode fallback dahil).
 - **Yerel HTTPS** — tek tıkla [mkcert](https://github.com/FiloSottile/mkcert): yerel CA, alan adı başına sertifika, HTTP→HTTPS yönlendirme. Yeşil kilit, evinizde.
 - **Veritabanı yönetimi** — oluştur/sil, yedekle/geri yükle (PostgreSQL'de tek transaction), phpMyAdmin / pgAdmin / Adminer kurulumu, `my.cnf` / `postgresql.conf` / `redis.conf` panelleri (güvenli yazma ile).
-- **PHP eklenti yöneticisi** — 50+ eklenti (xdebug, redis, imagick…), aç/kapat, PECL kurulumu, `php.ini` hızlı ayarları.
+- **PHP eklenti yöneticisi** — 26 seçilmiş eklenti (xdebug, redis, imagick…), aç/kapat, PECL kurulumu, `php.ini` hızlı ayarları.
 - **Uygulama süreç yöneticisi** — Node/Python/.NET uygulamaları sıfır bağımlılıklı bir süpervizörle: otomatik yeniden başlatma, birleşik loglar, sahibi olmadığı süreci ASLA öldürmeyen güvenli durdurma.
 - **Kurulum sihirbazı** — Apache portları, PHP-FPM, mkcert CA, localhost SSL, MariaDB root erişimi ve phpMyAdmin'i adım adım yapılandırır. Tek bir config dosyasına dokunmadan `https://localhost`.
 - **Yedekleme** — alan adları, ayarlar, vhost'lar, SSL sertifikaları ve php.ini'ler tek tıkla; eksik yedek asla sessizce geri yüklenmez.
@@ -141,7 +141,7 @@ MariaDB, PostgreSQL ve Redis panelleri, kopyalamaya hazır bağlantı bilgileriy
 
 ### 🧩 PHP Eklentileri
 
-PHP sürümü başına 50+ eklenti — xdebug, redis, imagick ve arkadaşları — tek tıkla aç/kapat, PECL kurulumu ve `php.ini` hızlı ayarları.
+PHP sürümü başına 26 seçilmiş eklenti — xdebug, redis, imagick ve arkadaşları — tek tıkla aç/kapat, PECL kurulumu ve `php.ini` hızlı ayarları.
 
 ![PHP eklentileri sekmesi — sürüm başına eklenti yöneticisi](screenshots/tr/phpExtensions.png)
 

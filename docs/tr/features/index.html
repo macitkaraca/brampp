@@ -686,7 +686,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <li><b>Yapılandırma düzenleyicileri</b> — <code>my.cnf</code>, <code>postgresql.conf</code> ve <code>redis.conf</code> için; her kayıttan önce yedek yazılır.</li>
     </ul>
     <h3 class="sub-h">Redis, sayılarla</h3>
-    <p class="para">Redis sekmesi <code>INFO</code> çıktısını okur; çalışma süresini, bağlı istemcileri, zirveye göre kullanılan belleği, toplam komut sayısını ve veritabanı başına isabet oranını gösterir. Henüz hiç istek gelmediyse yanıltıcı bir "%0 isabet" yerine bunu açıkça söyler — 0 aramada 0 isabet, önbellek ıskası değil, verinin yokluğudur.</p>
+    <p class="para">Redis sekmesi <code>INFO</code> çıktısını okur; çalışma süresini, bağlı istemcileri, zirveye göre kullanılan belleği, toplam komut sayısını, isabet oranını ve her veritabanındaki anahtar sayısını gösterir. Henüz hiç istek gelmediyse yanıltıcı bir "%0 isabet" yerine bunu açıkça söyler — 0 aramada 0 isabet, önbellek ıskası değil, verinin yokluğudur.</p>
   </div>
 </section>
 
@@ -697,7 +697,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <h2>Geri kalanı</h2>
     </div>
     <div class="grid">
-      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP eklenti yöneticisi</h3><p>Her PHP sürümü için 50'den fazla eklenti — xdebug, redis, imagick ve diğerleri — tek tıkla açılıp kapanır, PECL ile kurulur; ayrıca <code>php.ini</code> içinde gerçekten değiştirdiğiniz değerler için hızlı ayarlar.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP eklenti yöneticisi</h3><p>Her PHP sürümü için 26 seçilmiş eklenti — 17'si PHP'nin içinde gelir, kalan 9'u PECL ile kurulur — xdebug, redis, imagick ve diğerleri tek tıkla açılıp kapanır. Ayrıca <code>php.ini</code> içinde gerçekten değiştirdiğiniz değerler için hızlı ayarlar.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>Uygulama sunucusu gözetmeni</h3><p>Node, Python ve .NET uygulamaları bağımlılıksız bir gözetmen altında çalışır: çöktüğünde otomatik yeniden başlatma, birleşik günlükler ve sinyalden önce port sahipliğini denetleyen bir durdurma.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Kurulum sihirbazı</h3><p>Apache portları, PHP-FPM, mkcert otoritesi, localhost SSL, MariaDB root erişimi ve phpMyAdmin — sırayla yapılandırılır, yalnızca onayladığınız kurulur, çalıştırılan her komut konsola yazılır.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">📜</span><h3>Uygulama içinde günlükler</h3><p>Apache, Nginx, PHP-FPM ve alan adı başına erişim/hata günlükleri; <code>/opt/homebrew/var/log</code> içinde arama yapmadan okunur.</p></div>

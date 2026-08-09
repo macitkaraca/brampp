@@ -686,7 +686,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <li><b>Config editors</b> for <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code>, with a backup written before every save.</li>
     </ul>
     <h3 class="sub-h">Redis, with numbers</h3>
-    <p class="para">The Redis tab reads <code>INFO</code> and shows uptime, connected clients, memory used against peak, total commands, and the keyspace hit rate per database. When nothing has been requested yet it says so rather than reporting a misleading "0% hit rate" — 0 hits out of 0 lookups is not a cache miss, it is an absence of data.</p>
+    <p class="para">The Redis tab reads <code>INFO</code> and shows uptime, connected clients, memory used against peak, total commands, the keyspace hit rate, and the key count for each database. When nothing has been requested yet it says so rather than reporting a misleading "0% hit rate" — 0 hits out of 0 lookups is not a cache miss, it is an absence of data.</p>
   </div>
 </section>
 
@@ -697,7 +697,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <h2>The rest of it</h2>
     </div>
     <div class="grid">
-      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP extension manager</h3><p>50+ extensions per PHP version — xdebug, redis, imagick and the rest — toggled with one click, installed through PECL, plus quick settings for the values in <code>php.ini</code> you actually change.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🧩</span><h3>PHP extension manager</h3><p>26 curated extensions per PHP version — 17 built into PHP, the other 9 installed through PECL — xdebug, redis, imagick and the rest, toggled with one click. Plus quick settings for the values in <code>php.ini</code> you actually change.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🧯</span><h3>App server supervisor</h3><p>Node, Python and .NET apps run under a zero-dependency supervisor: automatic restart on crash, combined logs, and a stop that checks port ownership before signalling.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🧙</span><h3>Setup wizard</h3><p>Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin — configured in order, installing only what you approve, printing every command it runs to the console.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">📜</span><h3>Logs in the app</h3><p>Apache, Nginx, PHP-FPM and per-domain access and error logs, readable without hunting through <code>/opt/homebrew/var/log</code>.</p></div>
