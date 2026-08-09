@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MCP server — let an AI assistant drive your local stack</title>
-<meta name="description" content="BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.">
-<link rel="canonical" href="https://macitkaraca.github.io/brampp/mcp/">
-<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/">
-<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/">
-<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/mcp/">
-<link rel="icon" type="image/png" href="../assets/icon-256.png">
+<title>Değişiklikler — her BRAMPP sürümünde ne değişti</title>
+<meta name="description" content="Her BRAMPP sürümü, neyi eklediği ve neyi düzelttiği: Cloudflare tüneliyle yerel site paylaşımı, MCP sunucusu ve araçları, veritabanı yedekleme ve geri yükleme, yol boyunca bulunan hatalar.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/changelog/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/changelog/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/changelog/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/changelog/">
+<link rel="icon" type="image/png" href="../../assets/icon-256.png">
 <meta property="og:type" content="article">
-<meta property="og:title" content="MCP server — let an AI assistant drive your local stack">
-<meta property="og:description" content="BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.">
-<meta property="og:url" content="https://macitkaraca.github.io/brampp/mcp/">
+<meta property="og:title" content="Değişiklikler — her BRAMPP sürümünde ne değişti">
+<meta property="og:description" content="Her BRAMPP sürümü, neyi eklediği ve neyi düzelttiği: Cloudflare tüneliyle yerel site paylaşımı, MCP sunucusu ve araçları, veritabanı yedekleme ve geri yükleme, yol boyunca bulunan hatalar.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/changelog/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -22,10 +22,10 @@
 {
  "@context": "https://schema.org",
  "@type": "WebPage",
- "name": "MCP server — let an AI assistant drive your local stack",
- "description": "BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.",
- "inLanguage": "en",
- "datePublished": "2026-08-08",
+ "name": "Değişiklikler — her BRAMPP sürümünde ne değişti",
+ "description": "Her BRAMPP sürümü, neyi eklediği ve neyi düzelttiği: Cloudflare tüneliyle yerel site paylaşımı, MCP sunucusu ve araçları, veritabanı yedekleme ve geri yükleme, yol boyunca bulunan hatalar.",
+ "inLanguage": "tr",
+ "datePublished": "2026-08-10",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
  "author": {
   "@type": "Person",
@@ -36,7 +36,7 @@
   "@type": "Organization",
   "name": "Karaca Teknoloji"
  },
- "mainEntityOfPage": "https://macitkaraca.github.io/brampp/mcp/"
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/tr/changelog/"
 }
 </script>
 <style>
@@ -597,150 +597,132 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
 </head>
 <body>
 <nav class="topbar is-scrolled" aria-label="Site">
-  <a class="brandmark" href="../" aria-label="BRAMPP"><img src="../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks" id="sitenav"><a href="../features/">Features</a><a href="../install/">Install</a><a href="../mcp/" aria-current="true">MCP</a><a href="../compare/">Compare</a><a href="../guides/">Guides</a><a href="../changelog/">Changelog</a><a href="../#faq">FAQ</a></div>
+  <a class="brandmark" href="../../tr/" aria-label="BRAMPP"><img src="../../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
+  <div class="navlinks" id="sitenav"><a href="../../tr/features/">Özellikler</a><a href="../../tr/install/">Kurulum</a><a href="../../tr/mcp/">MCP</a><a href="../../tr/compare/">Karşılaştırma</a><a href="../../tr/guides/">Rehberler</a><a href="../../tr/changelog/" aria-current="true">Değişiklikler</a><a href="../../tr/#faq">SSS</a></div>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../mcp/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/mcp/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../../changelog/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/changelog/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
   </div>
   <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
 <main class="page">
 <div class="pagehead">
-  <p class="crumb"><a href="../">BRAMPP</a> → MCP</p>
-  <span class="eyebrow">AI &amp; MCP</span>
-  <h1>Let your assistant drive the stack</h1>
-  <p class="lede">Flip one switch and BRAMPP becomes a Model Context Protocol server. Your assistant can create a domain, start the services it needs and read the logs — while you watch the window update live.</p>
+  <p class="crumb"><a href="../../tr/">BRAMPP</a> → Değişiklikler</p>
+  <span class="eyebrow">Değişiklikler</span>
+  <h1>Sürüm sürüm ne değişti</h1>
+  <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
-<section id="what">
+<section id="next">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">The idea</span>
-      <h2>Not a wrapper around your shell</h2>
+      <span class="eyebrow">Geliştiriliyor</span>
+      <h2>Sıradaki sürüm</h2>
+      <p class="lede"><code>main</code> dalında, henüz yayınlanmadı. Erken denemek isterseniz kaynaktan derleyebilirsiniz.</p>
     </div>
-    <p class="para">The obvious way to give an assistant access to a development environment is to hand it a terminal. It works, and it is the wrong shape: a shell has no notion of what you meant to allow, so every request is either fully trusted or blocked, and the assistant has to reverse-engineer your setup from config files before it can do anything useful.</p>
-    <p class="para">BRAMPP exposes the managers the app itself uses. Each tool has a narrow job with validated arguments, and the app already knows where your domains live, which PHP version each one uses and which services are up. The assistant asks for an outcome — "create a Node domain called shop and start what it needs" — instead of assembling six commands and hoping.</p>
-    <div class="callout"><p><b>Everything goes through the live app.</b> There is no separate state file and no second source of truth. A change made through MCP appears in the BRAMPP window immediately, because it <i>is</i> the same code path as clicking the button.</p></div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Çalışan siteyi geçici, herkese açık bir adresle paylaşma.</b> Tek tıkla Cloudflare Quick Tunnel açılıyor ve <code>https://…trycloudflare.com</code> bağlantısı veriyor — müşteriye göstermek ya da siteyi telefondan açmak için. Cloudflare hesabı gerekmiyor. Hiçbir tünel diske yazılmıyor, kendiliğinden başlamıyor ve BRAMPP kapanınca hepsi kapanıyor.</li>
+      <li><b>Düz bir port da paylaşılabiliyor</b> — henüz BRAMPP alan adı olmayan, <code>:5173</code>'te çalışan bir geliştirme sunucusu gibi. Veritabanı ve önbellek portları reddediliyor: Quick Tunnel yalnızca HTTP taşır ve bu servisler burada çoğunlukla parolasız durur.</li>
+      <li><b>Yeniden başlatmayı atlatan konsol logu.</b> Satırlar <code>~/Library/Application Support/BRAMPP/logs</code> altında günlük dosyalara yazılıyor ve bir hafta sonra siliniyor. Bellekteki tampon 300 satır tutuyor ve tek bir <code>brew install</code> onu süpürebiliyordu; "on dakika önce ne oldu" sorusu bu yüzden yanıtsızdı.</li>
+      <li><b>Redis için canlı durum</b> — çalışma süresi, bağlı istemciler, zirveye karşı bellek, toplam komut, isabet oranı ve her veritabanındaki anahtar sayısı, doğrudan <code>INFO</code> çıktısından.</li>
+      <li><b>Paylaşım için üç MCP aracı</b>, varsayılanı <i>erişim yok</i> olan beşinci bir izin alanının arkasında — böyle olan tek alan, çünkü bu araçlar siteyi açık internete koyuyor.</li>
+      <li><b><code>read_log</code> süzgeçleri</b>: düzey, metin ve zamana göre; ayrıca canlı tampon yerine diskteki dosyayı okuyabiliyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Örnekler artık <code>.local</code> yerine <code>.test</code> öneriyor.</b> <code>.local</code>, <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> ile Multicast DNS'e ayrılmış ve macOS'ta çözümlemeyi geciktirebiliyor. Yerel HTTPS rehberimiz bunu bir süredir söylüyordu ama uygulama hâlâ <code>.local</code> dağıtıyordu. Mevcut alan adları çalışmaya devam ediyor — doğrulama zaten uzantıya bakmıyordu.</li>
+      <li><b>Log pencereleri artık akıtıyor, yoklamıyor.</b> Eskiden beş saniyede bir <code>tail</code> çalıştırıyor, kabuk süreci doğuruyor ve birkaç yeni satır için dosyayı baştan okuyordu. Dosya izleyici yalnızca eklenen kısmı okuyor ve gözetmen uygulamayı yeniden başlattığında logun yeniden yaratılmasına dayanıyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Sekiz uyarı, arayüz dili ne olursa olsun Türkçe çıkıyordu</b> — geçersiz alan adı, sistem adı, yinelenen ad, eksik .NET SDK ve sağlık kontrolünün dört sonucu. Çeviri kataloğuna hiç uğramayan Swift metinleriydi.</li>
+      <li><b>Arkası çalışmayan bir siteyi paylaşmak, arkasında hiçbir şey olmayan canlı bir adres üretiyordu.</b> Ziyaretçi 502 görüyor, bağlantıyı gönderen ancak sonradan öğreniyordu. Artık alan adı etkin değilse, web sunucusu kapalıysa ya da Node.js/Python/.NET uygulaması dinlemiyorsa paylaşım reddediliyor.</li>
+    </ul>
   </div>
 </section>
 
-<section class="band" id="tools">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Surface</span>
-      <h2>22 tools, five areas</h2>
-      <p class="lede">Each area has its own permission setting, so you decide how far the assistant reaches.</p>
+      <span class="eyebrow">8 Ağustos 2026</span>
+      <h2>1.2</h2>
+      <p class="lede">Developer ID sertifikasıyla imzalandı ve Apple tarafından noter onayından geçti; bilet hem uygulamaya hem DMG'ye zımbalandı, böylece çevrimdışıyken de doğrulanıyor.</p>
     </div>
-    <div class="stats">
-      <div class="stat"><span class="num">8</span><span class="lbl">Domain tools</span></div>
-      <div class="stat"><span class="num">4</span><span class="lbl">Service tools</span></div>
-      <div class="stat"><span class="num">5</span><span class="lbl">Database tools</span></div>
-      <div class="stat"><span class="num">2</span><span class="lbl">Log tools</span></div>
-    </div>
-    <div class="tscroll">
-      <table class="cmp">
-        <thead><tr><th scope="col">Area</th><th scope="col">Tools</th><th scope="col">What they do</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Domains</th>
-              <td><code>list_domains</code>, <code>create_domain</code>, <code>update_domain</code>, <code>set_domain_enabled</code>, <code>health_check</code>, <code>start_app</code>, <code>stop_app</code>, <code>app_status</code></td>
-              <td>Create and edit domains across every platform, enable or disable them, run a health check, and control the supervised app server behind a domain.</td></tr>
-          <tr><th scope="row">Services</th>
-              <td><code>service_status</code>, <code>start_service</code>, <code>stop_service</code>, <code>restart_service</code></td>
-              <td>Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL and Redis — with the same port-ownership checks the UI uses.</td></tr>
-          <tr><th scope="row">Databases</th>
-              <td><code>db_list</code>, <code>db_create</code>, <code>db_query</code>, <code>db_export</code>, <code>db_import</code></td>
-              <td>List and create databases, run a single SQL statement, dump to <code>.sql</code> and restore from one.</td></tr>
-          <tr><th scope="row">Logs</th>
-              <td><code>read_log</code>, <code>read_domain_log</code></td>
-              <td>Service logs and per-domain access and error logs, so the assistant can diagnose instead of guessing. <code>read_log</code> filters by level, text and time, and can read the daily file on disk rather than the live buffer.</td></tr>
-          <tr><th scope="row">Sharing</th>
-              <td><code>list_shares</code>, <code>start_share</code>, <code>stop_share</code></td>
-              <td>Opens a Cloudflare Quick Tunnel so a local site gets a temporary public address. <b>Defaults to No access</b> — unlike every other area, because these tools put the site on the open internet.</td></tr>
-        </tbody>
-      </table>
-    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>MCP üzerinden veritabanı yedekleme ve geri yükleme</b> — <code>db_export</code> ve <code>db_import</code>. MariaDB/MySQL için <code>mysqldump --single-transaction --routines --triggers</code> kullanılıyor; InnoDB tablolarını kilitlemeyen tutarlı bir anlık görüntü. Başarısız bir döküm yarım dosyasını siliyor, çünkü bozuk yedek hiç yedek olmamasından kötüdür.</li>
+      <li><b>Sürüm denetimi</b> — Ayarlar, istendiğinde GitHub'a son sürümü soruyor. Kendini asla güncellemiyor, indirme tarayıcınızda kalıyor.</li>
+      <li><b>İkinci bir beceri dosyası</b>, <code>brampp_mysql</code>: veritabanı araçları ve güvenlik kuralları.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Nginx hiçbir zaman "çalışıyor" görünmüyordu.</b> Ana süreci kendi başlığını <code>nginx: master process …</code> olarak değiştiriyor, bu yüzden <code>pgrep -x nginx</code> denetimi hiçbir zaman eşleşemiyordu. Yeni eklenen bir alan adının görünmesi için durdur-başlat gerekmesinin sebebi de buydu.</li>
+      <li><b>Kurulum sonsuza kadar bekleyebiliyordu.</b> Homebrew'un onay istemi satır başı karakteriyle bitiyor ve tamponu boşaltan kod istemi de onunla birlikte atıyordu — geri sayım, çoktan attığı bir şeyi bekliyordu.</li>
+      <li><b>"Ana Pencereyi Aç" menü çubuğundan çalışmıyordu</b>, çünkü panel tıklama anında etkin pencere durumunu tutuyor ve ancak eylem döndükten sonra bırakıyor.</li>
+      <li><b>Web sunucusu bağımlılık zincirine katıldı.</b> Apache ya da Nginx arkasındaki bir ASP.NET Core, Node veya Python uygulamasını başlatmak artık o sunucuyu da başlatıyor; kurulu olmayan bağımlılık sessizce atlanmak yerine bildiriliyor.</li>
+    </ul>
   </div>
 </section>
 
-<section id="permissions">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Permissions</span>
-      <h2>What you disallow never appears</h2>
-      <p class="lede">Each of the five areas is set independently to No access, Read, or Read + write.</p>
+      <span class="eyebrow">31 Temmuz 2026</span>
+      <h2>1.1 — ilk genel sürüm</h2>
+      <p class="lede">Servis denetimi, gerçek HTTPS'li yerel alan adları, veritabanı araçları ve MCP sunucusu; makinede zaten duran Homebrew servislerinin üzerinde tek bir yerel uygulamada.</p>
     </div>
-    <div class="perms">
-      <span>Per-area: <b>No access</b></span>
-      <span><b>Read</b></span>
-      <span><b>Read + write</b></span>
-      <span>Disallowed tools <b>never appear</b> to the client</span>
-    </div>
-    <p class="para">The filtering happens twice, on purpose. A tool you have not permitted is left out of the <code>tools/list</code> response, so the assistant never learns it exists and cannot decide to try it. And if a call arrives for it anyway, it is refused at the boundary. Hiding alone would be a UI convenience; refusing alone would leak the shape of your setup. Doing both is what makes it a boundary rather than a suggestion.</p>
-    <h3 class="sub-h">SQL is read-only until you say otherwise</h3>
-    <p class="para"><code>db_query</code> accepts <code>SELECT</code>, <code>SHOW</code>, <code>DESCRIBE</code>, <code>EXPLAIN</code> and <code>WITH</code> by default. Anything that modifies data requires an explicit <code>allow_write</code> — and even then, statements whose body hides a write behind a CTE, or that call functions reaching the filesystem (<code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>), are rejected outright. Dump and restore paths must be absolute, end in <code>.sql</code>, and contain no shell metacharacters.</p>
-    <p class="para">Read the full tool reference in the <a href="../guides/mcp-local-dev/">MCP for local development guide</a>, which goes into why scoped permissions matter more than tool count.</p>
-  </div>
-</section>
-
-<section class="band" id="setup">
-  <div class="wrap">
-    <div class="shead">
-      <span class="eyebrow">Setup</span>
-      <h2>Turning it on</h2>
-    </div>
-    <ol class="steps">
-      <li><b>Open Settings → MCP</b> in BRAMPP and turn the server on. It binds to <code>127.0.0.1</code> only and is off until you do this.</li>
-      <li><b>Set the four permissions</b> to whatever you are comfortable with. Read-only across the board is a reasonable place to start.</li>
-      <li><b>Connect your client.</b> Claude Code takes a single CLI command; Claude Desktop and ChatGPT Codex have a one-click config button in the same panel.</li>
-      <li><b>Enable "Launch BRAMPP at login"</b> if you use this daily — the server only answers while the app is running, and this removes the "why is my assistant not seeing the tools" moment.</li>
-    </ol>
-    <p class="endpoint">Endpoint: <code>http://127.0.0.1:8765/mcp</code> — JSON-RPC 2.0 over POST, loopback only, off by default.</p>
-    <div class="clients">
-      <div class="client">Claude Code<small>one CLI command</small></div>
-      <div class="client">Claude Desktop<small>one-click config</small></div>
-      <div class="client">ChatGPT Codex<small>one-click config</small></div>
-    </div>
+    <ul class="bullets">
+      <li>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL ve Redis; naif bir süreç eşleşmesiyle değil, port sahipliği denetimiyle başlatılıp durduruluyor.</li>
+      <li>PHP, Node.js, Python, ASP.NET Core ve statik siteler için yerel alan adları — vhost, hosts kaydı, site klasörü, başlangıç projesi ve sertifika tek adımda.</li>
+      <li><code>mkcert</code> ile otomatik HTTPS; yerel sertifika otoritesi sistem güven deposuna kuruluyor.</li>
+      <li>Yalnızca loopback'e bağlı, öntanımlı kapalı, alan bazlı izinli gömülü MCP sunucusu.</li>
+    </ul>
   </div>
 </section>
 
 <div class="nextprev">
-  <a href="../guides/mcp-local-dev/"><small>Guide</small><b>MCP for local development →</b></a>
-  <a href="../features/"><small>Also</small><b>All features →</b></a>
+  <a href="https://github.com/macitkaraca/brampp/releases"><small>GitHub</small><b>Tüm sürümler ve DMG indirmeleri →</b></a>
+  <a href="../../tr/install/"><small>Sıradaki</small><b>BRAMPP'ı kurun →</b></a>
 </div>
 
 </main>
 <footer class="sitefoot">
   <div class="wrap footgrid">
     <div>
-      <h2>Pages</h2>
-      <a href="../">Home</a>
-      <a href="../features/">Features</a>
-      <a href="../install/">Install</a>
-      <a href="../mcp/">MCP</a>
-      <a href="../compare/">Compare</a>
+      <h2>Sayfalar</h2>
+      <a href="../../tr/">Ana sayfa</a>
+      <a href="../../tr/features/">Özellikler</a>
+      <a href="../../tr/install/">Kurulum</a>
+      <a href="../../tr/mcp/">MCP</a>
+      <a href="../../tr/compare/">Karşılaştırma</a>
     </div>
     <div>
-      <h2>Guides</h2>
-      <a href="../guides/">Guides</a>
-      <a href="../guides/local-https/">Local HTTPS</a>
-      <a href="../guides/apache-nginx-together/">Apache and Nginx together</a>
-      <a href="../guides/mcp-local-dev/">MCP for local development</a>
+      <h2>Rehberler</h2>
+      <a href="../../tr/guides/">Rehberler</a>
+      <a href="../../tr/guides/local-https/">Yerel HTTPS</a>
+      <a href="../../tr/guides/apache-nginx-together/">Apache ve Nginx birlikte</a>
+      <a href="../../tr/guides/mcp-local-dev/">Yerel geliştirme için MCP</a>
     </div>
     <div>
-      <h2>Project</h2>
-      <a href="https://github.com/macitkaraca/brampp">Repository</a>
-      <a href="https://github.com/macitkaraca/brampp/releases/latest">Latest release</a>
-      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">License</a>
+      <h2>Proje</h2>
+      <a href="https://github.com/macitkaraca/brampp">Depo</a>
+      <a href="https://github.com/macitkaraca/brampp/releases/latest">Son sürüm</a>
+      <a href="https://github.com/macitkaraca/brampp/blob/main/LICENSE">Lisans</a>
     </div>
     <div class="footlang">
-      <h2>Language</h2>
-      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../mcp/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/mcp/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+      <h2>Dil</h2>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇹🇷</span>Türkçe<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../../changelog/" hreflang="en" lang="en" role="menuitem"><span aria-hidden="true">🇬🇧</span>English</a><a href="../../tr/changelog/" hreflang="tr" lang="tr" role="menuitem" aria-current="true"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
     </div>
   </div>
   <div class="wrap footbase">
-    <p>Built by <a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> at <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> · MIT © 2023–2026 Karaca Teknoloji</p>
-    <p class="fine">Pronounced "bremp". Free and open source, MIT licensed.</p>
+    <p><a href="https://github.com/macitkaraca"><b>Macit Karaca</b></a> tarafından <a href="https://karacatechnology.com" rel="noopener"><b>Karaca Technology</b></a> bünyesinde geliştirildi · MIT © 2023–2026 Karaca Teknoloji</p>
+    <p class="fine">"bremp" diye okunur. Ücretsiz ve açık kaynak, MIT lisanslı.</p>
   </div>
 </footer>
 <script>

@@ -1,0 +1,8 @@
+{"published": "2026-08-10",
+ "path": "changelog",
+ "nav": "changelog/",
+ "type": "WebPage",
+ "en": {"title": "Changelog — what changed in each BRAMPP release",
+        "desc": "Every BRAMPP release, what it added and what it fixed: local site sharing over Cloudflare tunnels, the MCP server and its tools, database backup and restore, and the bugs found along the way."},
+ "tr": {"title": "Değişiklikler — her BRAMPP sürümünde ne değişti",
+        "desc": "Her BRAMPP sürümü, neyi eklediği ve neyi düzelttiği: Cloudflare tüneliyle yerel site paylaşımı, MCP sunucusu ve araçları, veritabanı yedekleme ve geri yükleme, yol boyunca bulunan hatalar."}}

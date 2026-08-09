@@ -1,0 +1,84 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Changelog</p>
+  <span class="eyebrow">Changelog</span>
+  <h1>What changed, release by release</h1>
+  <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
+</div>
+
+<section id="next">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">In development</span>
+      <h2>Next release</h2>
+      <p class="lede">On <code>main</code>, not yet published. Build from source if you want it early.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Share a running site over a temporary public address.</b> One click opens a Cloudflare Quick Tunnel and hands back an <code>https://…trycloudflare.com</code> link — for showing a client, or opening the site on a phone. No Cloudflare account. Nothing is persisted, no tunnel starts on its own, and every one closes when BRAMPP quits.</li>
+      <li><b>Share a bare port too</b> — a dev server on <code>:5173</code> that has no BRAMPP domain yet. Database and cache ports are refused: a Quick Tunnel carries HTTP only, and those services usually sit here without a password.</li>
+      <li><b>A console log that survives a restart.</b> Lines are written to a daily file under <code>~/Library/Application Support/BRAMPP/logs</code> and pruned after a week. The in-memory buffer holds 300 lines and a single <code>brew install</code> can sweep it, so "what happened ten minutes ago" was previously unanswerable.</li>
+      <li><b>Live status for Redis</b> — uptime, connected clients, memory against peak, total commands, the keyspace hit rate and the key count per database, read straight from <code>INFO</code>.</li>
+      <li><b>Three more MCP tools</b> for sharing, behind a fifth permission scope that defaults to <i>no access</i> — the only scope that does, because these tools put a site on the open internet.</li>
+      <li><b><code>read_log</code> filters</b> by level, text and time, and can read the file on disk instead of the live buffer.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>Examples now suggest <code>.test</code> instead of <code>.local</code>.</b> <code>.local</code> is reserved for Multicast DNS by <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> and can stall resolution on macOS. The local-HTTPS guide had said so for a while; the app was still handing out <code>.local</code>. Existing domains keep working — validation never depended on the suffix.</li>
+      <li><b>Log windows stream instead of polling.</b> They used to re-run <code>tail</code> every five seconds, spawning a shell and re-reading the whole file for a few new lines. A file watcher now reads only what was appended, and survives the log being recreated when the supervisor restarts an app.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Eight alerts appeared in Turkish regardless of the interface language</b> — invalid domain name, reserved name, duplicate name, missing .NET SDK, and all four outcomes of the health check. They were Swift string literals that never reached the translation catalog.</li>
+      <li><b>Sharing a site whose backend was down produced a live address with nothing behind it.</b> The visitor got a 502 and the person who sent the link only found out afterwards. Sharing is now refused unless the domain is enabled, its web server is up, and — for Node.js, Python and .NET — the app is listening.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v12">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">8 August 2026</span>
+      <h2>1.2</h2>
+      <p class="lede">Signed with a Developer ID certificate and notarized by Apple, with the ticket stapled to both the app and the DMG so it verifies offline.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Database backup and restore over MCP</b> — <code>db_export</code> and <code>db_import</code>. MariaDB/MySQL uses <code>mysqldump --single-transaction --routines --triggers</code>, a consistent snapshot that does not lock InnoDB tables. A failed export deletes its partial file, because a corrupt backup is worse than none.</li>
+      <li><b>Update check</b> — Settings asks GitHub for the latest release on request. It never self-updates and the download stays in your browser.</li>
+      <li><b>A second skill file</b>, <code>brampp_mysql</code>, covering the database tools and their safety rules.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Nginx was never detected as running.</b> Its master process rewrites its own title to <code>nginx: master process …</code>, so a <code>pgrep -x nginx</code> check could never match. This was also why a newly added domain seemed to need a stop and start before it appeared.</li>
+      <li><b>The installer could hang forever.</b> Homebrew's confirmation prompt ends in a carriage return, and the code that flushed the buffer discarded the prompt along with it — so the countdown waited for something it had already thrown away.</li>
+      <li><b>"Open Main Window" did nothing</b> from the menu bar, because the panel holds key-window status at click time and only gives it up after the action returns.</li>
+      <li><b>The web server joined the dependency chain.</b> Starting an ASP.NET Core, Node or Python app behind Apache or Nginx now starts that server too, and a dependency that is not installed is reported rather than silently skipped.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v11">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">31 July 2026</span>
+      <h2>1.1 — first public release</h2>
+      <p class="lede">Service control, local domains with real HTTPS, database tools and an MCP server, in one native app on top of the Homebrew services already on the machine.</p>
+    </div>
+    <ul class="bullets">
+      <li>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL and Redis, started and stopped with port-ownership checks rather than a naive process match.</li>
+      <li>Local domains for PHP, Node.js, Python, ASP.NET Core and static sites — vhost, hosts entry, site folder, starter project and certificate in one step.</li>
+      <li>Automatic HTTPS through <code>mkcert</code>, with the local certificate authority installed into the system trust store.</li>
+      <li>A built-in MCP server, bound to loopback and off by default, with per-area permissions.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="https://github.com/macitkaraca/brampp/releases"><small>GitHub</small><b>All releases and DMG downloads →</b></a>
+  <a href="{{UP}}install/"><small>Next</small><b>Install BRAMPP →</b></a>
+</div>

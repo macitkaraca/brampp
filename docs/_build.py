@@ -26,6 +26,7 @@ NAV = [
     ("mcp/",      "MCP",         "MCP"),
     ("compare/",  "Compare",     "Karşılaştırma"),
     ("guides/",   "Guides",      "Rehberler"),
+    ("changelog/","Changelog",   "Değişiklikler"),
     ("#faq",      "FAQ",         "SSS"),
 ]
 

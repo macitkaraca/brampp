@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MCP server — let an AI assistant drive your local stack</title>
-<meta name="description" content="BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.">
-<link rel="canonical" href="https://macitkaraca.github.io/brampp/mcp/">
-<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/">
-<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/">
-<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/mcp/">
+<title>Changelog — what changed in each BRAMPP release</title>
+<meta name="description" content="Every BRAMPP release, what it added and what it fixed: local site sharing over Cloudflare tunnels, the MCP server and its tools, database backup and restore, and the bugs found along the way.">
+<link rel="canonical" href="https://macitkaraca.github.io/brampp/changelog/">
+<link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/changelog/">
+<link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/changelog/">
+<link rel="alternate" hreflang="x-default" href="https://macitkaraca.github.io/brampp/changelog/">
 <link rel="icon" type="image/png" href="../assets/icon-256.png">
 <meta property="og:type" content="article">
-<meta property="og:title" content="MCP server — let an AI assistant drive your local stack">
-<meta property="og:description" content="BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.">
-<meta property="og:url" content="https://macitkaraca.github.io/brampp/mcp/">
+<meta property="og:title" content="Changelog — what changed in each BRAMPP release">
+<meta property="og:description" content="Every BRAMPP release, what it added and what it fixed: local site sharing over Cloudflare tunnels, the MCP server and its tools, database backup and restore, and the bugs found along the way.">
+<meta property="og:url" content="https://macitkaraca.github.io/brampp/changelog/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -22,10 +22,10 @@
 {
  "@context": "https://schema.org",
  "@type": "WebPage",
- "name": "MCP server — let an AI assistant drive your local stack",
- "description": "BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default.",
+ "name": "Changelog — what changed in each BRAMPP release",
+ "description": "Every BRAMPP release, what it added and what it fixed: local site sharing over Cloudflare tunnels, the MCP server and its tools, database backup and restore, and the bugs found along the way.",
  "inLanguage": "en",
- "datePublished": "2026-08-08",
+ "datePublished": "2026-08-10",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
  "author": {
   "@type": "Person",
@@ -36,7 +36,7 @@
   "@type": "Organization",
   "name": "Karaca Teknoloji"
  },
- "mainEntityOfPage": "https://macitkaraca.github.io/brampp/mcp/"
+ "mainEntityOfPage": "https://macitkaraca.github.io/brampp/changelog/"
 }
 </script>
 <style>
@@ -598,115 +598,97 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
 <body>
 <nav class="topbar is-scrolled" aria-label="Site">
   <a class="brandmark" href="../" aria-label="BRAMPP"><img src="../assets/icon-256.png" alt="" width="26" height="26"><b>BRA<i>MPP</i></b></a>
-  <div class="navlinks" id="sitenav"><a href="../features/">Features</a><a href="../install/">Install</a><a href="../mcp/" aria-current="true">MCP</a><a href="../compare/">Compare</a><a href="../guides/">Guides</a><a href="../changelog/">Changelog</a><a href="../#faq">FAQ</a></div>
+  <div class="navlinks" id="sitenav"><a href="../features/">Features</a><a href="../install/">Install</a><a href="../mcp/">MCP</a><a href="../compare/">Compare</a><a href="../guides/">Guides</a><a href="../changelog/" aria-current="true">Changelog</a><a href="../#faq">FAQ</a></div>
   <div class="barcta">
     <a class="pill pill-dl" href="https://github.com/macitkaraca/brampp/releases/latest">⬇ DMG</a>
-    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../mcp/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/mcp/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+    <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-bar"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-bar" role="menu"><a href="../changelog/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/changelog/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
   </div>
   <button class="navtoggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitenav"><span></span><span></span><span></span></button>
 </nav>
 <main class="page">
 <div class="pagehead">
-  <p class="crumb"><a href="../">BRAMPP</a> → MCP</p>
-  <span class="eyebrow">AI &amp; MCP</span>
-  <h1>Let your assistant drive the stack</h1>
-  <p class="lede">Flip one switch and BRAMPP becomes a Model Context Protocol server. Your assistant can create a domain, start the services it needs and read the logs — while you watch the window update live.</p>
+  <p class="crumb"><a href="../">BRAMPP</a> → Changelog</p>
+  <span class="eyebrow">Changelog</span>
+  <h1>What changed, release by release</h1>
+  <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="what">
+<section id="next">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">The idea</span>
-      <h2>Not a wrapper around your shell</h2>
+      <span class="eyebrow">In development</span>
+      <h2>Next release</h2>
+      <p class="lede">On <code>main</code>, not yet published. Build from source if you want it early.</p>
     </div>
-    <p class="para">The obvious way to give an assistant access to a development environment is to hand it a terminal. It works, and it is the wrong shape: a shell has no notion of what you meant to allow, so every request is either fully trusted or blocked, and the assistant has to reverse-engineer your setup from config files before it can do anything useful.</p>
-    <p class="para">BRAMPP exposes the managers the app itself uses. Each tool has a narrow job with validated arguments, and the app already knows where your domains live, which PHP version each one uses and which services are up. The assistant asks for an outcome — "create a Node domain called shop and start what it needs" — instead of assembling six commands and hoping.</p>
-    <div class="callout"><p><b>Everything goes through the live app.</b> There is no separate state file and no second source of truth. A change made through MCP appears in the BRAMPP window immediately, because it <i>is</i> the same code path as clicking the button.</p></div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Share a running site over a temporary public address.</b> One click opens a Cloudflare Quick Tunnel and hands back an <code>https://…trycloudflare.com</code> link — for showing a client, or opening the site on a phone. No Cloudflare account. Nothing is persisted, no tunnel starts on its own, and every one closes when BRAMPP quits.</li>
+      <li><b>Share a bare port too</b> — a dev server on <code>:5173</code> that has no BRAMPP domain yet. Database and cache ports are refused: a Quick Tunnel carries HTTP only, and those services usually sit here without a password.</li>
+      <li><b>A console log that survives a restart.</b> Lines are written to a daily file under <code>~/Library/Application Support/BRAMPP/logs</code> and pruned after a week. The in-memory buffer holds 300 lines and a single <code>brew install</code> can sweep it, so "what happened ten minutes ago" was previously unanswerable.</li>
+      <li><b>Live status for Redis</b> — uptime, connected clients, memory against peak, total commands, the keyspace hit rate and the key count per database, read straight from <code>INFO</code>.</li>
+      <li><b>Three more MCP tools</b> for sharing, behind a fifth permission scope that defaults to <i>no access</i> — the only scope that does, because these tools put a site on the open internet.</li>
+      <li><b><code>read_log</code> filters</b> by level, text and time, and can read the file on disk instead of the live buffer.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>Examples now suggest <code>.test</code> instead of <code>.local</code>.</b> <code>.local</code> is reserved for Multicast DNS by <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> and can stall resolution on macOS. The local-HTTPS guide had said so for a while; the app was still handing out <code>.local</code>. Existing domains keep working — validation never depended on the suffix.</li>
+      <li><b>Log windows stream instead of polling.</b> They used to re-run <code>tail</code> every five seconds, spawning a shell and re-reading the whole file for a few new lines. A file watcher now reads only what was appended, and survives the log being recreated when the supervisor restarts an app.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Eight alerts appeared in Turkish regardless of the interface language</b> — invalid domain name, reserved name, duplicate name, missing .NET SDK, and all four outcomes of the health check. They were Swift string literals that never reached the translation catalog.</li>
+      <li><b>Sharing a site whose backend was down produced a live address with nothing behind it.</b> The visitor got a 502 and the person who sent the link only found out afterwards. Sharing is now refused unless the domain is enabled, its web server is up, and — for Node.js, Python and .NET — the app is listening.</li>
+    </ul>
   </div>
 </section>
 
-<section class="band" id="tools">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Surface</span>
-      <h2>22 tools, five areas</h2>
-      <p class="lede">Each area has its own permission setting, so you decide how far the assistant reaches.</p>
+      <span class="eyebrow">8 August 2026</span>
+      <h2>1.2</h2>
+      <p class="lede">Signed with a Developer ID certificate and notarized by Apple, with the ticket stapled to both the app and the DMG so it verifies offline.</p>
     </div>
-    <div class="stats">
-      <div class="stat"><span class="num">8</span><span class="lbl">Domain tools</span></div>
-      <div class="stat"><span class="num">4</span><span class="lbl">Service tools</span></div>
-      <div class="stat"><span class="num">5</span><span class="lbl">Database tools</span></div>
-      <div class="stat"><span class="num">2</span><span class="lbl">Log tools</span></div>
-    </div>
-    <div class="tscroll">
-      <table class="cmp">
-        <thead><tr><th scope="col">Area</th><th scope="col">Tools</th><th scope="col">What they do</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Domains</th>
-              <td><code>list_domains</code>, <code>create_domain</code>, <code>update_domain</code>, <code>set_domain_enabled</code>, <code>health_check</code>, <code>start_app</code>, <code>stop_app</code>, <code>app_status</code></td>
-              <td>Create and edit domains across every platform, enable or disable them, run a health check, and control the supervised app server behind a domain.</td></tr>
-          <tr><th scope="row">Services</th>
-              <td><code>service_status</code>, <code>start_service</code>, <code>stop_service</code>, <code>restart_service</code></td>
-              <td>Apache, Nginx, PHP-FPM, MariaDB, PostgreSQL and Redis — with the same port-ownership checks the UI uses.</td></tr>
-          <tr><th scope="row">Databases</th>
-              <td><code>db_list</code>, <code>db_create</code>, <code>db_query</code>, <code>db_export</code>, <code>db_import</code></td>
-              <td>List and create databases, run a single SQL statement, dump to <code>.sql</code> and restore from one.</td></tr>
-          <tr><th scope="row">Logs</th>
-              <td><code>read_log</code>, <code>read_domain_log</code></td>
-              <td>Service logs and per-domain access and error logs, so the assistant can diagnose instead of guessing. <code>read_log</code> filters by level, text and time, and can read the daily file on disk rather than the live buffer.</td></tr>
-          <tr><th scope="row">Sharing</th>
-              <td><code>list_shares</code>, <code>start_share</code>, <code>stop_share</code></td>
-              <td>Opens a Cloudflare Quick Tunnel so a local site gets a temporary public address. <b>Defaults to No access</b> — unlike every other area, because these tools put the site on the open internet.</td></tr>
-        </tbody>
-      </table>
-    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Database backup and restore over MCP</b> — <code>db_export</code> and <code>db_import</code>. MariaDB/MySQL uses <code>mysqldump --single-transaction --routines --triggers</code>, a consistent snapshot that does not lock InnoDB tables. A failed export deletes its partial file, because a corrupt backup is worse than none.</li>
+      <li><b>Update check</b> — Settings asks GitHub for the latest release on request. It never self-updates and the download stays in your browser.</li>
+      <li><b>A second skill file</b>, <code>brampp_mysql</code>, covering the database tools and their safety rules.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Nginx was never detected as running.</b> Its master process rewrites its own title to <code>nginx: master process …</code>, so a <code>pgrep -x nginx</code> check could never match. This was also why a newly added domain seemed to need a stop and start before it appeared.</li>
+      <li><b>The installer could hang forever.</b> Homebrew's confirmation prompt ends in a carriage return, and the code that flushed the buffer discarded the prompt along with it — so the countdown waited for something it had already thrown away.</li>
+      <li><b>"Open Main Window" did nothing</b> from the menu bar, because the panel holds key-window status at click time and only gives it up after the action returns.</li>
+      <li><b>The web server joined the dependency chain.</b> Starting an ASP.NET Core, Node or Python app behind Apache or Nginx now starts that server too, and a dependency that is not installed is reported rather than silently skipped.</li>
+    </ul>
   </div>
 </section>
 
-<section id="permissions">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Permissions</span>
-      <h2>What you disallow never appears</h2>
-      <p class="lede">Each of the five areas is set independently to No access, Read, or Read + write.</p>
+      <span class="eyebrow">31 July 2026</span>
+      <h2>1.1 — first public release</h2>
+      <p class="lede">Service control, local domains with real HTTPS, database tools and an MCP server, in one native app on top of the Homebrew services already on the machine.</p>
     </div>
-    <div class="perms">
-      <span>Per-area: <b>No access</b></span>
-      <span><b>Read</b></span>
-      <span><b>Read + write</b></span>
-      <span>Disallowed tools <b>never appear</b> to the client</span>
-    </div>
-    <p class="para">The filtering happens twice, on purpose. A tool you have not permitted is left out of the <code>tools/list</code> response, so the assistant never learns it exists and cannot decide to try it. And if a call arrives for it anyway, it is refused at the boundary. Hiding alone would be a UI convenience; refusing alone would leak the shape of your setup. Doing both is what makes it a boundary rather than a suggestion.</p>
-    <h3 class="sub-h">SQL is read-only until you say otherwise</h3>
-    <p class="para"><code>db_query</code> accepts <code>SELECT</code>, <code>SHOW</code>, <code>DESCRIBE</code>, <code>EXPLAIN</code> and <code>WITH</code> by default. Anything that modifies data requires an explicit <code>allow_write</code> — and even then, statements whose body hides a write behind a CTE, or that call functions reaching the filesystem (<code>LOAD_FILE</code>, <code>pg_read_file</code>, <code>lo_import</code>), are rejected outright. Dump and restore paths must be absolute, end in <code>.sql</code>, and contain no shell metacharacters.</p>
-    <p class="para">Read the full tool reference in the <a href="../guides/mcp-local-dev/">MCP for local development guide</a>, which goes into why scoped permissions matter more than tool count.</p>
-  </div>
-</section>
-
-<section class="band" id="setup">
-  <div class="wrap">
-    <div class="shead">
-      <span class="eyebrow">Setup</span>
-      <h2>Turning it on</h2>
-    </div>
-    <ol class="steps">
-      <li><b>Open Settings → MCP</b> in BRAMPP and turn the server on. It binds to <code>127.0.0.1</code> only and is off until you do this.</li>
-      <li><b>Set the four permissions</b> to whatever you are comfortable with. Read-only across the board is a reasonable place to start.</li>
-      <li><b>Connect your client.</b> Claude Code takes a single CLI command; Claude Desktop and ChatGPT Codex have a one-click config button in the same panel.</li>
-      <li><b>Enable "Launch BRAMPP at login"</b> if you use this daily — the server only answers while the app is running, and this removes the "why is my assistant not seeing the tools" moment.</li>
-    </ol>
-    <p class="endpoint">Endpoint: <code>http://127.0.0.1:8765/mcp</code> — JSON-RPC 2.0 over POST, loopback only, off by default.</p>
-    <div class="clients">
-      <div class="client">Claude Code<small>one CLI command</small></div>
-      <div class="client">Claude Desktop<small>one-click config</small></div>
-      <div class="client">ChatGPT Codex<small>one-click config</small></div>
-    </div>
+    <ul class="bullets">
+      <li>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL and Redis, started and stopped with port-ownership checks rather than a naive process match.</li>
+      <li>Local domains for PHP, Node.js, Python, ASP.NET Core and static sites — vhost, hosts entry, site folder, starter project and certificate in one step.</li>
+      <li>Automatic HTTPS through <code>mkcert</code>, with the local certificate authority installed into the system trust store.</li>
+      <li>A built-in MCP server, bound to loopback and off by default, with per-area permissions.</li>
+    </ul>
   </div>
 </section>
 
 <div class="nextprev">
-  <a href="../guides/mcp-local-dev/"><small>Guide</small><b>MCP for local development →</b></a>
-  <a href="../features/"><small>Also</small><b>All features →</b></a>
+  <a href="https://github.com/macitkaraca/brampp/releases"><small>GitHub</small><b>All releases and DMG downloads →</b></a>
+  <a href="../install/"><small>Next</small><b>Install BRAMPP →</b></a>
 </div>
 
 </main>
@@ -735,7 +717,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
     </div>
     <div class="footlang">
       <h2>Language</h2>
-      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../mcp/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/mcp/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
+      <div class="langsel"><button class="pill langbtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langmenu-foot"><span aria-hidden="true">🇬🇧</span>English<span class="chev" aria-hidden="true">▾</span></button><div class="langmenu" id="langmenu-foot" role="menu"><a href="../changelog/" hreflang="en" lang="en" role="menuitem" aria-current="true"><span aria-hidden="true">🇬🇧</span>English</a><a href="../tr/changelog/" hreflang="tr" lang="tr" role="menuitem"><span aria-hidden="true">🇹🇷</span>Türkçe</a></div></div>
     </div>
   </div>
   <div class="wrap footbase">

@@ -163,4 +163,16 @@
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/changelog/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/changelog/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/changelog/"/>
+    <lastmod>2026-08-10</lastmod>
+  </url>
+  <url>
+    <loc>https://macitkaraca.github.io/brampp/tr/changelog/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/changelog/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/changelog/"/>
+    <lastmod>2026-08-10</lastmod>
+  </url>
 </urlset>

@@ -38,6 +38,7 @@ for example `/features/` and `/tr/features/`. The two versions are linked with h
 - [Install](https://macitkaraca.github.io/brampp/install/): requirements, the four setup steps, signature verification, building from source, troubleshooting
 - [MCP server](https://macitkaraca.github.io/brampp/mcp/): all 22 tools by area, the permission model, and how to connect a client
 - [Comparison](https://macitkaraca.github.io/brampp/compare/): bundled stacks, PHP-only tools and containers — including when each of those is the better choice
+- [Changelog](https://macitkaraca.github.io/brampp/changelog/): what each release added, changed and fixed, in plain terms
 - [Guides hub](https://macitkaraca.github.io/brampp/guides/): practical guides on local development ([Türkçe](https://macitkaraca.github.io/brampp/tr/guides/))
 - [Local HTTPS on macOS](https://macitkaraca.github.io/brampp/guides/local-https/): mkcert, the system trust store, .test vs .local
 - [Apache and Nginx side by side](https://macitkaraca.github.io/brampp/guides/apache-nginx-together/): port splitting, per-domain routing, reverse proxies

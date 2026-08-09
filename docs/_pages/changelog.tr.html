@@ -1,0 +1,84 @@
+<div class="pagehead">
+  <p class="crumb"><a href="{{UP}}">BRAMPP</a> → Değişiklikler</p>
+  <span class="eyebrow">Değişiklikler</span>
+  <h1>Sürüm sürüm ne değişti</h1>
+  <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
+</div>
+
+<section id="next">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Geliştiriliyor</span>
+      <h2>Sıradaki sürüm</h2>
+      <p class="lede"><code>main</code> dalında, henüz yayınlanmadı. Erken denemek isterseniz kaynaktan derleyebilirsiniz.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Çalışan siteyi geçici, herkese açık bir adresle paylaşma.</b> Tek tıkla Cloudflare Quick Tunnel açılıyor ve <code>https://…trycloudflare.com</code> bağlantısı veriyor — müşteriye göstermek ya da siteyi telefondan açmak için. Cloudflare hesabı gerekmiyor. Hiçbir tünel diske yazılmıyor, kendiliğinden başlamıyor ve BRAMPP kapanınca hepsi kapanıyor.</li>
+      <li><b>Düz bir port da paylaşılabiliyor</b> — henüz BRAMPP alan adı olmayan, <code>:5173</code>'te çalışan bir geliştirme sunucusu gibi. Veritabanı ve önbellek portları reddediliyor: Quick Tunnel yalnızca HTTP taşır ve bu servisler burada çoğunlukla parolasız durur.</li>
+      <li><b>Yeniden başlatmayı atlatan konsol logu.</b> Satırlar <code>~/Library/Application Support/BRAMPP/logs</code> altında günlük dosyalara yazılıyor ve bir hafta sonra siliniyor. Bellekteki tampon 300 satır tutuyor ve tek bir <code>brew install</code> onu süpürebiliyordu; "on dakika önce ne oldu" sorusu bu yüzden yanıtsızdı.</li>
+      <li><b>Redis için canlı durum</b> — çalışma süresi, bağlı istemciler, zirveye karşı bellek, toplam komut, isabet oranı ve her veritabanındaki anahtar sayısı, doğrudan <code>INFO</code> çıktısından.</li>
+      <li><b>Paylaşım için üç MCP aracı</b>, varsayılanı <i>erişim yok</i> olan beşinci bir izin alanının arkasında — böyle olan tek alan, çünkü bu araçlar siteyi açık internete koyuyor.</li>
+      <li><b><code>read_log</code> süzgeçleri</b>: düzey, metin ve zamana göre; ayrıca canlı tampon yerine diskteki dosyayı okuyabiliyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Örnekler artık <code>.local</code> yerine <code>.test</code> öneriyor.</b> <code>.local</code>, <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> ile Multicast DNS'e ayrılmış ve macOS'ta çözümlemeyi geciktirebiliyor. Yerel HTTPS rehberimiz bunu bir süredir söylüyordu ama uygulama hâlâ <code>.local</code> dağıtıyordu. Mevcut alan adları çalışmaya devam ediyor — doğrulama zaten uzantıya bakmıyordu.</li>
+      <li><b>Log pencereleri artık akıtıyor, yoklamıyor.</b> Eskiden beş saniyede bir <code>tail</code> çalıştırıyor, kabuk süreci doğuruyor ve birkaç yeni satır için dosyayı baştan okuyordu. Dosya izleyici yalnızca eklenen kısmı okuyor ve gözetmen uygulamayı yeniden başlattığında logun yeniden yaratılmasına dayanıyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Sekiz uyarı, arayüz dili ne olursa olsun Türkçe çıkıyordu</b> — geçersiz alan adı, sistem adı, yinelenen ad, eksik .NET SDK ve sağlık kontrolünün dört sonucu. Çeviri kataloğuna hiç uğramayan Swift metinleriydi.</li>
+      <li><b>Arkası çalışmayan bir siteyi paylaşmak, arkasında hiçbir şey olmayan canlı bir adres üretiyordu.</b> Ziyaretçi 502 görüyor, bağlantıyı gönderen ancak sonradan öğreniyordu. Artık alan adı etkin değilse, web sunucusu kapalıysa ya da Node.js/Python/.NET uygulaması dinlemiyorsa paylaşım reddediliyor.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v12">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">8 Ağustos 2026</span>
+      <h2>1.2</h2>
+      <p class="lede">Developer ID sertifikasıyla imzalandı ve Apple tarafından noter onayından geçti; bilet hem uygulamaya hem DMG'ye zımbalandı, böylece çevrimdışıyken de doğrulanıyor.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>MCP üzerinden veritabanı yedekleme ve geri yükleme</b> — <code>db_export</code> ve <code>db_import</code>. MariaDB/MySQL için <code>mysqldump --single-transaction --routines --triggers</code> kullanılıyor; InnoDB tablolarını kilitlemeyen tutarlı bir anlık görüntü. Başarısız bir döküm yarım dosyasını siliyor, çünkü bozuk yedek hiç yedek olmamasından kötüdür.</li>
+      <li><b>Sürüm denetimi</b> — Ayarlar, istendiğinde GitHub'a son sürümü soruyor. Kendini asla güncellemiyor, indirme tarayıcınızda kalıyor.</li>
+      <li><b>İkinci bir beceri dosyası</b>, <code>brampp_mysql</code>: veritabanı araçları ve güvenlik kuralları.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Nginx hiçbir zaman "çalışıyor" görünmüyordu.</b> Ana süreci kendi başlığını <code>nginx: master process …</code> olarak değiştiriyor, bu yüzden <code>pgrep -x nginx</code> denetimi hiçbir zaman eşleşemiyordu. Yeni eklenen bir alan adının görünmesi için durdur-başlat gerekmesinin sebebi de buydu.</li>
+      <li><b>Kurulum sonsuza kadar bekleyebiliyordu.</b> Homebrew'un onay istemi satır başı karakteriyle bitiyor ve tamponu boşaltan kod istemi de onunla birlikte atıyordu — geri sayım, çoktan attığı bir şeyi bekliyordu.</li>
+      <li><b>"Ana Pencereyi Aç" menü çubuğundan çalışmıyordu</b>, çünkü panel tıklama anında etkin pencere durumunu tutuyor ve ancak eylem döndükten sonra bırakıyor.</li>
+      <li><b>Web sunucusu bağımlılık zincirine katıldı.</b> Apache ya da Nginx arkasındaki bir ASP.NET Core, Node veya Python uygulamasını başlatmak artık o sunucuyu da başlatıyor; kurulu olmayan bağımlılık sessizce atlanmak yerine bildiriliyor.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v11">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">31 Temmuz 2026</span>
+      <h2>1.1 — ilk genel sürüm</h2>
+      <p class="lede">Servis denetimi, gerçek HTTPS'li yerel alan adları, veritabanı araçları ve MCP sunucusu; makinede zaten duran Homebrew servislerinin üzerinde tek bir yerel uygulamada.</p>
+    </div>
+    <ul class="bullets">
+      <li>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL ve Redis; naif bir süreç eşleşmesiyle değil, port sahipliği denetimiyle başlatılıp durduruluyor.</li>
+      <li>PHP, Node.js, Python, ASP.NET Core ve statik siteler için yerel alan adları — vhost, hosts kaydı, site klasörü, başlangıç projesi ve sertifika tek adımda.</li>
+      <li><code>mkcert</code> ile otomatik HTTPS; yerel sertifika otoritesi sistem güven deposuna kuruluyor.</li>
+      <li>Yalnızca loopback'e bağlı, öntanımlı kapalı, alan bazlı izinli gömülü MCP sunucusu.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="nextprev">
+  <a href="https://github.com/macitkaraca/brampp/releases"><small>GitHub</small><b>Tüm sürümler ve DMG indirmeleri →</b></a>
+  <a href="{{UP}}install/"><small>Sıradaki</small><b>BRAMPP'ı kurun →</b></a>
+</div>
