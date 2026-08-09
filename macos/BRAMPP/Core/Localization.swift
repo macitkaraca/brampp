@@ -90,6 +90,8 @@ enum L10n {
         "set.persistLog":     ["tr": "Konsolu diske kaydet", "en": "Save the console to disk"],
         "set.persistLogDesc": ["tr": "Satırlar günlük dosyalara yazılır, 7 gün sonra silinir — geçmişe dönük hata ayıklama ve MCP log okuması için", "en": "Lines are written to daily files and deleted after 7 days — for looking back and for MCP log reads"],
         "dom.share":          ["tr": "Paylaş", "en": "Share"],
+        "dom.share.live":     ["tr": "Yayında — karekodu görmek veya durdurmak için tıklayın", "en": "Live — click to see the QR code or stop it"],
+        "dom.share.off":      ["tr": "Yayın kapalı — paylaşmak için tıklayın", "en": "Not shared — click to share"],
         "dom.share.stop":     ["tr": "Paylaşımı durdur", "en": "Stop sharing"],
         "dom.share.title":    ["tr": "Siteyi internete aç", "en": "Put the site on the internet"],
         "dom.share.warn":     ["tr": "Bu adres HERKESE AÇIKTIR. Adresi bilen herkes sitenize girebilir — sitede kimlik doğrulaması yoksa veriler de dâhil. Cloudflare hesabı gerekmez; adres geçicidir ve paylaşımı durdurunca ölür.", "en": "This address is PUBLIC. Anyone who has it can reach your site — including its data, if the site has no authentication. No Cloudflare account is needed; the address is temporary and dies when you stop sharing."],

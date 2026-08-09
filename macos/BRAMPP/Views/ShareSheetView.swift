@@ -158,7 +158,11 @@ struct ShareSheetView: View {
                 Button(loc.t("dom.share.stop"), role: .destructive) {
                     Task { await tunnelManager.stop(domainName: domain.name); dismiss() }
                 }
-                .keyboardShortcut(.defaultAction)
+                // Kapat, yayını SÜRDÜREREK pencereyi kapatır. Bu düğme olmadan
+                // pencereden çıkmanın tek yolu paylaşımı durdurmaktı — oysa çoğu zaman
+                // istenen, adres yayında kalırken pencereyi kapatmak.
+                Button(loc.t("common.close")) { dismiss() }
+                    .keyboardShortcut(.defaultAction)
             }
         }
     }

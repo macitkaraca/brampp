@@ -202,6 +202,11 @@ struct DomainRowView: View {
     @State private var cachedPID:     String? = nil
     @State private var showShare:     Bool   = false
 
+    /// Bu alan adı şu anda yayında mı — satırdaki simgenin rengi buna bağlı.
+    private var isSharing: Bool {
+        tunnelManager.tunnel(for: domain.name)?.isLive == true
+    }
+
     private var isAppPlatform: Bool {
         [Platform.nodejs, .python, .dotnet].contains(domain.platform)
     }
@@ -325,14 +330,14 @@ struct DomainRowView: View {
                 Button(action: onErrorLog) { Image(systemName: "exclamationmark.bubble") }
                     .help(loc.t("dom.logs"))
                 Button(action: { showShare = true }) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        // Etkin tünel görünür olmalı: kullanıcı sitesinin şu anda
-                        // internete açık olduğunu satıra bakınca anlamalı.
-                        .foregroundColor(tunnelManager.tunnel(for: domain.name)?.isLive == true
-                                         ? .orange : nil)
+                    // Yayın durumu satıra bakınca anlaşılmalı: yeşil = yayında,
+                    // kırmızı = kapalı. Kullanıcı sitesinin şu anda internete açık
+                    // olup olmadığını pencere açmadan görebilmeli.
+                    Image(systemName: isSharing ? "antenna.radiowaves.left.and.right"
+                                                : "antenna.radiowaves.left.and.right.slash")
+                        .foregroundColor(isSharing ? .green : .red)
                 }
-                .help(tunnelManager.tunnel(for: domain.name)?.isLive == true
-                      ? loc.t("dom.share.stop") : loc.t("dom.share"))
+                .help(isSharing ? loc.t("dom.share.live") : loc.t("dom.share.off"))
                 Button(action: onDelete)   { Image(systemName: "trash").foregroundColor(.red) }
                     .help(loc.t("dom.delete"))
             }

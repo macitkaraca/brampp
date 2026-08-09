@@ -125,7 +125,9 @@ struct SharePortSheetView: View {
                         dismiss()
                     }
                 }
-                .keyboardShortcut(.defaultAction)
+                // Yayını sürdürerek pencereyi kapat.
+                Button(loc.t("common.close")) { dismiss() }
+                    .keyboardShortcut(.defaultAction)
             }
         }
     }
