@@ -353,8 +353,8 @@ class DomainManager: BaseManager {
         // root ile çalışan /etc/hosts komutlarını bozar
         guard Self.isValidDomainName(domain.name) else {
             log(key: "log.dom.invalidName", args: [domain.name], type: .error)
-            activeAlert = AppAlert(title: "Geçersiz Domain Adı",
-                                   message: "'\(domain.name)' geçerli bir alan adı değil. Örnek: projem.test, api.test\n\nBoşluk, tırnak veya slash kullanmayın.")
+            activeAlert = AppAlert(title: Localizer.shared.t("dom.alert.invalidName.title"),
+                                   message: String(format: Localizer.shared.t("dom.alert.invalidName.msg"), domain.name))
             return false
         }
 
@@ -362,16 +362,16 @@ class DomainManager: BaseManager {
         // satırı ve Apache+Nginx'in ORTAK kullandığı localhost SSL dizini yok edilirdi.
         guard !Self.isReservedDomainName(domain.name) else {
             log(key: "log.dom.invalidName", args: [domain.name], type: .error)
-            activeAlert = AppAlert(title: "Sistem Adı Kullanılamaz",
-                                   message: "'\(domain.name)' sistem tarafından ayrılmış bir addır (localhost, broadcasthost, IP adresleri…). Bu adla domain oluşturmak macOS'un /etc/hosts dosyasını ve paylaşılan localhost SSL sertifikasını bozar.\n\nÖrnek geçerli ad: projem.test, api.test")
+            activeAlert = AppAlert(title: Localizer.shared.t("dom.alert.reservedName.title"),
+                                   message: String(format: Localizer.shared.t("dom.alert.reservedName.msg"), domain.name))
             return false
         }
 
         // Aynı adla domain zaten var mı? — çift kayıt vhost/hosts çakışmasına yol açar
         if domains.contains(where: { $0.name.lowercased() == domain.name.lowercased() }) {
             log(key: "log.dom.duplicateName", args: [domain.name], type: .error)
-            activeAlert = AppAlert(title: "Domain Zaten Var",
-                                   message: "'\(domain.name)' adında bir domain zaten kayıtlı. Farklı bir ad kullanın veya mevcut domaini düzenleyin.")
+            activeAlert = AppAlert(title: Localizer.shared.t("dom.alert.duplicateName.title"),
+                                   message: String(format: Localizer.shared.t("dom.alert.duplicateName.msg"), domain.name))
             return false
         }
 
@@ -1358,20 +1358,20 @@ class DomainManager: BaseManager {
             let message: String
             if let c = Int(code), (200..<400).contains(c) {
                 log(key: "log.dom.healthOk", args: [domain.name, code], type: .success)
-                title = "✅ \(domain.name) Çalışıyor"
-                message = "Site yanıt veriyor — HTTP \(code)\n\(url)"
+                title = String(format: Localizer.shared.t("dom.health.ok.title"), domain.name)
+                message = String(format: Localizer.shared.t("dom.health.ok.msg"), code, url)
             } else if code == "000" || code.isEmpty {
                 log(key: "log.dom.healthUnreachable", args: [domain.name], type: .error)
-                title = "❌ \(domain.name) Erişilemiyor"
-                message = "Bağlantı kurulamadı.\n\nKontrol edin:\n• \(domain.webServer.displayName) çalışıyor mu? (Servisler sekmesi)\n• /etc/hosts kaydı var mı?\n• SSL sertifikası mevcut mu?"
+                title = String(format: Localizer.shared.t("dom.health.unreachable.title"), domain.name)
+                message = String(format: Localizer.shared.t("dom.health.unreachable.msg"), domain.webServer.displayName)
             } else if code == "502" || code == "503" || code == "504" {
                 log(key: "log.dom.healthBackendDown", args: [domain.name, code], type: .warning)
-                title = "⚠️ Uygulama Çalışmıyor (HTTP \(code))"
-                message = "Web sunucusu ayakta ama arkadaki uygulama yanıt vermiyor.\n\nDomain satırındaki ▶︎ butonuyla uygulamayı başlatın."
+                title = String(format: Localizer.shared.t("dom.health.backendDown.title"), code)
+                message = Localizer.shared.t("dom.health.backendDown.msg")
             } else {
                 log(key: "log.dom.healthUnexpected", args: [domain.name, code], type: .warning)
-                title = "⚠️ \(domain.name) — HTTP \(code)"
-                message = "Site yanıt verdi ama beklenmeyen durum kodu döndü: HTTP \(code)\n\(url)"
+                title = String(format: Localizer.shared.t("dom.health.unexpected.title"), domain.name, code)
+                message = String(format: Localizer.shared.t("dom.health.unexpected.msg"), code, url)
             }
             activeAlert = AppAlert(title: title, message: message)
         }
@@ -1612,8 +1612,8 @@ class DomainManager: BaseManager {
         let target = await resolveDotnetTarget(for: domain)
         guard target.installed else {
             log(key: "log.dom.dotnetSdkMissing", type: .error)
-            activeAlert = AppAlert(title: ".NET SDK Bulunamadı",
-                                   message: "'\(domain.name)' için .NET SDK kurulu değil.\n\nServisler sekmesinden bir .NET sürümü (örn. .NET 9) kurup domaini tekrar başlatın.")
+            activeAlert = AppAlert(title: Localizer.shared.t("dom.alert.dotnetMissing.title"),
+                                   message: String(format: Localizer.shared.t("dom.alert.dotnetMissing.msg"), domain.name))
             return false
         }
         let frameworkMoniker = target.moniker

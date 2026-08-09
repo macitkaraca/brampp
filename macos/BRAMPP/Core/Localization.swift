@@ -88,6 +88,44 @@ enum L10n {
         "dom.portsNginxHint": ["tr": "HTTP :8080  ·  HTTPS :8443  —  Node.js ve .NET için önerilir", "en": "HTTP :8080  ·  HTTPS :8443  —  recommended for Node.js and .NET"],
         "dom.versionNotInstalled": ["tr": "%@  — kurulu değil", "en": "%@  — not installed"],
 
+        // DomainManager uyarıları — bunlar Swift içinde SABİT TÜRKÇE yazılıydı, yani
+        // İngilizce arayüzde de Türkçe görünüyordu. Birden çok argüman alan metinlerde
+        // konumlu belirteç (%1$@) kullanılır: argüman sırası dile göre değişebilir.
+        "dom.alert.invalidName.title": ["tr": "Geçersiz Domain Adı", "en": "Invalid Domain Name"],
+        "dom.alert.invalidName.msg": [
+            "tr": "'%@' geçerli bir alan adı değil. Örnek: projem.test, api.test\n\nBoşluk, tırnak veya slash kullanmayın.",
+            "en": "'%@' is not a valid domain name. Example: myproject.test, api.test\n\nDo not use spaces, quotes or slashes."],
+        "dom.alert.reservedName.title": ["tr": "Sistem Adı Kullanılamaz", "en": "Reserved System Name"],
+        "dom.alert.reservedName.msg": [
+            "tr": "'%@' sistem tarafından ayrılmış bir addır (localhost, broadcasthost, IP adresleri…). Bu adla domain oluşturmak macOS'un /etc/hosts dosyasını ve paylaşılan localhost SSL sertifikasını bozar.\n\nÖrnek geçerli ad: projem.test, api.test",
+            "en": "'%@' is reserved by the system (localhost, broadcasthost, IP addresses…). Creating a domain with this name would break the macOS /etc/hosts file and the shared localhost SSL certificate.\n\nValid example: myproject.test, api.test"],
+        "dom.alert.duplicateName.title": ["tr": "Domain Zaten Var", "en": "Domain Already Exists"],
+        "dom.alert.duplicateName.msg": [
+            "tr": "'%@' adında bir domain zaten kayıtlı. Farklı bir ad kullanın veya mevcut domaini düzenleyin.",
+            "en": "A domain named '%@' is already registered. Use a different name, or edit the existing one."],
+        "dom.alert.dotnetMissing.title": ["tr": ".NET SDK Bulunamadı", "en": ".NET SDK Not Found"],
+        "dom.alert.dotnetMissing.msg": [
+            "tr": "'%@' için .NET SDK kurulu değil.\n\nServisler sekmesinden bir .NET sürümü (örn. .NET 9) kurup domaini tekrar başlatın.",
+            "en": "No .NET SDK is installed for '%@'.\n\nInstall a .NET version (e.g. .NET 9) from the Services tab, then start the domain again."],
+
+        // Sağlık kontrolü sonucu — dört dalın da başlığı ve mesajı
+        "dom.health.ok.title": ["tr": "✅ %@ Çalışıyor", "en": "✅ %@ is up"],
+        "dom.health.ok.msg": [
+            "tr": "Site yanıt veriyor — HTTP %1$@\n%2$@",
+            "en": "The site is responding — HTTP %1$@\n%2$@"],
+        "dom.health.unreachable.title": ["tr": "❌ %@ Erişilemiyor", "en": "❌ %@ is unreachable"],
+        "dom.health.unreachable.msg": [
+            "tr": "Bağlantı kurulamadı.\n\nKontrol edin:\n• %@ çalışıyor mu? (Servisler sekmesi)\n• /etc/hosts kaydı var mı?\n• SSL sertifikası mevcut mu?",
+            "en": "Could not connect.\n\nCheck:\n• Is %@ running? (Services tab)\n• Is there an /etc/hosts entry?\n• Does the SSL certificate exist?"],
+        "dom.health.backendDown.title": ["tr": "⚠️ Uygulama Çalışmıyor (HTTP %@)", "en": "⚠️ App Not Running (HTTP %@)"],
+        "dom.health.backendDown.msg": [
+            "tr": "Web sunucusu ayakta ama arkadaki uygulama yanıt vermiyor.\n\nDomain satırındaki ▶︎ butonuyla uygulamayı başlatın.",
+            "en": "The web server is up, but the app behind it is not responding.\n\nStart it with the ▶︎ button on the domain row."],
+        "dom.health.unexpected.title": ["tr": "⚠️ %1$@ — HTTP %2$@", "en": "⚠️ %1$@ — HTTP %2$@"],
+        "dom.health.unexpected.msg": [
+            "tr": "Site yanıt verdi ama beklenmeyen durum kodu döndü: HTTP %1$@\n%2$@",
+            "en": "The site responded with an unexpected status code: HTTP %1$@\n%2$@"],
+
         // LogsTabView
         "logs.lineCount":         ["tr": "%d satır", "en": "%d lines"],
         "logs.lineCountFiltered": ["tr": "%d/%d satır", "en": "%d/%d lines"],

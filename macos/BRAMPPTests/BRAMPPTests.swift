@@ -591,6 +591,57 @@ final class BRAMPPTests: XCTestCase {
     }
 
     /// İki beceri AYRI klasörlere kurulmalı — aynı yola yazılırsa biri diğerini ezer.
+    /// Her katalog anahtarının iki dilinde de AYNI biçim belirteçleri olmalı.
+    ///
+    /// `String(format:)` fazla argümanı sessizce yutar, eksik argümanda çöp gösterir.
+    /// TR metninde `%@` olup EN metninde olmaması bu yüzden hata vermez — yalnızca
+    /// yanlış metin üretir ve fark edilmez. Belirteçler kümesi eşitlenerek yakalanır.
+    func testCatalog_FormatSpecifiersMatchAcrossLanguages() {
+        let pattern = try! NSRegularExpression(pattern: "%(?:\\d+\\$)?[@dfs]")
+        func specs(_ s: String) -> [String] {
+            let r = NSRange(s.startIndex..., in: s)
+            return pattern.matches(in: s, range: r)
+                .compactMap { Range($0.range, in: s).map { String(s[$0]) } }
+                .sorted()
+        }
+        for (key, langs) in L10n.catalog where langs.count > 1 {
+            let byLang = langs.mapValues(specs)
+            let reference = byLang.first!.value
+            for (lang, found) in byLang {
+                XCTAssertEqual(found, reference,
+                               "\(key): \(lang) belirteçleri diğer dillerle uyuşmuyor — \(byLang)")
+            }
+        }
+    }
+
+    /// Uyarı metinleri Swift içinde SABİT yazılmamalı.
+    ///
+    /// DomainManager'daki sekiz uyarı sabit Türkçeydi; İngilizce arayüzde de Türkçe
+    /// görünüyorlardı. Anahtarların varlığı ve iki dilde dolu olması burada güvenceye alınır.
+    func testDomainAlerts_AreLocalizedInBothLanguages() {
+        let keys = ["dom.alert.invalidName.title", "dom.alert.invalidName.msg",
+                    "dom.alert.reservedName.title", "dom.alert.reservedName.msg",
+                    "dom.alert.duplicateName.title", "dom.alert.duplicateName.msg",
+                    "dom.alert.dotnetMissing.title", "dom.alert.dotnetMissing.msg",
+                    "dom.health.ok.title", "dom.health.ok.msg",
+                    "dom.health.unreachable.title", "dom.health.unreachable.msg",
+                    "dom.health.backendDown.title", "dom.health.backendDown.msg",
+                    "dom.health.unexpected.title", "dom.health.unexpected.msg"]
+        for key in keys {
+            guard let entry = L10n.catalog[key] else {
+                XCTFail("\(key) katalogda yok"); continue
+            }
+            for lang in ["tr", "en"] {
+                let text = entry[lang] ?? ""
+                XCTAssertFalse(text.isEmpty, "\(key) için \(lang) çevirisi boş")
+            }
+            // "TR ile EN aynı olmamalı" diye bir kural YOK: "⚠️ %1$@ — HTTP %2$@" gibi
+            // yalnızca yer tutucu ve protokol adı içeren başlıklar iki dilde de aynıdır.
+            // Gerçek invariantlar burada anahtarın varlığı ve dolu olması; biçim
+            // belirteçlerinin tutarlılığını testCatalog_FormatSpecifiers… güvenceye alır.
+        }
+    }
+
     /// Örneklerde `.test` önerilmeli, `.local` DEĞİL.
     ///
     /// `.local` mDNS'e ayrılmıştır (RFC 6762) ve macOS'ta çözümleme gecikmesi yaratır.
