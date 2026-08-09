@@ -155,11 +155,27 @@ struct ServiceGroupView: View {
 struct ServiceRowView: View {
     @EnvironmentObject var loc: Localizer
     @EnvironmentObject var serviceManager: ServiceManager
+    @EnvironmentObject var tunnelManager: TunnelManager
     let service: Service
 
     @State private var showApacheConfig    = false
     @State private var showNginxConfig     = false
     @State private var showUninstallAlert  = false
+
+    /// cloudflared satırının alt yazısı — açık yayınları adlarıyla listeler.
+    @ViewBuilder
+    private var cloudflaredStatus: some View {
+        let live = tunnelManager.tunnels.values.filter(\.isLive)
+            .map(\.domainName).sorted()
+        if live.isEmpty {
+            CaptionText(loc.t("svc.cf.idle"))
+        } else {
+            Text(live.count == 1
+                 ? String(format: loc.t("svc.cf.activeOne"), live[0])
+                 : String(format: loc.t("svc.cf.activeMany"), live.count, live.joined(separator: ", ")))
+                .font(.caption).foregroundColor(.green)
+        }
+    }
 
     private var isPhpMyAdminInstalled: Bool {
         PathConfig.isPhpMyAdminInstalled
@@ -188,7 +204,14 @@ struct ServiceRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(service.name).fontWeight(.medium)
-                if let v = service.version { CaptionText("v\(v)") }
+                if service.id == "cloudflared" {
+                    // Bu satır "kurulu mu"dan fazlasını söylemeli: cloudflared sürekli
+                    // çalışmaz, bir paylaşım açıkken yaşar. Kullanıcının görmek
+                    // istediği HANGİ sitelerin şu anda internete açık olduğu.
+                    cloudflaredStatus
+                } else if let v = service.version {
+                    CaptionText("v\(v)")
+                }
             }
             Spacer()
             actionButtons
@@ -757,5 +780,6 @@ struct MariaDBConfigView: View {
 #Preview {
     ServicesTabView()
         .environmentObject(ServiceManager(consoleStore: ConsoleStore()))
+        .environmentObject(TunnelManager(consoleStore: ConsoleStore()))
         .environmentObject(Localizer.shared)
 }

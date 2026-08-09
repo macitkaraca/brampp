@@ -111,6 +111,8 @@ struct DomainsTabView: View {
                 Label(loc.t("share.port.menu"), systemImage: "antenna.radiowaves.left.and.right")
             }
             .buttonStyle(.bordered)
+            .disabled(!TunnelManager.isCloudflaredInstalled)
+            .help(TunnelManager.isCloudflaredInstalled ? "" : loc.t("dom.share.needsInstall"))
             Button(action: { showAddSheet = true }) { Label(loc.t("dom.new"), systemImage: "plus") }
                 .buttonStyle(.borderedProminent)
         }
@@ -206,6 +208,9 @@ struct DomainRowView: View {
     private var isSharing: Bool {
         tunnelManager.tunnel(for: domain.name)?.isLive == true
     }
+
+    /// Paylaşım hiç mümkün mü — cloudflared kurulu değilse düğme pasif olur.
+    private var canShare: Bool { TunnelManager.isCloudflaredInstalled }
 
     private var isAppPlatform: Bool {
         [Platform.nodejs, .python, .dotnet].contains(domain.platform)
@@ -335,9 +340,13 @@ struct DomainRowView: View {
                     // olup olmadığını pencere açmadan görebilmeli.
                     Image(systemName: isSharing ? "antenna.radiowaves.left.and.right"
                                                 : "antenna.radiowaves.left.and.right.slash")
-                        .foregroundColor(isSharing ? .green : .red)
+                        .foregroundColor(canShare ? (isSharing ? .green : .red) : .secondary)
                 }
-                .help(isSharing ? loc.t("dom.share.live") : loc.t("dom.share.off"))
+                // cloudflared yoksa düğme PASİF: tıklayıp kurulum ekranıyla
+                // karşılaşmaktansa neden çalışmadığını ipucunda okumak daha dürüst.
+                .disabled(!canShare)
+                .help(!canShare ? loc.t("dom.share.needsInstall")
+                      : (isSharing ? loc.t("dom.share.live") : loc.t("dom.share.off")))
                 Button(action: onDelete)   { Image(systemName: "trash").foregroundColor(.red) }
                     .help(loc.t("dom.delete"))
             }

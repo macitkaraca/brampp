@@ -10,6 +10,8 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
     case dotnet = "dotnet"
     case database = "database"
     case cache = "cache"
+    /// Paylaşım araçları — brew services yönetmez, yalnızca kurulu olmaları gerekir
+    case sharing = "sharing"
 
     var id: String { rawValue }
 
@@ -18,6 +20,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .webServer: return "cat.webServer"
         case .database:  return "cat.database"
+        case .sharing:   return "cat.sharing"
         default:         return nil
         }
     }
@@ -32,6 +35,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         case .dotnet: return ".NET Core"
         case .database: return "Veritabanı"
         case .cache: return "Cache"
+        case .sharing: return "Paylaşım"
         }
     }
 
@@ -45,6 +49,7 @@ enum ServiceCategory: String, Codable, CaseIterable, Identifiable {
         case .dotnet: return "🟣"
         case .database: return "🗄️"
         case .cache: return "📦"
+        case .sharing: return "📡"
         }
     }
 }
@@ -209,5 +214,11 @@ extension Service {
         // Cache
         Service(id: "redis", name: "Redis", category: .cache, type: .brewService, port: 6379),
         Service(id: "memcached", name: "Memcached", category: .cache, type: .brewService, port: 11211),
+
+        // Paylaşım — cloudflared bir brew SERVİSİ DEĞİLDİR: kalıcı bir daemon olarak
+        // çalışmaz, yalnızca bir tünel açıkken yaşar. Bu yüzden Node/Python gibi
+        // `.runtime` olarak izlenir: tek sorulan "kurulu mu".
+        Service(id: "cloudflared", name: "Cloudflare Tunnel", category: .sharing,
+                type: .runtime, brewName: "cloudflared"),
     ]
 }
