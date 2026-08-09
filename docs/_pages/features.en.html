@@ -58,7 +58,7 @@
       <p class="lede">A self-signed certificate is rejected no matter how carefully you configure the server. BRAMPP takes the other route: a local certificate authority.</p>
     </div>
     <p class="para">One click sets up <code>mkcert</code>, installs its CA into the macOS system trust store — that is the single password prompt you will see — and issues a certificate for each domain you create. Browsers then trust those certificates the way they trust a public one, because the authority that signed them is genuinely trusted on your machine.</p>
-    <p class="para">Each domain also gets an HTTP→HTTPS redirect, so <code>http://myproject.local</code> lands on the secure address rather than serving a second, subtly different version of your site. The full story — including why <code>.local</code> is a trap on macOS and what to use instead — is in the <a href="{{UP}}guides/local-https/">local HTTPS guide</a>.</p>
+    <p class="para">Each domain also gets an HTTP→HTTPS redirect, so <code>http://myproject.test</code> lands on the secure address rather than serving a second, subtly different version of your site. The full story — including why <code>.local</code> is a trap on macOS and what to use instead — is in the <a href="{{UP}}guides/local-https/">local HTTPS guide</a>.</p>
 </div>
 </section>
 

@@ -591,6 +591,28 @@ final class BRAMPPTests: XCTestCase {
     }
 
     /// İki beceri AYRI klasörlere kurulmalı — aynı yola yazılırsa biri diğerini ezer.
+    /// Örneklerde `.test` önerilmeli, `.local` DEĞİL.
+    ///
+    /// `.local` mDNS'e ayrılmıştır (RFC 6762) ve macOS'ta çözümleme gecikmesi yaratır.
+    /// Yerel HTTPS rehberimiz bunu zaten anlatıyordu, ama uygulama ve beceri metinleri
+    /// hâlâ `.local` dağıtıyordu — kendi tavsiyemizle çelişen bu durum böyle yakalanır.
+    /// Doğrulama TLD'den bağımsızdır; değişen yalnızca ÖNERİ, mevcut alan adları çalışır.
+    func testExamples_RecommendTestTLD_NotLocal() {
+        let example = L10n.catalog["dom.example"]
+        XCTAssertNotNil(example, "dom.example anahtarı olmalı")
+        for (lang, text) in example ?? [:] {
+            XCTAssertTrue(text.contains(".test"), "\(lang): örnek .test önermeli — \(text)")
+            XCTAssertFalse(text.contains(".local"), "\(lang): örnek .local önermemeli — \(text)")
+        }
+
+        for (name, markdown) in [("mcptools", MCPToolsSkill.markdown),
+                                 ("brampp_mysql", BramppMySQLSkill.markdown)] {
+            XCTAssertFalse(markdown.contains(".local"),
+                           "\(name) becerisi örnek alan adı olarak .local vermemeli")
+            XCTAssertTrue(markdown.contains(".test"), "\(name) becerisi .test örneği içermeli")
+        }
+    }
+
     func testSkills_HaveDistinctInstallPaths() {
         XCTAssertNotEqual(ClaudeIntegration.skillPath, ClaudeIntegration.mysqlSkillPath)
         XCTAssertNotEqual(ClaudeIntegration.skillDirectory, ClaudeIntegration.mysqlSkillDirectory)

@@ -745,7 +745,7 @@ enum L10n {
         "dom.logType":     ["tr": "Log Türü", "en": "Log Type"],
         "dom.openFile":    ["tr": "Dosyayı Aç", "en": "Open File"],
         "dom.logEmpty":    ["tr": "Log içeriği bulunamadı.", "en": "No log content found."],
-        "dom.example":     ["tr": "Örnek: myproject.local, api.test", "en": "Example: myproject.local, api.test"],
+        "dom.example":     ["tr": "Örnek: projem.test, api.test", "en": "Example: myproject.test, api.test"],
         "dom.docRootHint": ["tr": "Seçilen klasör kullanılır — mevcut dosyalar korunur, klasör boşsa örnek proje dosyası eklenir.", "en": "The selected folder is used — existing files are preserved; if empty, a sample project file is added."],
         "dom.appPortHint": ["tr": "Nginx bu porta yönlendirme yapar", "en": "Nginx proxies to this port"],
         "dom.python.venvHint": ["tr": "Öneri: Projeyi oluşturduktan sonra proje dizininde 'python -m venv venv' çalıştırın.", "en": "Tip: After creating the project, run 'python -m venv venv' in the project directory."],

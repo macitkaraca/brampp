@@ -120,7 +120,7 @@
       "name": "What asks for my password?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Only /etc/hosts edits (adding 127.0.0.1 myproject.local). Each operation asks separately and shows the exact command first."
+        "text": "Only /etc/hosts edits (adding 127.0.0.1 myproject.test). Each operation asks separately and shows the exact command first."
       }
     },
     {
@@ -767,7 +767,7 @@ pre code{white-space:pre;overflow-wrap:normal}
     </div>
     <div class="grid">
       <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Service control</h3><p>Start, stop and restart Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL and Redis. Live status with port checks, crash notifications, auto-start of last-running services.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Local domains</h3><p><code>myproject.local</code> in seconds: virtual host, <code>/etc/hosts</code> entry, site folder and sample project generated for you. Apache or Nginx, per domain.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Local domains</h3><p><code>myproject.test</code> in seconds: virtual host, <code>/etc/hosts</code> entry, site folder and sample project generated for you. Apache or Nginx, per domain.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Every stack, one app</h3><p>PHP with a per-domain version, Node.js, Python (FastAPI, Django, Flask with venv), ASP.NET Core, static sites and SPAs with history-mode fallback.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Real HTTPS locally</h3><p>One-click mkcert integration: local certificate authority, per-domain certificates and HTTP→HTTPS redirect. The green padlock, at home.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Databases without the CLI</h3><p>Create and drop databases, dump and restore, phpMyAdmin / pgAdmin / Adminer installers, plus <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code> editors with safe writes.</p></div>
@@ -826,7 +826,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <li><b>Download and drag.</b> Grab <code>BRAMPP.dmg</code> from <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> and drag BRAMPP.app to Applications.</li>
       <li><b>Open it.</b> The app is Developer ID signed and notarized by Apple, so macOS runs it without any extra step.</li>
       <li><b>Run the setup wizard.</b> It configures Apache ports, PHP-FPM, the mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin — installing only what you approve, showing every command in the console.</li>
-      <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and platform → open <code>https://myproject.local</code> in your browser.</li>
+      <li><b>Create your first domain.</b> <i>+ New Domain</i> → pick a name and platform → open <code>https://myproject.test</code> in your browser.</li>
     </ol>
     <p class="secmore"><a class="btn btn-ghost" href="install/">Requirements &amp; troubleshooting →</a></p>
   </div>
@@ -864,7 +864,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <p style="margin-top:22px"><a href="guides/local-https/" style="color:var(--amber-hi)">How local HTTPS works →</a></p>
       <details><summary>Will it fight my existing Homebrew setup?</summary><p>No — it <i>is</i> your Homebrew setup. BRAMPP never installs a parallel copy of anything.</p></details>
       <details><summary>Is the app signed and notarized?</summary><p>Yes. Releases are signed with a Developer ID Application certificate and notarized by Apple; the ticket is stapled to both the DMG and the app, so it verifies even if the first launch is offline. Run <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> and you should see <code>source=Notarized Developer ID</code>. The project is fully open source — build it yourself if you prefer.</p></details>
-      <details><summary>What asks for my password?</summary><p>Only <code>/etc/hosts</code> edits (adding <code>127.0.0.1 myproject.local</code>). Each operation asks separately and shows the exact command first.</p></details>
+      <details><summary>What asks for my password?</summary><p>Only <code>/etc/hosts</code> edits (adding <code>127.0.0.1 myproject.test</code>). Each operation asks separately and shows the exact command first.</p></details>
       <details><summary>Can BRAMPP run my Node.js / Python / ASP.NET app?</summary><p>Yes — each app runs under a zero-dependency supervisor with auto-restart and combined logs, behind Apache or Nginx as a reverse proxy (WebSocket, SSE, HTTP/2 and gRPC options included). You can declare service dependencies (e.g. MariaDB + Redis) that start automatically first.</p></details>
       <details><summary>Which PHP versions are supported?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 and 8.5 side by side — each domain can pin its own version, and the extension manager works per version.</p></details>
       <details><summary>Which Macs does BRAMPP run on?</summary><p>Apple Silicon only. The shipped build is a native <code>arm64</code> binary and requires macOS 14 (Sonoma) or newer — Intel Macs are not supported. The Homebrew prefix (<code>/opt/homebrew</code>) is detected automatically.</p></details>

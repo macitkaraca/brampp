@@ -131,7 +131,7 @@ BRAMPP issues a local SSL certificate for every domain it creates and installs i
 system trust store. When you check a site in a browser or with `curl`, use **the domain's
 HTTPS address**:
 
-- Right: `https://myapp.local` — Apache; `https://myapp.local:8443` — Nginx
+- Right: `https://myapp.test` — Apache; `https://myapp.test:8443` — Nginx
 - Wrong: `http://127.0.0.1:3001` (the app's backend port — that is behind the reverse
   proxy and skips both the real request path and SSL)
 

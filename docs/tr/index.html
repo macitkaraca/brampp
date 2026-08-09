@@ -120,7 +120,7 @@
       "name": "Şifremi ne için soruyor?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yalnızca /etc/hosts düzenlemeleri için (127.0.0.1 projem.local satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir."
+        "text": "Yalnızca /etc/hosts düzenlemeleri için (127.0.0.1 projem.test satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir."
       }
     },
     {
@@ -767,7 +767,7 @@ pre code{white-space:pre;overflow-wrap:normal}
     </div>
     <div class="grid">
       <div class="card"><span class="ico" aria-hidden="true">⚙️</span><h3>Servis kontrolü</h3><p>Apache, Nginx, PHP-FPM 8.1–8.5, MariaDB, PostgreSQL ve Redis'i başlatın, durdurun, yeniden başlatın. Port kontrollü canlı durum, çökme bildirimleri, son çalışan servisleri açılışta başlatma.</p></div>
-      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Yerel alan adları</h3><p>Saniyeler içinde <code>projem.local</code>: vhost, <code>/etc/hosts</code> kaydı, site klasörü ve örnek proje sizin için oluşturulur. Alan adı başına Apache ya da Nginx.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🌐</span><h3>Yerel alan adları</h3><p>Saniyeler içinde <code>projem.test</code>: vhost, <code>/etc/hosts</code> kaydı, site klasörü ve örnek proje sizin için oluşturulur. Alan adı başına Apache ya da Nginx.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🚀</span><h3>Her platform, tek uygulama</h3><p>Alan adı başına sürümüyle PHP, Node.js, Python (venv ile FastAPI, Django, Flask), ASP.NET Core, statik siteler ve history-mode yönlendirmeli SPA'lar.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Gerçek yerel HTTPS</h3><p>Tek tıkla mkcert entegrasyonu: yerel sertifika otoritesi, alan adı başına sertifika ve HTTP→HTTPS yönlendirme. Yeşil kilit, artık evinizde.</p></div>
       <div class="card"><span class="ico" aria-hidden="true">🗄️</span><h3>Terminalsiz veritabanı</h3><p>Veritabanı oluşturma ve silme, yedekleme ve geri yükleme, phpMyAdmin / pgAdmin / Adminer kurucuları, ayrıca güvenli yazmalı <code>my.cnf</code>, <code>postgresql.conf</code> ve <code>redis.conf</code> panelleri.</p></div>
@@ -826,7 +826,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <li><b>İndirin ve sürükleyin.</b> <code>BRAMPP.dmg</code> dosyasını <a href="https://github.com/macitkaraca/brampp/releases/latest">Releases</a> sayfasından indirin, BRAMPP.app'i Uygulamalar klasörüne sürükleyin.</li>
       <li><b>Açın.</b> Uygulama Developer ID ile imzalı ve Apple tarafından noter onaylıdır — macOS ek bir adım istemeden çalıştırır.</li>
       <li><b>Kurulum sihirbazını çalıştırın.</b> Apache portlarını, PHP-FPM'i, mkcert CA'sını, localhost SSL'ini, MariaDB root erişimini ve phpMyAdmin'i yapılandırır — yalnızca onayladığınızı kurar, çalıştırdığı her komutu konsolda gösterir.</li>
-      <li><b>İlk alan adınızı oluşturun.</b> <i>+ Yeni Alan Adı</i> → bir ad ve platform seçin → tarayıcıda <code>https://projem.local</code> adresini açın.</li>
+      <li><b>İlk alan adınızı oluşturun.</b> <i>+ Yeni Alan Adı</i> → bir ad ve platform seçin → tarayıcıda <code>https://projem.test</code> adresini açın.</li>
     </ol>
     <p class="secmore"><a class="btn btn-ghost" href="install/">Gereksinimler ve sorun giderme →</a></p>
   </div>
@@ -864,7 +864,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <p style="margin-top:22px"><a href="guides/local-https/" style="color:var(--amber-hi)">Yerel HTTPS nasıl çalışır →</a></p>
       <details><summary>Mevcut Homebrew kurulumumla kavga eder mi?</summary><p>Hayır — zaten <i>o</i> sizin Homebrew kurulumunuz. BRAMPP hiçbir şeyin ikinci bir kopyasını kurmaz.</p></details>
       <details><summary>Uygulama imzalı ve noter onaylı mı?</summary><p>Evet. Yayın sürümleri Developer ID Application sertifikasıyla imzalanır ve Apple noter onayından geçer; bilet hem DMG'ye hem uygulamaya zımbalanır, böylece ilk açılışta internet olmasa bile doğrulanır. <code>spctl -a -vvv -t exec /Applications/BRAMPP.app</code> komutu <code>source=Notarized Developer ID</code> demeli. Proje tümüyle açık kaynaktır; dilerseniz kendiniz derleyin.</p></details>
-      <details><summary>Şifremi ne için soruyor?</summary><p>Yalnızca <code>/etc/hosts</code> düzenlemeleri için (<code>127.0.0.1 projem.local</code> satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir.</p></details>
+      <details><summary>Şifremi ne için soruyor?</summary><p>Yalnızca <code>/etc/hosts</code> düzenlemeleri için (<code>127.0.0.1 projem.test</code> satırını eklemek gibi). Her işlem ayrı ayrı sorar ve çalıştırılacak komutu önce gösterir.</p></details>
       <details><summary>BRAMPP Node.js / Python / ASP.NET uygulamamı çalıştırabilir mi?</summary><p>Evet — her uygulama, bağımlılığı olmayan bir süpervizör altında otomatik yeniden başlatma ve birleşik günlüklerle çalışır; önünde ters vekil (reverse proxy) olarak Apache ya da Nginx durur (WebSocket, SSE, HTTP/2 ve gRPC seçenekleri dahil). Uygulamanızdan önce otomatik başlayacak servis bağımlılıkları da tanımlayabilirsiniz (örneğin MariaDB + Redis).</p></details>
       <details><summary>Hangi PHP sürümleri destekleniyor?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 ve 8.5 yan yana — her alan adı kendi sürümünü sabitleyebilir; eklenti yöneticisi de sürüm başına çalışır.</p></details>
       <details><summary>Hangi Mac'lerde çalışır?</summary><p>Yalnızca Apple Silicon. Dağıtılan sürüm yerel bir <code>arm64</code> ikilisidir ve macOS 14 (Sonoma) veya üstünü gerektirir — Intel Mac'ler desteklenmez. Homebrew prefix'i (<code>/opt/homebrew</code>) otomatik algılanır.</p></details>

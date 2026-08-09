@@ -64,13 +64,13 @@ Creates a domain: site folder, vhost, SSL certificate and `/etc/hosts` entry.
 
 | Argument | Type | Description |
 | --- | --- | --- |
-| `name` | string | **Required.** e.g. `myapp.local` |
+| `name` | string | **Required.** e.g. `myapp.test` |
 | `platform` | string | `php` (default), `nodejs`, `python`, `dotnet`, `static` |
 | `web_server` | string | `apache` (default), `nginx` |
 | `port` | integer | Backend port (nodejs/python/dotnet); a free one is assigned if omitted |
 | `ssl` | boolean | Default `true` |
 
-> Example: `{"name": "api.local", "platform": "nodejs", "web_server": "nginx"}`
+> Example: `{"name": "api.test", "platform": "nodejs", "web_server": "nginx"}`
 
 ### `set_domain_enabled`
 Enables or disables a domain. While disabled the record and site files are kept; only the
@@ -81,7 +81,7 @@ vhost and hosts entry are removed. — *Domains: write*
 | `name` | string | **Required.** Domain name |
 | `enabled` | boolean | **Required.** `true`/`false` |
 
-> Example: `{"name": "api.local", "enabled": false}`
+> Example: `{"name": "api.test", "enabled": false}`
 
 ### `service_status`
 Returns the status of every service (`id`, name, state, port, version). No arguments.
@@ -133,7 +133,7 @@ BRAMPP issues a local SSL certificate for every domain and installs it into the 
 trust store. When you check a site in a browser or with `curl`, use **the domain's HTTPS
 address**:
 
-- Right: `https://myapp.local` — Apache; `https://myapp.local:8443` — Nginx
+- Right: `https://myapp.test` — Apache; `https://myapp.test:8443` — Nginx
 - Wrong: `http://127.0.0.1:3001` (the app's backend port — that is behind the reverse
   proxy and skips both the real request path and SSL)
 

@@ -354,7 +354,7 @@ class DomainManager: BaseManager {
         guard Self.isValidDomainName(domain.name) else {
             log(key: "log.dom.invalidName", args: [domain.name], type: .error)
             activeAlert = AppAlert(title: "Geçersiz Domain Adı",
-                                   message: "'\(domain.name)' geçerli bir alan adı değil. Örnek: myproject.local, api.test\n\nBoşluk, tırnak veya slash kullanmayın.")
+                                   message: "'\(domain.name)' geçerli bir alan adı değil. Örnek: projem.test, api.test\n\nBoşluk, tırnak veya slash kullanmayın.")
             return false
         }
 
@@ -363,7 +363,7 @@ class DomainManager: BaseManager {
         guard !Self.isReservedDomainName(domain.name) else {
             log(key: "log.dom.invalidName", args: [domain.name], type: .error)
             activeAlert = AppAlert(title: "Sistem Adı Kullanılamaz",
-                                   message: "'\(domain.name)' sistem tarafından ayrılmış bir addır (localhost, broadcasthost, IP adresleri…). Bu adla domain oluşturmak macOS'un /etc/hosts dosyasını ve paylaşılan localhost SSL sertifikasını bozar.\n\nÖrnek geçerli ad: myproject.local, api.test")
+                                   message: "'\(domain.name)' sistem tarafından ayrılmış bir addır (localhost, broadcasthost, IP adresleri…). Bu adla domain oluşturmak macOS'un /etc/hosts dosyasını ve paylaşılan localhost SSL sertifikasını bozar.\n\nÖrnek geçerli ad: projem.test, api.test")
             return false
         }
 

@@ -379,7 +379,7 @@ struct DomainRowView: View {
             Text(loc.t("dom.rename.title")).font(.headline)
             Text(String(format: loc.t("dom.rename.desc"), domain.name))
                 .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
-            TextField("yeni.domain.local", text: $renameText)
+            TextField("yeni.domain.test", text: $renameText)
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
                 .disabled(isRenaming)

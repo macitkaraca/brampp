@@ -36,8 +36,8 @@ Four steps from a fresh Mac to a local site with a green padlock.
 
 1. **Install** — download `BRAMPP.dmg` from [Releases](../../releases/latest) and drag **BRAMPP.app** to Applications. The app is signed with a Developer ID and notarized by Apple, so it opens straight away — no Gatekeeper prompt to work around.
 2. **Run the setup wizard** — it checks Homebrew, installs the formulas you approve (`httpd`, `php`, `mariadb`…), puts Apache on port 80, wires up PHP-FPM and creates the mkcert CA. Every command it runs is printed in the console.
-3. **Create your first domain** — **Domains → + New Domain**, type `myproject.local`, pick a platform (PHP / Node.js / Python / .NET / static). BRAMPP writes the vhost, adds the `/etc/hosts` entry (admin prompt), creates `~/Sites/myproject.local` and drops a sample project in it.
-4. **Open `https://myproject.local`** — real certificate, real padlock, zero config files edited by hand.
+3. **Create your first domain** — **Domains → + New Domain**, type `myproject.test`, pick a platform (PHP / Node.js / Python / .NET / static). BRAMPP writes the vhost, adds the `/etc/hosts` entry (admin prompt), creates `~/Sites/myproject.test` and drops a sample project in it.
+4. **Open `https://myproject.test`** — real certificate, real padlock, zero config files edited by hand.
 
 Stuck on any of those? → [Troubleshooting](#troubleshooting).
 
@@ -106,7 +106,7 @@ Being clear about the edges saves you an evening:
 ## Features
 
 - **Service control** — start/stop/restart Apache, Nginx, PHP-FPM (8.1–8.5), MariaDB, PostgreSQL (multi-version), Redis and more. Live status with port checks, crash notifications, auto-start of last-running services.
-- **Local domains** — create `myproject.local` in seconds: virtual host, `/etc/hosts` entry, site folder and sample project generated automatically. Apache *or* Nginx per domain.
+- **Local domains** — create `myproject.test` in seconds: virtual host, `/etc/hosts` entry, site folder and sample project generated automatically. Apache *or* Nginx per domain.
 - **Every stack, one app** — PHP (per-domain PHP version), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, static sites & SPAs (history-mode fallback included).
 - **Real HTTPS locally** — one-click [mkcert](https://github.com/FiloSottile/mkcert) integration: local CA, per-domain certificates, HTTP→HTTPS redirect. The green padlock, at home.
 - **Databases without the CLI** — create/drop databases, dump & restore (single-transaction for PostgreSQL), phpMyAdmin / pgAdmin / Adminer installers, `my.cnf` / `postgresql.conf` / `redis.conf` editors with safe writes.
@@ -334,13 +334,13 @@ A tool that is not permitted **never shows up in the client at all**: `tools/lis
 
 ### Example prompts
 
-> "Create a PHP 8.5 domain called `blog.local` in BRAMPP"
+> "Create a PHP 8.5 domain called `blog.test` in BRAMPP"
 
-> "Show me the last 50 lines of the error log for `shop.example.local`"
+> "Show me the last 50 lines of the error log for `shop.example.test`"
 
 > "Start MariaDB, create a `shop` database and list the tables in it"
 
-> "`api.local` returns 502 — check whether the app is running and read its log"
+> "`api.test` returns 502 — check whether the app is running and read its log"
 
 ## Troubleshooting
 
@@ -379,11 +379,11 @@ Two other honest possibilities: a leftover `Listen 8080` line in `httpd.conf` (t
 <details>
 <summary><b>The admin (password) prompt when creating a domain</b></summary>
 
-Only `/etc/hosts` needs root — that's the file that maps `myproject.local` to `127.0.0.1`. BRAMPP asks per operation (Touch ID works), shows the command first, and never keeps a privileged helper running in the background.
+Only `/etc/hosts` needs root — that's the file that maps `myproject.test` to `127.0.0.1`. BRAMPP asks per operation (Touch ID works), shows the command first, and never keeps a privileged helper running in the background.
 
 If you cancel the prompt, the domain is **still created** — vhost, folder, certificate, all of it — it just won't resolve in the browser. Two ways out:
 
-- add the line yourself: `127.0.0.1  myproject.local`
+- add the line yourself: `127.0.0.1  myproject.test`
 - or let the app do it: when entries are missing, an orange repair banner appears above the Domains tab; **Repair** re-adds all of them in one prompt.
 </details>
 
@@ -420,7 +420,7 @@ No — it *is* your Homebrew setup. BRAMPP reads and manages the formulas you al
 Yes. Releases carry a Developer ID Application signature and an Apple notarization ticket, stapled to both the DMG and the app. Verify with `spctl -a -vvv -t exec /Applications/BRAMPP.app` — it should report `source=Notarized Developer ID`. You can still audit the code and build it yourself.
 
 **Why do some things ask for my password?**
-Only `/etc/hosts` edits (adding `127.0.0.1 myproject.local`) require admin rights. Everything else runs as your user.
+Only `/etc/hosts` edits (adding `127.0.0.1 myproject.test`) require admin rights. Everything else runs as your user.
 
 **Is the MCP server safe to leave on?**
 It listens on loopback only, validates `Origin`/`Host`, holds no privileges of its own and can be narrowed per scope — but it is still a door into your dev environment. It's off by default on purpose; turn it on when you're using it.

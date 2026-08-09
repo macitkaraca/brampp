@@ -424,9 +424,9 @@ enum MCPSetupPage {
             </div>
             <pre><code id="c5">\(escape(curlCmd))</code></pre>
             <p data-lang="tr" style="margin-top:12px">Bağlandıktan sonra istemcinize şunu deneyin:
-            <b>&ldquo;BRAMPP'te test.local adında bir PHP alan adı oluştur&rdquo;</b></p>
+            <b>&ldquo;BRAMPP'te demo.test adında bir PHP alan adı oluştur&rdquo;</b></p>
             <p data-lang="en" style="margin-top:12px">Once connected, try asking your client:
-            <b>&ldquo;Create a PHP domain called test.local in BRAMPP&rdquo;</b></p>
+            <b>&ldquo;Create a PHP domain called demo.test in BRAMPP&rdquo;</b></p>
           </div>
         </section>
 

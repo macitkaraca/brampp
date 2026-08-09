@@ -36,8 +36,8 @@ Sıfırdan yeşil kilitli bir yerel siteye dört adım.
 
 1. **Kurun** — [Releases](../../releases/latest) sayfasından `BRAMPP.dmg` indirin ve **BRAMPP.app**'i Applications klasörüne sürükleyin. Uygulama Developer ID ile imzalı ve Apple tarafından noter onaylı olduğundan doğrudan açılır — aşmanız gereken bir Gatekeeper adımı yok.
 2. **Kurulum sihirbazını çalıştırın** — Homebrew'u kontrol eder, onayladığınız formülleri kurar (`httpd`, `php`, `mariadb`…), Apache'yi 80 portuna alır, PHP-FPM'i bağlar ve mkcert CA'sını oluşturur. Çalıştırdığı her komut konsolda görünür.
-3. **İlk alan adınızı oluşturun** — **Alan Adları → + Yeni Alan Adı**, `projem.local` yazın, platformu seçin (PHP / Node.js / Python / .NET / statik). BRAMPP vhost'u yazar, `/etc/hosts` girişini ekler (yönetici onayı), `~/Sites/projem.local` klasörünü açar ve içine örnek bir proje bırakır.
-4. **`https://projem.local` adresini açın** — gerçek sertifika, gerçek kilit, elle düzenlenen sıfır config dosyası.
+3. **İlk alan adınızı oluşturun** — **Alan Adları → + Yeni Alan Adı**, `projem.test` yazın, platformu seçin (PHP / Node.js / Python / .NET / statik). BRAMPP vhost'u yazar, `/etc/hosts` girişini ekler (yönetici onayı), `~/Sites/projem.test` klasörünü açar ve içine örnek bir proje bırakır.
+4. **`https://projem.test` adresini açın** — gerçek sertifika, gerçek kilit, elle düzenlenen sıfır config dosyası.
 
 Adımlardan birinde takıldınız mı? → [Sorun Giderme](#sorun-giderme).
 
@@ -106,7 +106,7 @@ Sınırları baştan bilmek bir akşamınızı kurtarır:
 ## Özellikler
 
 - **Servis kontrolü** — Apache, Nginx, PHP-FPM (8.1–8.5), MariaDB, PostgreSQL (çoklu sürüm), Redis: başlat/durdur/yeniden başlat, canlı port kontrolü, çökme bildirimi, son çalışanları açılışta başlatma.
-- **Yerel alan adları** — `projem.local` saniyeler içinde: vhost + `/etc/hosts` kaydı + site klasörü + örnek proje. Alan adı başına Apache **veya** Nginx.
+- **Yerel alan adları** — `projem.test` saniyeler içinde: vhost + `/etc/hosts` kaydı + site klasörü + örnek proje. Alan adı başına Apache **veya** Nginx.
 - **Her stack** — PHP (alan adı başına sürüm), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, statik site & SPA (history-mode fallback dahil).
 - **Yerel HTTPS** — tek tıkla [mkcert](https://github.com/FiloSottile/mkcert): yerel CA, alan adı başına sertifika, HTTP→HTTPS yönlendirme. Yeşil kilit, evinizde.
 - **Veritabanı yönetimi** — oluştur/sil, yedekle/geri yükle (PostgreSQL'de tek transaction), phpMyAdmin / pgAdmin / Adminer kurulumu, `my.cnf` / `postgresql.conf` / `redis.conf` panelleri (güvenli yazma ile).
@@ -336,13 +336,13 @@ Beceri genel (global) kurulur; yalnızca bu projede değil, her projede geçerli
 
 ### Örnek istemler
 
-> "BRAMPP'te `blog.local` adında PHP 8.5 alan adı oluştur"
+> "BRAMPP'te `blog.test` adında PHP 8.5 alan adı oluştur"
 
-> "`shop.example.local`'in hata logunun son 50 satırını göster"
+> "`shop.example.test`'in hata logunun son 50 satırını göster"
 
 > "MariaDB'yi başlat, `shop` veritabanını oluştur ve içindeki tabloları listele"
 
-> "`api.local` 502 dönüyor — uygulama çalışıyor mu bak ve logunu oku"
+> "`api.test` 502 dönüyor — uygulama çalışıyor mu bak ve logunu oku"
 
 ## Sorun Giderme
 
@@ -381,11 +381,11 @@ Sonra ya o süreci durdurun ya da BRAMPP'i 80'den çekin: **Servisler → Apache
 <details>
 <summary><b>Alan adı oluştururken çıkan yönetici (şifre) istemi</b></summary>
 
-Yalnızca `/etc/hosts` root ister — `projem.local` adını `127.0.0.1`e bağlayan dosya odur. BRAMPP izni işlem başına sorar, çalıştırılacak komutu önce gösterir ve arka planda yetkili bir yardımcı süreç tutmaz.
+Yalnızca `/etc/hosts` root ister — `projem.test` adını `127.0.0.1`e bağlayan dosya odur. BRAMPP izni işlem başına sorar, çalıştırılacak komutu önce gösterir ve arka planda yetkili bir yardımcı süreç tutmaz.
 
 İstemi iptal ederseniz alan adı **yine de oluşur** — vhost, klasör, sertifika, hepsi — sadece tarayıcıda çözümlenmez. İki çıkış yolu:
 
-- satırı kendiniz ekleyin: `127.0.0.1  projem.local`
+- satırı kendiniz ekleyin: `127.0.0.1  projem.test`
 - ya da uygulamaya bırakın: girişler eksikken Alan Adları sekmesinin üstünde turuncu bir onarım şeridi çıkar; **Onar** hepsini tek istemde geri ekler.
 </details>
 
@@ -422,7 +422,7 @@ Hayır — o kurulumun *kendisi* zaten. BRAMPP hâlihazırdaki formüllerinizi o
 Evet. Yayın sürümleri Developer ID Application imzası ve Apple noter bileti taşır; bilet hem DMG'ye hem uygulamaya zımbalıdır. `spctl -a -vvv -t exec /Applications/BRAMPP.app` komutu `source=Notarized Developer ID` demeli. Kodu yine de inceleyip kendiniz derleyebilirsiniz.
 
 **Neden bazı işlemler şifre soruyor?**
-Yalnızca `/etc/hosts` düzenlemeleri (`127.0.0.1 projem.local` satırı) yönetici hakkı ister. Geri kalan her şey sizin kullanıcınızla çalışır.
+Yalnızca `/etc/hosts` düzenlemeleri (`127.0.0.1 projem.test` satırı) yönetici hakkı ister. Geri kalan her şey sizin kullanıcınızla çalışır.
 
 **MCP sunucusunu açık bırakmak güvenli mi?**
 Yalnızca loopback dinler, `Origin`/`Host` doğrular, kendine ait bir yetkisi yoktur ve alan bazında kısılabilir — ama yine de geliştirme ortamınıza açılan bir kapıdır. Varsayılan olarak kapalı olması tesadüf değil: kullanacağınız zaman açın.

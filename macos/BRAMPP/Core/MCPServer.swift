@@ -530,7 +530,7 @@ final class MCPServer: ObservableObject {
         let nameOnly: [String: Any] = ["name": property("string", "Alan adı")]
 
         let createProperties: [String: Any] = [
-            "name": property("string", "Alan adı, ör. myapp.local"),
+            "name": property("string", "Alan adı, ör. myapp.test"),
             "platform": property("string", "Varsayılan: php",
                                  allowed: ["php", "nodejs", "python", "dotnet", "static"]),
             "web_server": property("string", "Varsayılan: apache", allowed: ["apache", "nginx"]),
