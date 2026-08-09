@@ -957,12 +957,25 @@ final class BRAMPPTests: XCTestCase {
         let d = Domain(name: "shop.test", platform: .php, sslEnabled: true, webServer: .apache)
         let cmd = TunnelManager.buildCommand(for: d, cloudflaredPath: "/opt/homebrew/bin/cloudflared")
 
-        XCTAssertTrue(cmd.contains("https://shop.test"), "SSL açıkken HTTPS hedeflenmeli: \(cmd)")
+        // Hedef IP: alan adını çözmek `.local` uzantısında istek başına 5 sn mDNS
+        // zaman aşımına yol açıyordu (ölçüldü: 5,01 sn → 0,012 sn).
+        XCTAssertTrue(cmd.contains("https://127.0.0.1:"), "hedef doğrudan IP olmalı: \(cmd)")
+        XCTAssertFalse(cmd.contains("https://shop.test"), "ad çözümlemesi yola girmemeli")
+        // Ama vhost ve TLS eşleşmesi için ad İKİ yerde verilmeli.
+        XCTAssertTrue(cmd.contains("--http-host-header"), "vhost Host başlığıyla seçilir")
+        XCTAssertTrue(cmd.contains("--origin-server-name"),
+                      "SNI verilmezse sunucu varsayılan sertifikayı sunar ve 421 döner")
         XCTAssertTrue(cmd.contains("--no-tls-verify"), "mkcert sertifikası için gerekli")
-        XCTAssertTrue(cmd.contains("--http-host-header"),
-                      "isim tabanlı vhost'un eşleşmesi bu bayrağa bağlı")
-        XCTAssertTrue(cmd.contains("shop.test"), "Host başlığı alan adı olmalı")
-        XCTAssertFalse(cmd.contains("127.0.0.1:8"), "hedef IP değil alan adı olmalı")
+        // Sayıya dayalı iddia kırılgandı: alan adı log dosyası yolunda da geçiyor.
+        // Bayrakların DEĞERİNE bakılır.
+        let tokens = cmd.components(separatedBy: " ")
+        for flag in ["--http-host-header", "--origin-server-name"] {
+            guard let i = tokens.firstIndex(of: flag), i + 1 < tokens.count else {
+                return XCTFail("\(flag) komutta yok: \(cmd)")
+            }
+            XCTAssertTrue(tokens[i + 1].contains("shop.test"),
+                          "\(flag) değeri alan adı olmalı, bulunan: \(tokens[i + 1])")
+        }
     }
 
     /// SSL KAPALI: HTTP hedeflenir ve TLS doğrulaması atlanmaz — atlanacak TLS yok.
@@ -970,11 +983,13 @@ final class BRAMPPTests: XCTestCase {
         let d = Domain(name: "demo.test", platform: .php, sslEnabled: false, webServer: .apache)
         let cmd = TunnelManager.buildCommand(for: d, cloudflaredPath: "/opt/homebrew/bin/cloudflared")
 
-        XCTAssertTrue(cmd.contains("http://demo.test"))
-        XCTAssertFalse(cmd.contains("https://demo.test"))
+        XCTAssertTrue(cmd.contains("http://127.0.0.1:"))
+        XCTAssertFalse(cmd.contains("https://"))
         XCTAssertFalse(cmd.contains("--no-tls-verify"),
                        "TLS yokken doğrulama atlama bayrağı anlamsız")
-        XCTAssertTrue(cmd.contains("--http-host-header"))
+        XCTAssertFalse(cmd.contains("--origin-server-name"),
+                       "TLS yoksa SNI de yok")
+        XCTAssertTrue(cmd.contains("--http-host-header"), "vhost yine ada göre seçilir")
     }
 
 
@@ -1059,6 +1074,14 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertNil(TunnelManager.portRefusal(port: 3000, isListening: true))
         XCTAssertEqual(TunnelManager.portKey(5173), ":5173",
                        "port paylaşımları alan adı olmadığı için sentetik anahtar kullanır")
+    }
+
+    /// Kullanıcıya teknik hedef değil sitenin kendi adresi gösterilmeli.
+    func testTunnel_ShowsSiteAddressNotTheIPTarget() {
+        let d = Domain(name: "shop.test", platform: .php, sslEnabled: true, webServer: .apache)
+        XCTAssertTrue(TunnelManager.displayOrigin(for: d).contains("shop.test"))
+        XCTAssertFalse(TunnelManager.displayOrigin(for: d).contains("127.0.0.1"))
+        XCTAssertTrue(TunnelManager.origin(for: d).contains("127.0.0.1"))
     }
 
     // MARK: - Konsol log dosyası

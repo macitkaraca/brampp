@@ -27,6 +27,7 @@
 
     <h3 class="sub-h">Değişti</h3>
     <ul class="bullets">
+      <li><b>Paylaşılan site artık her istekte ad çözümlemesi ödemiyor.</b> Tünel alan adını hedefliyordu; <code>.local</code> uzantısında bu Multicast DNS'e gidiyor ve hosts dosyasına düşmeden önce <b>beş saniye</b> zaman aşımına uğruyor — gerçek bir sitede ölçüldü: adla 5,01 sn, doğrudan adresle 0,012 sn. Artık <code>127.0.0.1</code>'e bağlanıyor, alan adını hem <code>Host</code> başlığında hem TLS sunucu adında taşıyor; böylece vhost ve sertifika yine eşleşiyor. Yalnızca başlık gönderilirse sunucu 421 döner.</li>
       <li><b>Örnekler artık <code>.local</code> yerine <code>.test</code> öneriyor.</b> <code>.local</code>, <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> ile Multicast DNS'e ayrılmış ve macOS'ta çözümlemeyi geciktirebiliyor. Yerel HTTPS rehberimiz bunu bir süredir söylüyordu ama uygulama hâlâ <code>.local</code> dağıtıyordu. Mevcut alan adları çalışmaya devam ediyor — doğrulama zaten uzantıya bakmıyordu.</li>
       <li><b>Log pencereleri artık akıtıyor, yoklamıyor.</b> Eskiden beş saniyede bir <code>tail</code> çalıştırıyor, kabuk süreci doğuruyor ve birkaç yeni satır için dosyayı baştan okuyordu. Dosya izleyici yalnızca eklenen kısmı okuyor ve gözetmen uygulamayı yeniden başlattığında logun yeniden yaratılmasına dayanıyor.</li>
     </ul>

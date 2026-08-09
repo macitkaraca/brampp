@@ -635,6 +635,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
 
     <h3 class="sub-h">Changed</h3>
     <ul class="bullets">
+      <li><b>A shared site no longer pays for name resolution on every request.</b> The tunnel used to point at the domain, which on a <code>.local</code> name goes to Multicast DNS and times out after <b>five seconds</b> before falling back to the hosts file — measured on a real site: 5.01s with the name, 0.012s straight to the address. It now connects to <code>127.0.0.1</code> and carries the domain in both the <code>Host</code> header and the TLS server name, so the vhost and the certificate still match. Sending only the header returns 421.</li>
       <li><b>Examples now suggest <code>.test</code> instead of <code>.local</code>.</b> <code>.local</code> is reserved for Multicast DNS by <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> and can stall resolution on macOS. The local-HTTPS guide had said so for a while; the app was still handing out <code>.local</code>. Existing domains keep working — validation never depended on the suffix.</li>
       <li><b>Log windows stream instead of polling.</b> They used to re-run <code>tail</code> every five seconds, spawning a shell and re-reading the whole file for a few new lines. A file watcher now reads only what was appended, and survives the log being recreated when the supervisor restarts an app.</li>
     </ul>

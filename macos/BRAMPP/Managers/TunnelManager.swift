@@ -31,17 +31,30 @@ final class TunnelManager: BaseManager {
 
     // MARK: - Komut kurma
 
-    /// cloudflared'in yerelde hedefleyeceği adres.
+    /// cloudflared'in yerelde hedefleyeceği adres — DOĞRUDAN 127.0.0.1.
     ///
-    /// IP DEĞİL alan adının kendisi kullanılır: `/etc/hosts` zaten 127.0.0.1'e eşliyor ve
-    /// adı kullanınca hem SNI hem `Host` başlığı vhost ile eşleşir. IP'ye bağlanınca
-    /// isim tabanlı vhost tutmaz, ziyaretçi varsayılan siteyi görür.
+    /// Alan adını hedeflemek her isteğe ad çözümlemesi maliyeti bindiriyordu. `.local`
+    /// uzantısı Multicast DNS'e gider; macOS'ta bu **istek başına 5 saniye** zaman
+    /// aşımıyla sonuçlanıp ancak sonra `/etc/hosts`'a düşüyor. Aynı sitede ölçüm:
+    /// alan adıyla 5,01 sn, doğrudan IP ile 0,012 sn.
+    ///
+    /// IP'ye bağlanmak tek başına yetmez — vhost eşleşmesi için `Host` başlığı ve
+    /// TLS'te SNI de alan adı olmalı. İkisi `buildCommand` içinde ayrıca veriliyor;
+    /// yalnızca `Host` verilip SNI atlanırsa sunucu 421 döner.
     static func origin(for domain: Domain) -> String {
         let scheme = domain.sslEnabled ? "https" : "http"
         let port   = domain.sslEnabled ? WebServerPorts.httpsPort(for: domain.webServer)
                                        : WebServerPorts.httpPort(for: domain.webServer)
-        let suffix = WebServerPorts.portSuffix(port, https: domain.sslEnabled)
-        return "\(scheme)://\(domain.name)\(suffix)"
+        return "\(scheme)://127.0.0.1:\(port)"
+    }
+
+    /// Kullanıcıya gösterilecek yerel adres — teknik hedef değil, sitenin kendi adresi.
+    /// Arayüzde `127.0.0.1:8443` yerine `https://projem.test` görmek daha anlamlı.
+    static func displayOrigin(for domain: Domain) -> String {
+        let scheme = domain.sslEnabled ? "https" : "http"
+        let port   = domain.sslEnabled ? WebServerPorts.httpsPort(for: domain.webServer)
+                                       : WebServerPorts.httpPort(for: domain.webServer)
+        return "\(scheme)://\(domain.name)\(WebServerPorts.portSuffix(port, https: domain.sslEnabled))"
     }
 
     /// Çalıştırılacak komut.
@@ -62,7 +75,13 @@ final class TunnelManager: BaseManager {
             "--url", Shell.quote(origin),
             "--http-host-header", Shell.quote(domain.name),
         ]
-        if domain.sslEnabled { parts.append("--no-tls-verify") }
+        if domain.sslEnabled {
+            // SNI de alan adı olmalı. IP'ye bağlanırken SNI gönderilemez (IP adresi
+            // geçerli bir SNI değildir), sunucu varsayılan sertifikayı sunar ve `Host`
+            // ile uyuşmayınca 421 döner — ölçtüm. Bu bayrak TLS el sıkışmasındaki adı
+            // düzeltir; `--no-tls-verify` ise mkcert sertifikası için.
+            parts += ["--origin-server-name", Shell.quote(domain.name), "--no-tls-verify"]
+        }
         parts += [
             "--logfile", Shell.quote(PathConfig.tunnelLog(domain: domain.name)),
             "--loglevel", "info",

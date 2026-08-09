@@ -105,7 +105,7 @@ struct ShareSheetView: View {
 
             HStack(spacing: 6) {
                 Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
-                Text(TunnelManager.origin(for: domain))
+                Text(TunnelManager.displayOrigin(for: domain))
                     .font(.system(size: 11.5, design: .monospaced))
                     .foregroundColor(.secondary)
                     .lineLimit(1).truncationMode(.middle)
@@ -154,7 +154,7 @@ struct ShareSheetView: View {
             }
             HStack(spacing: 6) {
                 Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
-                Text(TunnelManager.origin(for: domain))
+                Text(TunnelManager.displayOrigin(for: domain))
                     .font(.system(size: 11.5, design: .monospaced))
                     .foregroundColor(.secondary)
                     .lineLimit(1).truncationMode(.middle)
@@ -189,7 +189,7 @@ struct ShareSheetView: View {
 
             HStack(spacing: 6) {
                 Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
-                Text(TunnelManager.origin(for: domain))
+                Text(TunnelManager.displayOrigin(for: domain))
                     .font(.system(size: 11.5, design: .monospaced))
                     .foregroundColor(.secondary)
                     .lineLimit(1).truncationMode(.middle)
