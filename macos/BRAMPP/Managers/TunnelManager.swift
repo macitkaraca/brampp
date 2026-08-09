@@ -24,6 +24,8 @@ final class TunnelManager: BaseManager {
 
     /// Adresin log dosyasında belirmesi için beklenecek süre.
     static let urlTimeout: TimeInterval = 30
+    /// Adres alındıktan sonra DNS'in yayılması için beklenecek süre.
+    static let dnsTimeout: TimeInterval = 45
 
     var activeCount: Int { tunnels.values.filter(\.isLive).count }
 
@@ -258,6 +260,13 @@ final class TunnelManager: BaseManager {
             return false
         }
 
+        // Adres logda belirdiği AN kullanılabilir değil: DNS kaydının yayılması
+        // ölçümde ~6 saniye daha sürüyor. Kullanıcıya erken verirsek tarayıcı adı
+        // henüz yokken sorgular ve macOS çözümleyicisi sonucu ÖNBELLEĞE ALIR —
+        // kayıt sonradan gelse bile ERR_NAME_NOT_RESOLVED almaya devam eder.
+        // Bu yüzden adres, çözülebilir olana kadar gösterilmez.
+        await waitUntilResolvable(url: url)
+
         tunnels[domain.name]?.publicURL = url
         tunnels[domain.name]?.state = .active
         // Bu satır KASITLI olarak belirgin: makinenin internete açıldığı, kullanıcı
@@ -349,10 +358,49 @@ final class TunnelManager: BaseManager {
             log(key: "log.tunnel.urlTimeout", args: [key], type: .error)
             return false
         }
+        await waitUntilResolvable(url: url)
         tunnels[key]?.publicURL = url
         tunnels[key]?.state = .active
         log(key: "log.tunnel.live", args: [key, url], type: .success)
         return true
+    }
+
+    /// Adres TARAYICININ kullandığı çözümleyiciyle çözülene kadar bekler.
+    ///
+    /// `dig` ile denetlemek yetmiyordu: `dig` `/etc/resolv.conf`'taki sunucuya doğrudan
+    /// sorar, tarayıcı ise sistem çözümleyicisini kullanır ve ikisi farklı sonuç
+    /// verebilir. Ölçüm: taze bir tünel adını Google DNS 6 denemede 1 kez, Cloudflare'in
+    /// kendi çözümleyicisi 6/6 yanıtladı — yani adres gerçekten vardır ama kullanıcının
+    /// DNS'i onu henüz görmüyordur.
+    ///
+    /// Bu yüzden `getaddrinfo` kullanılır: tarayıcı neyi görüyorsa o. Süre dolarsa adres
+    /// yine verilir ama nedeni ve çözümü konsola yazılır — kullanıcı çıplak bir
+    /// ERR_NAME_NOT_RESOLVED yerine ne olduğunu bilir.
+    private func waitUntilResolvable(url: String,
+                                     timeout: TimeInterval = TunnelManager.dnsTimeout) async {
+        let host = url.replacingOccurrences(of: "https://", with: "")
+                      .replacingOccurrences(of: "http://", with: "")
+        guard !host.isEmpty else { return }
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await Self.systemCanResolve(host) { return }
+            try? await Task.sleep(nanoseconds: 900_000_000)
+        }
+        log(key: "log.tunnel.dnsSlow", args: [host], type: .warning)
+    }
+
+    /// `getaddrinfo` — tarayıcı ve curl ile AYNI yol. Ana iş parçacığını bloklamamak
+    /// için ayrı bir görevde koşar.
+    nonisolated static func systemCanResolve(_ host: String) async -> Bool {
+        await Task.detached(priority: .utility) {
+            var hints = addrinfo(ai_flags: 0, ai_family: AF_UNSPEC, ai_socktype: SOCK_STREAM,
+                                 ai_protocol: 0, ai_addrlen: 0,
+                                 ai_canonname: nil, ai_addr: nil, ai_next: nil)
+            var result: UnsafeMutablePointer<addrinfo>?
+            let status = getaddrinfo(host, nil, &hints, &result)
+            if let result { freeaddrinfo(result) }
+            return status == 0
+        }.value
     }
 
     func stop(domainName: String) async {

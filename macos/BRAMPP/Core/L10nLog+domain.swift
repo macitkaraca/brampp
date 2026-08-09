@@ -35,6 +35,9 @@ extension L10n {
         "log.diag.issues":
             ["tr": "Teşhis tamamlandı — %@ bulgu var",
              "en": "Diagnostics finished — %@ findings"],
+        "log.tunnel.dnsSlow":
+            ["tr": "⚠️ %@ adresi oluştu ama Mac'inizin DNS'i onu henüz görmüyor. Tarayıcı ERR_NAME_NOT_RESOLVED verebilir. Bazı sağlayıcılar (ör. 8.8.8.8) yeni trycloudflare adlarını geç alıyor; 1.1.1.1 kullanmak bunu çözer.",
+             "en": "⚠️ %@ exists but your Mac's DNS has not picked it up yet. The browser may show ERR_NAME_NOT_RESOLVED. Some resolvers (8.8.8.8 among them) are slow with new trycloudflare names; 1.1.1.1 resolves them immediately."],
         "log.tunnel.portRange":
             ["tr": "❌ %@ geçerli bir port değil (1–65535)",
              "en": "❌ %@ is not a valid port (1–65535)"],
