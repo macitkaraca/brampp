@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın</title>
-<meta name="description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
+<meta name="description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 22 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
 <link rel="canonical" href="https://macitkaraca.github.io/brampp/tr/mcp/">
 <link rel="alternate" hreflang="en" href="https://macitkaraca.github.io/brampp/mcp/">
 <link rel="alternate" hreflang="tr" href="https://macitkaraca.github.io/brampp/tr/mcp/">
@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" href="../../assets/icon-256.png">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın">
-<meta property="og:description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
+<meta property="og:description" content="BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 22 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.">
 <meta property="og:url" content="https://macitkaraca.github.io/brampp/tr/mcp/">
 <meta property="og:image" content="https://macitkaraca.github.io/brampp/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
@@ -23,7 +23,7 @@
  "@context": "https://schema.org",
  "@type": "WebPage",
  "name": "MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın",
- "description": "BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.",
+ "description": "BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 22 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı.",
  "inLanguage": "tr",
  "datePublished": "2026-08-08",
  "image": "https://macitkaraca.github.io/brampp/assets/og-cover.png",
@@ -629,7 +629,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">Yüzey</span>
-      <h2>19 araç, dört alan</h2>
+      <h2>22 araç, beş alan</h2>
       <p class="lede">Her alanın kendi izin ayarı var; asistanın nereye kadar uzanacağına siz karar veriyorsunuz.</p>
     </div>
     <div class="stats">
@@ -653,7 +653,10 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
               <td>Veritabanı listeleme ve oluşturma, tek bir SQL ifadesi çalıştırma, <code>.sql</code> yedeği alma ve geri yükleme.</td></tr>
           <tr><th scope="row">Günlükler</th>
               <td><code>read_log</code>, <code>read_domain_log</code></td>
-              <td>Servis günlükleri ile alan adı başına erişim ve hata günlükleri; asistan tahmin etmek yerine teşhis koyabilsin diye.</td></tr>
+              <td>Servis günlükleri ile alan adı başına erişim ve hata günlükleri; asistan tahmin etmek yerine teşhis koyabilsin diye. <code>read_log</code> düzeye, metne ve zamana göre süzer; canlı tampon yerine diskteki günlük dosyayı da okuyabilir.</td></tr>
+          <tr><th scope="row">Paylaşım</th>
+              <td><code>list_shares</code>, <code>start_share</code>, <code>stop_share</code></td>
+              <td>Cloudflare Quick Tunnel açarak yerel siteye geçici, herkese açık bir adres verir. <b>Varsayılanı Erişim yok</b> — diğer tüm alanlardan farklı, çünkü bu araçlar siteyi açık internete çıkarır.</td></tr>
         </tbody>
       </table>
     </div>

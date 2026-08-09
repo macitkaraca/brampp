@@ -30,7 +30,8 @@ Code, Claude Desktop, ChatGPT Codex).
 
 ## Access permissions — check here first when a tool is missing
 
-Tools are grouped into four scopes: **Domains**, **Services**, **Databases**, **Logs**.
+Tools are grouped into five scopes: **Domains**, **Services**, **Databases**, **Logs**,
+**Sharing**.
 Each scope is set in Settings to **No access / Read / Read + write**.
 
 A tool that is not permitted **never appears** in the `tools/list` response; if it is
@@ -45,6 +46,10 @@ relevant scope. Do not try to accomplish the same thing another way.
 | Services | `service_status`, `health_check`, `app_status` | `start_service`, `stop_service`, `restart_service` |
 | Databases | `db_list`, `db_query` | `db_create`, `db_export`, `db_import` |
 | Logs | `read_log`, `read_domain_log` | — |
+| Sharing | `list_shares` | `start_share`, `stop_share` |
+
+**Sharing defaults to No access**, unlike the other scopes. Its tools put a local site
+on the public internet, so the user turns it on deliberately.
 
 Database work (queries, dumps, restores) has its own, more detailed skill:
 **`brampp_mysql`**. Read that one first for any task that touches a database — rules such
@@ -112,12 +117,51 @@ Returns the most recent lines from the BRAMPP console (for debugging). — *Logs
 | Argument | Type | Description |
 | --- | --- | --- |
 | `lines` | integer | Default 50, max 500 |
+| `level` | string | `all` (default), `error`, `warning`. `warning` includes errors |
+| `search` | string | Keep only lines containing this text (case-insensitive) |
+| `since_minutes` | integer | Keep only the last N minutes |
+| `source` | string | `memory` (default) or `file` |
 
-> Example: `{"lines": 100}`
+> Example: `{"lines": 100}` · `{"level": "error", "since_minutes": 15}`
+
+`memory` is the live buffer — the last ~300 lines, which a noisy `brew install` can sweep
+away on its own. `file` reads the daily log on disk and is the only way to see anything
+older, including lines from before the app was last restarted. Reach for `file` whenever
+the question is "what happened earlier"; the buffer probably no longer holds it.
+
+If `file` reports an empty log, disk logging is switched off in
+**Settings → Console → Save the console to disk**.
 
 ### `read_domain_log`
 Reads a domain's web server error/access log, or (for nodejs/python/dotnet) its
 application log. — *Logs: read*
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `name` | string | **Required.** Domain name |
+
+### `list_shares`
+Lists the Cloudflare tunnels that are open right now, with their public addresses.
+— *Sharing: read*
+
+### `start_share`
+Opens a Cloudflare Quick Tunnel for a domain and returns a **public**
+`https://<random>.trycloudflare.com` address. — *Sharing: write*
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `name` | string | **Required.** Domain name |
+
+**Do not call this unless the user asked for it.** It takes a site that was reachable only
+on this machine and puts it on the open internet: anyone holding the address can browse it,
+and if the site has no authentication — as local development sites usually do not — they
+can read its data too. There is no password on the tunnel itself.
+
+Before calling it, say plainly what will become public and get a yes. Afterwards, give the
+user the address and remind them it stays open until `stop_share`, or until BRAMPP quits.
+
+### `stop_share`
+Closes the domain's tunnel; the public address dies immediately. — *Sharing: write*
 
 | Argument | Type | Description |
 | --- | --- | --- |

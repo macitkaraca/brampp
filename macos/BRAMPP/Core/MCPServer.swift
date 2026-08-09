@@ -137,6 +137,7 @@ final class MCPServer: ObservableObject {
     private weak var serviceManager: ServiceManager?
     private weak var domainManager: DomainManager?
     private weak var consoleStore: ConsoleStore?
+    private weak var tunnelManager: TunnelManager?
 
     // MARK: - Sabitler
 
@@ -171,10 +172,12 @@ final class MCPServer: ObservableObject {
     /// Canlı manager'ları enjekte eder. AppState.bootstrapManagers() içinde çağrılır.
     func configure(serviceManager: ServiceManager,
                    domainManager: DomainManager,
-                   consoleStore: ConsoleStore) {
+                   consoleStore: ConsoleStore,
+                   tunnelManager: TunnelManager) {
         self.serviceManager = serviceManager
         self.domainManager  = domainManager
         self.consoleStore   = consoleStore
+        self.tunnelManager  = tunnelManager
     }
 
     /// Konsola ÇEVRİLEBİLİR satır yaz — metin gösterim anında çözülür.
@@ -566,7 +569,16 @@ final class MCPServer: ObservableObject {
             "id": property("string", "Servis id'si, ör. mariadb")
         ]
         let logProperties: [String: Any] = [
-            "lines": property("integer", "Kaç satır — varsayılan 50, en çok 500")
+            "lines": property("integer", "Kaç satır — varsayılan 50, en çok 500"),
+            "level": property("string", "Düzeye göre süz — varsayılan all",
+                              allowed: ["all", "error", "warning"]),
+            "search": property("string", "Yalnızca bu metni içeren satırlar (büyük/küçük harf duyarsız)"),
+            "since_minutes": property("integer", "Yalnızca son N dakika"),
+            "source": property("string", "memory = canlı tampon (son ~300 satır), file = diskteki günlük geçmiş",
+                               allowed: ["memory", "file"])
+        ]
+        let shareProperties: [String: Any] = [
+            "name": property("string", "Alan adı, ör. myapp.test")
         ]
         let dbListProperties: [String: Any] = [
             "engine": property("string", "Varsayılan: mysql", allowed: dbEngines)
@@ -695,7 +707,26 @@ final class MCPServer: ObservableObject {
                      title: "Alan Adı Logunu Oku",
                      description: "Bir alan adının web sunucusu error/access logunu veya (nodejs/python/dotnet için) uygulama logunu okur.",
                      schema: schema(domainLogProperties, required: ["name"]),
-                     scope: .logs, needsWrite: false)
+                     scope: .logs, needsWrite: false),
+
+            // MARK: Paylaşım (Cloudflare Quick Tunnel)
+            ToolSpec("list_shares",
+                     title: "Paylaşımları Listele",
+                     description: "Şu anda açık olan Cloudflare tünellerini ve herkese açık adreslerini döndürür.",
+                     schema: schema(), scope: .sharing, needsWrite: false),
+            ToolSpec("start_share",
+                     title: "Paylaşımı Başlat",
+                     description: "Bir alan adı için Cloudflare Quick Tunnel açar ve HERKESE AÇIK bir "
+                         + "https://<rastgele>.trycloudflare.com adresi döndürür. UYARI: bu adresi bilen "
+                         + "herkes siteye erişebilir; sitede kimlik doğrulaması yoksa verileri de görür. "
+                         + "Kullanıcı açıkça istemeden ÇAĞIRMA. Adres geçicidir, paylaşım durunca ölür.",
+                     schema: schema(shareProperties, required: ["name"]),
+                     scope: .sharing, needsWrite: true, readOnly: false, destructive: false),
+            ToolSpec("stop_share",
+                     title: "Paylaşımı Durdur",
+                     description: "Alan adının Cloudflare tünelini kapatır; herkese açık adres anında ölür.",
+                     schema: schema(shareProperties, required: ["name"]),
+                     scope: .sharing, needsWrite: true, readOnly: false, destructive: true)
         ]
     }
 
@@ -790,6 +821,9 @@ final class MCPServer: ObservableObject {
         case "restart_service":    return toolControlService(arguments, action: .restart)
         case "read_log":           return toolReadLog(arguments)
         case "read_domain_log":    return await toolReadDomainLog(arguments)
+        case "list_shares":        return await toolListShares()
+        case "start_share":        return await toolStartShare(arguments)
+        case "stop_share":         return await toolStopShare(arguments)
         case "db_list":            return await toolDBList(arguments)
         case "db_create":          return await toolDBCreate(arguments)
         case "db_export":          return await toolDBExport(arguments)
@@ -1290,16 +1324,137 @@ final class MCPServer: ObservableObject {
                      + "durum birkaç saniye içinde güncellenir (service_status ile doğrulayın).")
     }
 
+    /// Bir konsol satırının süzgeçlerden geçip geçmediği.
+    ///
+    /// Saf fonksiyon: `read_log` süzgeçleri kabuk çağırmadan test edilebilsin diye
+    /// ayrı tutuldu. `warning` düzeyi uyarı VE hataları kapsar — kullanıcı "sorunları
+    /// göster" derken hatayı dışarıda bırakmak istemez.
+    static func logLineMatches(level: String, search: String?,
+                               entryLabel: String, text: String) -> Bool {
+        switch level {
+        case "error":   if entryLabel != "ERROR" { return false }
+        case "warning": if entryLabel != "WARN" && entryLabel != "ERROR" { return false }
+        default:        break
+        }
+        if let search, !search.isEmpty,
+           text.range(of: search, options: .caseInsensitive) == nil { return false }
+        return true
+    }
+
+    /// Diskteki `YYYY-MM-DD HH:mm:ss [DÜZEY] metin` satırını parçalar.
+    static func parseFileLogLine(_ line: String) -> (date: String, label: String, text: String)? {
+        // 19 karakter tarih + boşluk + "[ETİKET]" + boşluk
+        guard line.count > 22,
+              let open = line.firstIndex(of: "["),
+              let close = line[open...].firstIndex(of: "]") else { return nil }
+        let stamp = String(line[line.startIndex..<open]).trimmingCharacters(in: .whitespaces)
+        guard stamp.count == 19 else { return nil }
+        let label = String(line[line.index(after: open)..<close])
+        let rest = String(line[line.index(after: close)...]).trimmingCharacters(in: .whitespaces)
+        return (stamp, label, rest)
+    }
+
     private func toolReadLog(_ arguments: [String: Any]) -> ToolOutcome {
-        guard let store = consoleStore else { return .failure("Konsol hazır değil") }
         let requested = arguments["lines"] as? Int ?? 50
-        let count = max(1, min(500, requested))
-        let entries = store.entries.suffix(count)
-        guard !entries.isEmpty else { return .text("Konsol boş") }
+        let count  = max(1, min(500, requested))
+        let level  = (arguments["level"] as? String)?.lowercased() ?? "all"
+        let search = arguments["search"] as? String
+        let since  = (arguments["since_minutes"] as? Int).map { max(1, $0) }
+        let source = (arguments["source"] as? String)?.lowercased() ?? "memory"
+
+        guard ["all", "error", "warning"].contains(level) else {
+            return .invalidParams("'level' geçersiz: \(level) — all|error|warning")
+        }
+        guard ["memory", "file"].contains(source) else {
+            return .invalidParams("'source' geçersiz: \(source) — memory|file")
+        }
+
+        if source == "file" {
+            // Diskteki geçmiş: bellekteki 300 satırlık tampon uzun işlemlerde
+            // süpürüldüğü için "biraz önce ne oldu" ancak buradan yanıtlanır.
+            let days = since.map { max(1, Int(ceil(Double($0) / 1440.0)) + 1) } ?? 2
+            let raw = ConsoleLogFile.recentText(days: min(days, ConsoleLogFile.retentionDays))
+            guard !raw.isEmpty else {
+                return .text("Disk logu boş — Ayarlar'da 'Konsolu diske kaydet' kapalı olabilir.")
+            }
+            let cutoff = since.map { Date().addingTimeInterval(-Double($0) * 60) }
+            let stampFmt = DateFormatter()
+            stampFmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            stampFmt.locale = Locale(identifier: "en_US_POSIX")
+
+            var kept: [String] = []
+            for line in raw.components(separatedBy: .newlines) where !line.isEmpty {
+                guard let p = Self.parseFileLogLine(line) else { continue }
+                if let cutoff, let d = stampFmt.date(from: p.date), d < cutoff { continue }
+                guard Self.logLineMatches(level: level, search: search,
+                                          entryLabel: p.label, text: p.text) else { continue }
+                kept.append(line)
+            }
+            guard !kept.isEmpty else { return .text("Süzgeçlere uyan satır yok") }
+            return .text(kept.suffix(count).joined(separator: "\n"))
+        }
+
+        guard let store = consoleStore else { return .failure("Konsol hazır değil") }
+        let cutoff = since.map { Date().addingTimeInterval(-Double($0) * 60) }
         // Gösterim DAİMA `text` üzerinden: `message` ham/İngilizce yedektir ve
         // doğrudan kullanılırsa log satırları uygulamanın diline uymaz (dili dondurur).
-        return .text(entries.map { "\($0.formattedTime) \($0.type.icon) \($0.text)" }
+        let matched = store.entries.filter { entry in
+            if let cutoff, entry.timestamp < cutoff { return false }
+            return Self.logLineMatches(level: level, search: search,
+                                       entryLabel: entry.type.logLabel, text: entry.text)
+        }
+        guard !matched.isEmpty else {
+            return .text(store.entries.isEmpty ? "Konsol boş" : "Süzgeçlere uyan satır yok")
+        }
+        return .text(matched.suffix(count)
+            .map { "\($0.formattedTime) \($0.type.icon) \($0.text)" }
             .joined(separator: "\n"))
+    }
+
+    // MARK: - Paylaşım Araçları
+
+    private func toolListShares() async -> ToolOutcome {
+        guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
+        let live = manager.tunnels.values.sorted { $0.domainName < $1.domainName }
+        guard !live.isEmpty else { return .text("Açık paylaşım yok") }
+        return .text(live.map { t in
+            let url = t.publicURL ?? "(adres bekleniyor)"
+            return "\(t.domainName) → \(url)  [yerel: \(t.origin)]"
+        }.joined(separator: "\n"))
+    }
+
+    private func toolStartShare(_ arguments: [String: Any]) async -> ToolOutcome {
+        guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
+        let domain: Domain
+        switch resolveDomain(arguments) {
+        case .failure(let outcome): return outcome
+        case .success(let d):       domain = d
+        }
+        guard TunnelManager.isCloudflaredInstalled else {
+            return .failure("cloudflared kurulu değil. Kurulum: brew install cloudflared")
+        }
+        guard await manager.start(domain: domain) else {
+            return .failure("'\(domain.name)' için tünel açılamadı — ayrıntı için read_log.")
+        }
+        guard let url = manager.tunnel(for: domain.name)?.publicURL else {
+            return .failure("Tünel açıldı ama adres alınamadı.")
+        }
+        return .text("'\(domain.name)' ARTIK HERKESE AÇIK: \(url)\n\n"
+                     + "Bu adresi bilen herkes siteye erişebilir. İşiniz bitince "
+                     + "stop_share ile kapatın; uygulama kapanırken de otomatik kapanır.")
+    }
+
+    private func toolStopShare(_ arguments: [String: Any]) async -> ToolOutcome {
+        guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
+        guard let name = (arguments["name"] as? String)?
+            .trimmingCharacters(in: .whitespaces), !name.isEmpty else {
+            return .invalidParams("'name' zorunlu")
+        }
+        guard manager.tunnel(for: name) != nil else {
+            return .failure("'\(name)' için açık paylaşım yok")
+        }
+        await manager.stop(domainName: name)
+        return .text("'\(name)' paylaşımı durduruldu — herkese açık adres artık ölü.")
     }
 
     private func toolReadDomainLog(_ arguments: [String: Any]) async -> ToolOutcome {

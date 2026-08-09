@@ -21,7 +21,7 @@
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">Surface</span>
-      <h2>19 tools, four areas</h2>
+      <h2>22 tools, five areas</h2>
       <p class="lede">Each area has its own permission setting, so you decide how far the assistant reaches.</p>
     </div>
     <div class="stats">
@@ -45,7 +45,10 @@
               <td>List and create databases, run a single SQL statement, dump to <code>.sql</code> and restore from one.</td></tr>
           <tr><th scope="row">Logs</th>
               <td><code>read_log</code>, <code>read_domain_log</code></td>
-              <td>Service logs and per-domain access and error logs, so the assistant can diagnose instead of guessing.</td></tr>
+              <td>Service logs and per-domain access and error logs, so the assistant can diagnose instead of guessing. <code>read_log</code> filters by level, text and time, and can read the daily file on disk rather than the live buffer.</td></tr>
+          <tr><th scope="row">Sharing</th>
+              <td><code>list_shares</code>, <code>start_share</code>, <code>stop_share</code></td>
+              <td>Opens a Cloudflare Quick Tunnel so a local site gets a temporary public address. <b>Defaults to No access</b> — unlike every other area, because these tools put the site on the open internet.</td></tr>
         </tbody>
       </table>
     </div>
@@ -57,7 +60,7 @@
     <div class="shead">
       <span class="eyebrow">Permissions</span>
       <h2>What you disallow never appears</h2>
-      <p class="lede">Each of the four areas is set independently to No access, Read, or Read + write.</p>
+      <p class="lede">Each of the five areas is set independently to No access, Read, or Read + write.</p>
     </div>
     <div class="perms">
       <span>Per-area: <b>No access</b></span>

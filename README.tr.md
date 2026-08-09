@@ -78,7 +78,7 @@ XAMPP ve MAMP kendi Apache/PHP/MySQL kopyalarını kurar ve makinenizdeki her ş
 | Veritabanları | MySQL | MariaDB/MySQL, PostgreSQL, Redis |
 | Yerel HTTPS | Elle, zahmetli | mkcert ile otomatik |
 | `brew upgrade` uyumu | 😬 | Zaten bütün mesele bu |
-| Yapay zekâ erişimi | — | Yerleşik MCP sunucusu, 19 araç |
+| Yapay zekâ erişimi | — | Yerleşik MCP sunucusu, 22 araç |
 | Uçtan uca `arm64` | Ürüne ve kuruluma göre değişir | Uygulama **ve** yönettiği tüm servisler, native |
 | Fiyat | XAMPP ücretsiz · MAMP PRO ücretli | Ücretsiz, MIT, açık kaynak |
 
@@ -114,6 +114,7 @@ Sınırları baştan bilmek bir akşamınızı kurtarır:
 - **Uygulama süreç yöneticisi** — Node/Python/.NET uygulamaları sıfır bağımlılıklı bir süpervizörle: otomatik yeniden başlatma, birleşik loglar, sahibi olmadığı süreci ASLA öldürmeyen güvenli durdurma.
 - **Kurulum sihirbazı** — Apache portları, PHP-FPM, mkcert CA, localhost SSL, MariaDB root erişimi ve phpMyAdmin'i adım adım yapılandırır. Tek bir config dosyasına dokunmadan `https://localhost`.
 - **Yedekleme** — alan adları, ayarlar, vhost'lar, SSL sertifikaları ve php.ini'ler tek tıkla; eksik yedek asla sessizce geri yüklenmez.
+- **Siteyi geçici olarak paylaşın** — tek tıkla Cloudflare Quick Tunnel açılır ve herkese açık bir `trycloudflare.com` adresi döner; müşteriye göstermek ya da telefondan açmak için. Cloudflare hesabı gerekmez; BRAMPP kapanınca tüneller kapanır.
 - **Yapay zekâ araçları için MCP sunucusu** — yerleşik [Model Context Protocol](https://modelcontextprotocol.io) uç noktası (yalnızca 127.0.0.1, varsayılan kapalı). Claude, Codex ve arkadaşları **alan bazlı izinlerin** arkasındaki **19 araca** erişir; yaptıkları her değişiklik BRAMPP penceresine anında yansır. → [ayrıntılar](#bramppi-yapay-zekâ-araçlarından-kullanmak-mcp)
 - **Menü çubuğu** — tüm stack menü çubuğunuzda. Türkçe & İngilizce arayüz, çalışırken değiştirilebilir.
 
@@ -280,7 +281,7 @@ Beceri genel (global) kurulur; yalnızca bu projede değil, her projede geçerli
 
 ### Araçlar
 
-19 araç, bağlı oldukları erişim alanına göre gruplanmış hâlde:
+22 araç, bağlı oldukları erişim alanına göre gruplanmış hâlde:
 
 **Alan Adları**
 
@@ -318,8 +319,20 @@ Beceri genel (global) kurulur; yalnızca bu projede değil, her projede geçerli
 
 | Araç | Ne yapar | Erişim |
 | --- | --- | --- |
-| `read_log` | BRAMPP konsolunun son satırları (varsayılan 50, en çok 500) | okuma |
+| `read_log` | BRAMPP konsolundaki satırlar; `level`, `search` ve `since_minutes` ile süzülür. `source: "file"` canlı tampon yerine diskteki günlük dosyayı okur — son ~300 satırdan eskisini görmenin tek yolu | okuma |
 | `read_domain_log` | Bir alan adının error/access logu ya da Node.js/Python/.NET alan adlarında uygulama logu (varsayılan 100 satır, en çok 1000) | okuma |
+
+**Paylaşım**
+
+| Araç | Ne yapar | Erişim |
+| --- | --- | --- |
+| `list_shares` | Şu anda açık olan Cloudflare tünellerini ve herkese açık adreslerini listeler | okuma |
+| `start_share` | Bir alan adı için Cloudflare Quick Tunnel açar ve **herkese açık** bir `trycloudflare.com` adresi döndürür | yazma |
+| `stop_share` | Tüneli kapatır; herkese açık adres anında ölür | yazma |
+
+Varsayılanı **erişim yok** olan tek alan paylaşımdır. Bu araçlar yalnızca sizin
+makinenizden erişilebilen bir siteyi açık internete çıkarır — üstelik tünelin kendisinde
+parola yoktur — bu yüzden kapalı gelir, siz açarsınız.
 
 ### Alan bazlı izinler
 

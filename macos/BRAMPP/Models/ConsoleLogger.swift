@@ -57,4 +57,17 @@ enum ConsoleEntryType {
         case .progress: return "⬇️"
         }
     }
+
+    /// Log dosyasındaki düzey etiketi. Emoji DEĞİL: dosya `grep` ile süzülüyor ve
+    /// MCP `read_log` bu etikete göre filtreliyor.
+    var logLabel: String {
+        switch self {
+        case .info:     return "INFO"
+        case .success:  return "OK"
+        case .warning:  return "WARN"
+        case .error:    return "ERROR"
+        case .command:  return "CMD"
+        case .progress: return "PROGRESS"
+        }
+    }
 }

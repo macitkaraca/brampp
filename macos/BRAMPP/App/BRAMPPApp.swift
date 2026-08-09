@@ -156,6 +156,9 @@ struct BRAMPPApp: App {
             MenuBarServicesView()
                 .environmentObject(appState)
                 .environmentObject(appState.serviceManager)
+                // Etkin tünel sayısı menüde gösteriliyor; @Published değişimini
+                // görebilmek için manager'ın kendisi gözlenmeli.
+                .environmentObject(appState.tunnelManager)
                 .environmentObject(localizer)
         } label: {
             MenuBarLabelView(appState: appState)
@@ -184,6 +187,8 @@ class AppState: ObservableObject {
     let domainManager: DomainManager
     let phpExtensionManager: PHPExtensionManager
     let backupRestoreManager: BackupRestoreManager
+    /// Cloudflare Quick Tunnel yönetimi — hiçbir tünel kalıcı değildir
+    let tunnelManager: TunnelManager
     /// Uygulama içi MCP sunucusu — manager'lar bootstrapManagers()'ta enjekte edilir
     let mcpServer = MCPServer()
 
@@ -218,6 +223,7 @@ class AppState: ObservableObject {
         self.domainManager = DomainManager(consoleStore: store)
         self.phpExtensionManager = PHPExtensionManager(consoleStore: store)
         self.backupRestoreManager = BackupRestoreManager(consoleStore: store)
+        self.tunnelManager = TunnelManager(consoleStore: store)
 
         serviceManager.objectWillChange
             .receive(on: DispatchQueue.main)
@@ -316,6 +322,12 @@ class AppState: ObservableObject {
         // açılışta tüm servisler kapalı olduğundan ilk tam kontrol listeye BOŞ yazar —
         // liste sonradan okunursa .lastRunning modu hiçbir zaman servis başlatamazdı.
 
+        // 7 günden eski konsol dosyalarını temizle (Core/ConsoleLogFile.swift)
+        ConsoleLogFile.pruneOldFiles()
+        // Önceki oturumdan kalmış tünel süreci varsa öldür: uygulama çökerse
+        // cloudflared yaşamaya devam eder ve site açık kalırdı.
+        TunnelManager.killAllSynchronously()
+
         domainManager.loadDomains()
         // domains.json'a BRAMPP dışından yazılırsa (MCP aracı, CLI, elle düzenleme)
         // arayüz kendiliğinden tazelensin — dosya izleyicisi dış yazımı algılar.
@@ -350,7 +362,8 @@ class AppState: ObservableObject {
         // (Araçlar doğrudan bu manager'ları çağırdığından değişiklikler arayüze anında yansır.)
         mcpServer.configure(serviceManager: serviceManager,
                             domainManager:  domainManager,
-                            consoleStore:   consoleStore)
+                            consoleStore:   consoleStore,
+                            tunnelManager:  tunnelManager)
         if settings.mcpServerEnabled {
             mcpServer.start(port: settings.mcpServerPort)
         }
@@ -731,14 +744,22 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
         // İki bağımsız sinyal birlikte kullanılır: willPowerOff bildirimi ile quit
         // AppleEvent'inin sırası macOS sürümleri arasında garanti değildir.
         if systemIsPoweringOff || isSystemQuitEvent {
+            TunnelManager.killAllSynchronously()
             return .terminateNow
         }
         guard realQuitRequested else {
             // Dock sağ tık "Kapat" vb. istekler → pencereyi gizle, dock ikonunu kaldır
+            // (uygulama YAŞAMAYA DEVAM ediyor; tüneller de açık kalır)
             mainWindow?.orderOut(nil)
             NSApp.setActivationPolicy(.accessory)
             return .terminateCancel
         }
+        // Açık her tünel yerel siteyi internete çıkarıyor. Uygulama kapanırken
+        // KOŞULSUZ kapatılır — `autoStopOnQuit` ayarına bağlanmaz, o ayar servisler
+        // içindir. Arkada unutulmuş herkese açık bir adres kabul edilebilir değil.
+        // Eşzamanlı sürüm kullanılır: burada başlatılan asenkron iş, süreç sonlanmadan
+        // bitmeyebilirdi.
+        TunnelManager.killAllSynchronously()
         return .terminateNow
     }
 

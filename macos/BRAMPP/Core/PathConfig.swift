@@ -10,6 +10,7 @@ struct PathConfig {
     static let mkcert: String   = "\(brewBin)/mkcert"
     static let node: String     = "\(brewBin)/node"
     static let dotnet: String   = "\(brewBin)/dotnet"
+    static let cloudflared: String = "\(brewBin)/cloudflared"
     static let psql: String     = "\(brewBin)/psql"
 
     // MARK: - Kullanıcı
@@ -26,6 +27,13 @@ struct PathConfig {
     /// Son çalışan brew servis ID'leri — açılışta "son çalışanları başlat" için
     static let lastRunningJson: String = "\(appSupport)/last-running-services.json"
     static let backups: String      = "\(appSupport)/backups"
+    /// Konsolun diskteki günlük kopyaları — bkz. Core/ConsoleLogFile.swift
+    static let logs: String         = "\(appSupport)/logs"
+    /// Cloudflare Quick Tunnel süreçlerinin PID ve log dosyaları
+    static let tunnels: String      = "\(appSupport)/tunnels"
+
+    static func tunnelPid(domain: String) -> String { "\(tunnels)/\(domain).pid" }
+    static func tunnelLog(domain: String) -> String { "\(tunnels)/\(domain).log" }
 
     // MARK: - SSL Helper'lar (tekrarlanan path'leri merkeze al)
 

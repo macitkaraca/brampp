@@ -38,7 +38,7 @@ enum MCPPermission: String, Codable, CaseIterable, Identifiable {
 
 /// MCP araçlarının gruplandığı erişim alanları.
 enum MCPScope: String, CaseIterable, Identifiable {
-    case domains, services, databases, logs
+    case domains, services, databases, logs, sharing
 
     var id: String { rawValue }
 
@@ -48,6 +48,7 @@ enum MCPScope: String, CaseIterable, Identifiable {
         case .services:  return Localizer.shared.t("set.mcp.scope.services")
         case .databases: return Localizer.shared.t("set.mcp.scope.databases")
         case .logs:      return Localizer.shared.t("set.mcp.scope.logs")
+        case .sharing:   return Localizer.shared.t("set.mcp.scope.sharing")
         }
     }
 
@@ -57,6 +58,7 @@ enum MCPScope: String, CaseIterable, Identifiable {
         case .services:  return "gearshape.2"
         case .databases: return "cylinder.split.1x2"
         case .logs:      return "doc.text"
+        case .sharing:   return "antenna.radiowaves.left.and.right"
         }
     }
 
@@ -67,6 +69,7 @@ enum MCPScope: String, CaseIterable, Identifiable {
         case .services:  return .parse(settings.mcpPermServices)
         case .databases: return .parse(settings.mcpPermDatabases)
         case .logs:      return .parse(settings.mcpPermLogs)
+        case .sharing:   return .parse(settings.mcpPermSharing)
         }
     }
 
@@ -77,6 +80,7 @@ enum MCPScope: String, CaseIterable, Identifiable {
         case .services:  settings.mcpPermServices  = level.rawValue
         case .databases: settings.mcpPermDatabases = level.rawValue
         case .logs:      settings.mcpPermLogs      = level.rawValue
+        case .sharing:   settings.mcpPermSharing   = level.rawValue
         }
     }
 }

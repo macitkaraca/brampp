@@ -5,6 +5,7 @@ import SwiftUI
 struct MenuBarServicesView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var serviceManager: ServiceManager
+    @EnvironmentObject var tunnelManager: TunnelManager
     @EnvironmentObject var loc: Localizer
 
     /// Ana pencere hiç kalmadığında WindowGroup sahnesini yeniden oluşturmak için.
@@ -201,6 +202,18 @@ struct MenuBarServicesView: View {
                     NSApp.activate(ignoringOtherApps: true)
                 }
             })
+
+            // Etkin tünel varsa menüde GÖRÜNÜR olmalı: kullanıcı ana pencereyi
+            // açmadan da sitesinin internete açık olduğunu görebilmeli ve tek
+            // tıkla kapatabilmeli.
+            if tunnelManager.activeCount > 0 {
+                Divider()
+                footerRow(icon: "antenna.radiowaves.left.and.right",
+                          label: loc.t("menu.stopAllShares"),
+                          shortcut: "\(tunnelManager.activeCount)",
+                          tint: .orange,
+                          action: { Task { await tunnelManager.stopAll() } })
+            }
 
             Divider()
             footerRow(icon: "macwindow", label: loc.t("menu.openMain"), shortcut: nil,  tint: nil,  action: openMainWindow)

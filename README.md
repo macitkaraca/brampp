@@ -80,7 +80,7 @@ If you searched for **"XAMPP alternative for Mac"** or **"MAMP alternative macOS
 | Databases | MySQL | MariaDB/MySQL, PostgreSQL, Redis |
 | Local HTTPS | Manual pain | Automatic via mkcert |
 | `brew upgrade` friendly | 😬 | That's the whole point |
-| AI assistant access | — | Built-in MCP server, 19 tools |
+| AI assistant access | — | Built-in MCP server, 22 tools |
 | End-to-end `arm64` | Varies by product and installer | The app **and** every service it manages, natively |
 | Price | XAMPP free · MAMP PRO paid | Free, MIT, open source |
 
@@ -114,7 +114,8 @@ Being clear about the edges saves you an evening:
 - **Process manager for app servers** — Node/Python/.NET apps run under a zero-dependency supervisor: auto-restart, combined logs, safe stop that never kills a process it doesn't own.
 - **Setup wizard** — checks and configures Apache ports, PHP-FPM, mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to `https://localhost` without touching a config file.
 - **Backups** — one click backs up domains, settings, vhosts, SSL certs and php.ini files; partial backups are detected and never silently restored.
-- **MCP server for AI tools** — a built-in [Model Context Protocol](https://modelcontextprotocol.io) endpoint (127.0.0.1 only, off by default). Claude, Codex and friends get **19 tools** behind **per-scope permissions** — and every change they make appears in the BRAMPP window instantly. → [details](#using-brampp-from-ai-tools-mcp)
+- **Share a site temporarily** — one click opens a Cloudflare Quick Tunnel and returns a public `trycloudflare.com` address, for showing a client or opening the site on a phone. No Cloudflare account; every tunnel closes when BRAMPP quits.
+- **MCP server for AI tools** — a built-in [Model Context Protocol](https://modelcontextprotocol.io) endpoint (127.0.0.1 only, off by default). Claude, Codex and friends get **22 tools** behind **per-scope permissions** — and every change they make appears in the BRAMPP window instantly. → [details](#using-brampp-from-ai-tools-mcp)
 - **Menu bar app** — the whole stack lives in your menu bar. Turkish & English UI, live-switchable.
 
 ## Screenshots — a tour of the app
@@ -278,7 +279,7 @@ Before **every** write the existing file is copied to `<file>.bak-YYYYMMDD-HHmms
 
 ### Tools
 
-19 tools, grouped by the scope that governs them:
+22 tools, grouped by the scope that governs them:
 
 **Domains**
 
@@ -316,8 +317,20 @@ Before **every** write the existing file is copied to `<file>.bak-YYYYMMDD-HHmms
 
 | Tool | What it does | Access |
 | --- | --- | --- |
-| `read_log` | Last lines of the BRAMPP console (default 50, max 500) | read |
+| `read_log` | Lines from the BRAMPP console, filtered by `level`, `search` and `since_minutes`. `source: "file"` reads the daily log on disk instead of the live buffer — the only way to see anything older than the last ~300 lines | read |
 | `read_domain_log` | A domain's error/access log, or the app log for Node.js/Python/.NET domains (default 100 lines, max 1000) | read |
+
+**Sharing**
+
+| Tool | What it does | Access |
+| --- | --- | --- |
+| `list_shares` | Lists the Cloudflare tunnels open right now, with their public addresses | read |
+| `start_share` | Opens a Cloudflare Quick Tunnel for a domain and returns a **public** `trycloudflare.com` address | write |
+| `stop_share` | Closes the tunnel; the public address dies immediately | write |
+
+Sharing is the one scope that defaults to **no access**. Its tools take a site that was
+reachable only on your machine and put it on the open internet — with no password on the
+tunnel itself — so it is opt-in rather than opt-out.
 
 ### Per-scope permissions
 

@@ -32,7 +32,24 @@ class ConsoleStore: ObservableObject {
         if entries.count > maxEntries {
             entries.removeFirst(entries.count - trimTo)
         }
+        persist(entry)
     }
+
+    /// Satırı diskteki günlük dosyaya da yazar.
+    ///
+    /// Bellekteki tampon 300 satırda kesiliyor ve uygulama kapanınca siliniyor; kalıcı
+    /// kopya olmadan ne kullanıcı ne de MCP'nin `read_log` aracı biraz öncesine
+    /// bakabiliyordu. Yazma arka planda, `ConsoleLogFile` üzerinden.
+    private func persist(_ entry: ConsoleEntry) {
+        guard persistToFile, ConsoleLogFile.shouldPersist(entry.type) else { return }
+        // `text` anahtarı ÇÖZER (dosya kendi başına okunabilir olmalı) ve @MainActor'dır —
+        // bu yüzden çözme burada, ana iş parçacığında; yalnızca dosyaya yazma arka planda.
+        ConsoleLogFile.append(date: entry.timestamp, level: entry.type.logLabel, text: entry.text)
+    }
+
+    /// Ayarlardan gelen anahtar. Her satırda `AppSettings.load()` çağırmamak için
+    /// bir kez okunur; ayar değişince `SettingsView` bunu günceller.
+    var persistToFile: Bool = AppSettings.load().persistConsoleLog
 
     /// İndirme çubuğu için son `.progress` satırını in-place günceller.
     /// Son satır `.progress` değilse yeni satır ekler.

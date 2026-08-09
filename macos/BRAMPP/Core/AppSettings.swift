@@ -45,6 +45,11 @@ struct AppSettings: Codable {
     /// Tüm shell komutlarını (yenileme dahil) konsola yaz — gelişmiş hata ayıklama için
     var verboseLogging: Bool
 
+    /// Konsol satırları ~/Library/Application Support/BRAMPP/logs altına da yazılsın mı?
+    /// Bellekteki tampon 300 satırda kesiliyor; kalıcı kopya olmadan biraz öncesine
+    /// bakmak mümkün değil. 7 günden eski dosyalar açılışta silinir.
+    var persistConsoleLog: Bool
+
     // MARK: - MCP Sunucusu
 
     /// Uygulama içi MCP sunucusu (yapay zekâ araçları için yerel uç nokta) açılışta başlatılsın mı?
@@ -60,6 +65,10 @@ struct AppSettings: Codable {
     var mcpPermServices:  String
     var mcpPermDatabases: String
     var mcpPermLogs:      String
+    /// Paylaşım (Cloudflare Quick Tunnel) alanı. Varsayılan ERİŞİM YOK: bu araçlar
+    /// yerel siteyi herkese açık bir adrese çıkarır, diğer alanlarla aynı düzeyde
+    /// varsayılamaz — kullanıcı bilerek açar.
+    var mcpPermSharing:   String
 
     // MARK: - Backward-compatible Decoder
 
@@ -70,9 +79,9 @@ struct AppSettings: Codable {
         case notificationsEnabled, showCommandsInConsole, showBrewOutputInConsole
         case stopPHPOnWebServerStop, stopDomainsOnWebServerStop, startPHPOnWebServerStart
         case installPromptAutoConfirm, installPromptAutoConfirmSeconds
-        case verboseLogging, autoStartServiceIds
+        case verboseLogging, autoStartServiceIds, persistConsoleLog
         case mcpServerEnabled, mcpServerPort
-        case mcpPermDomains, mcpPermServices, mcpPermDatabases, mcpPermLogs
+        case mcpPermDomains, mcpPermServices, mcpPermDatabases, mcpPermLogs, mcpPermSharing
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +104,7 @@ struct AppSettings: Codable {
         installPromptAutoConfirm   = (try? c.decode(Bool.self, forKey: .installPromptAutoConfirm)) ?? true
         installPromptAutoConfirmSeconds = (try? c.decode(Int.self, forKey: .installPromptAutoConfirmSeconds)) ?? 10
         verboseLogging             = (try? c.decode(Bool.self, forKey: .verboseLogging)) ?? false
+        persistConsoleLog          = (try? c.decode(Bool.self, forKey: .persistConsoleLog)) ?? true
         autoStartServiceIds        = (try? c.decode([String].self, forKey: .autoStartServiceIds)) ?? []
         mcpServerEnabled           = (try? c.decode(Bool.self, forKey: .mcpServerEnabled)) ?? false
         mcpServerPort              = (try? c.decode(Int.self,  forKey: .mcpServerPort))    ?? 8765
@@ -102,6 +112,7 @@ struct AppSettings: Codable {
         mcpPermServices            = (try? c.decode(String.self, forKey: .mcpPermServices))  ?? MCPPermission.write.rawValue
         mcpPermDatabases           = (try? c.decode(String.self, forKey: .mcpPermDatabases)) ?? MCPPermission.write.rawValue
         mcpPermLogs                = (try? c.decode(String.self, forKey: .mcpPermLogs))      ?? MCPPermission.write.rawValue
+        mcpPermSharing             = (try? c.decode(String.self, forKey: .mcpPermSharing))   ?? MCPPermission.none.rawValue
     }
 
     init() {
@@ -123,6 +134,7 @@ struct AppSettings: Codable {
         self.installPromptAutoConfirm   = true
         self.installPromptAutoConfirmSeconds = 10
         self.verboseLogging             = false
+        self.persistConsoleLog          = true
         self.autoStartServiceIds        = []
         self.mcpServerEnabled           = false
         self.mcpServerPort              = 8765
@@ -130,6 +142,7 @@ struct AppSettings: Codable {
         self.mcpPermServices            = MCPPermission.write.rawValue
         self.mcpPermDatabases           = MCPPermission.write.rawValue
         self.mcpPermLogs                = MCPPermission.write.rawValue
+        self.mcpPermSharing             = MCPPermission.none.rawValue
     }
 
     // MARK: - Bellek İçi Önbellek (thread-safe)
@@ -209,7 +222,7 @@ struct AppSettings: Codable {
         "showCommandsInConsole", "showBrewOutputInConsole", "stopPHPOnWebServerStop",
         "stopDomainsOnWebServerStop", "startPHPOnWebServerStart",
         "installPromptAutoConfirm", "installPromptAutoConfirmSeconds", "verboseLogging",
-        "showMenuBarIcon", "hideWindowOnClose"
+        "showMenuBarIcon", "hideWindowOnClose", "persistConsoleLog"
     ]
 
     /// settings.json uygulama DIŞINDA değiştirildiğinde (yedek geri yükleme) önbelleği
@@ -271,6 +284,7 @@ struct AppSettings: Codable {
         put("verboseLogging", s.verboseLogging)
         put("showMenuBarIcon", s.showMenuBarIcon)
         put("hideWindowOnClose", s.hideWindowOnClose)
+        put("persistConsoleLog", s.persistConsoleLog)
     }
 
     static func reset() {

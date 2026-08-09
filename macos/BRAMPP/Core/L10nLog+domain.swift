@@ -15,6 +15,27 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.tunnel.notInstalled":
+            ["tr": "cloudflared kurulu değil — paylaşım için: brew install cloudflared",
+             "en": "cloudflared is not installed — for sharing: brew install cloudflared"],
+        "log.tunnel.starting":
+            ["tr": "▶︎ %@ için Cloudflare tüneli açılıyor",
+             "en": "▶︎ opening a Cloudflare tunnel for %@"],
+        "log.tunnel.already":
+            ["tr": "%@ zaten paylaşılıyor",
+             "en": "%@ is already shared"],
+        "log.tunnel.startFailed":
+            ["tr": "❌ %@ için tünel başlatılamadı",
+             "en": "❌ could not start the tunnel for %@"],
+        "log.tunnel.urlTimeout":
+            ["tr": "❌ %@ için herkese açık adres alınamadı — tünel kapatıldı",
+             "en": "❌ no public address arrived for %@ — the tunnel was closed"],
+        "log.tunnel.live":
+            ["tr": "🌍 %@ ARTIK HERKESE AÇIK: %@",
+             "en": "🌍 %@ IS NOW PUBLIC: %@"],
+        "log.tunnel.stopped":
+            ["tr": "%@ paylaşımı durduruldu",
+             "en": "sharing stopped for %@"],
         "log.dom.depReady":
             ["tr": "↳ bağımlılık hazır: %@",
              "en": "↳ dependency ready: %@"],

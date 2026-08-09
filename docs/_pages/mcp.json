@@ -3,6 +3,6 @@
  "nav": "mcp/",
  "type": "WebPage",
  "en": {"title": "MCP server — let an AI assistant drive your local stack",
-        "desc": "BRAMPP ships a local Model Context Protocol server: 19 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default."},
+        "desc": "BRAMPP ships a local Model Context Protocol server: 22 tools for domains, services, databases and logs, behind per-area permissions, bound to loopback and off by default."},
  "tr": {"title": "MCP sunucusu — yerel ortamınızı yapay zekâ asistanına açın",
-        "desc": "BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 19 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı."}}
+        "desc": "BRAMPP yerel bir Model Context Protocol sunucusuyla gelir: alan adları, servisler, veritabanları ve günlükler için 22 araç; alan bazlı izinlerin arkasında, yalnızca loopback'e bağlı ve öntanımlı kapalı."}}

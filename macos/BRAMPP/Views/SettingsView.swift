@@ -33,6 +33,7 @@ struct SettingsView: View {
 
     // Debug
     @AppStorage("verboseLogging") private var verboseLogging: Bool = false
+    @AppStorage("persistConsoleLog") private var persistConsoleLog: Bool = true
 
     // MCP Sunucusu — @AppStorage DEĞİL: bu ayarlar yalnızca settings.json'da tutulur
     // (UI dışında okuyan tek yer AppState açılış akışıdır, ayna anahtara gerek yok).
@@ -392,6 +393,15 @@ struct SettingsView: View {
             Section {
                 Toggle(loc.t("set.verbose.toggle"), isOn: $verboseLogging)
                     .onChange(of: verboseLogging) { _, v in saveConsoleSetting(\.verboseLogging, v) }
+                Toggle(loc.t("set.persistLog"), isOn: $persistConsoleLog)
+                    .onChange(of: persistConsoleLog) { _, v in
+                        saveConsoleSetting(\.persistConsoleLog, v)
+                        // Canlı store da güncellenmeli: aksi halde ayar ancak
+                        // uygulama yeniden açılınca etkili olurdu.
+                        appState.consoleStore.persistToFile = v
+                    }
+                Text(loc.t("set.persistLogDesc"))
+                    .font(.caption).foregroundColor(.secondary)
             } header: {
                 Label(loc.t("set.verbose.header"), systemImage: "ant.circle")
             } footer: {

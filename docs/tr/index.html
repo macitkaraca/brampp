@@ -152,7 +152,7 @@
       "name": "Claude gibi yapay zekâ araçları BRAMPP'i kullanabilir mi?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar) her alana izin yok, okuma ya da okuma + yazma verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca 127.0.0.1 üzerinden dinler ve varsayılan olarak kapalıdır."
+        "text": "Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar, Paylaşım) her alana izin yok, okuma ya da okuma + yazma verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca 127.0.0.1 üzerinden dinler ve varsayılan olarak kapalıdır."
       }
     },
     {
@@ -746,7 +746,7 @@ pre code{white-space:pre;overflow-wrap:normal}
           <tr><th scope="row">Veritabanları</th><td>XAMPP: MariaDB · MAMP: MySQL</td><td class="win">MariaDB/MySQL, PostgreSQL, Redis</td></tr>
           <tr><th scope="row">Yerel HTTPS</th><td>Elle, zahmetli</td><td class="win">mkcert ile otomatik</td></tr>
           <tr><th scope="row"><code>brew upgrade</code> uyumu</th><td>Pek değil</td><td class="win">Zaten bütün mesele bu</td></tr>
-          <tr><th scope="row">Yapay zekâ erişimi</th><td>—</td><td class="win">Yerleşik MCP sunucusu, 19 araç</td></tr>
+          <tr><th scope="row">Yapay zekâ erişimi</th><td>—</td><td class="win">Yerleşik MCP sunucusu, 22 araç</td></tr>
           <tr><th scope="row">Uçtan uca arm64</th><td>Ürüne ve kuruluma göre değişir</td><td class="win">Uygulama <i>ve</i> yönettiği tüm servisler, native</td></tr>
           <tr><th scope="row">Fiyat</th><td>XAMPP ücretsiz · MAMP PRO ücretli</td><td class="win">Ücretsiz, MIT, açık kaynak</td></tr>
         </tbody>
@@ -868,7 +868,7 @@ pre code{white-space:pre;overflow-wrap:normal}
       <details><summary>BRAMPP Node.js / Python / ASP.NET uygulamamı çalıştırabilir mi?</summary><p>Evet — her uygulama, bağımlılığı olmayan bir süpervizör altında otomatik yeniden başlatma ve birleşik günlüklerle çalışır; önünde ters vekil (reverse proxy) olarak Apache ya da Nginx durur (WebSocket, SSE, HTTP/2 ve gRPC seçenekleri dahil). Uygulamanızdan önce otomatik başlayacak servis bağımlılıkları da tanımlayabilirsiniz (örneğin MariaDB + Redis).</p></details>
       <details><summary>Hangi PHP sürümleri destekleniyor?</summary><p>PHP 8.1, 8.2, 8.3, 8.4 ve 8.5 yan yana — her alan adı kendi sürümünü sabitleyebilir; eklenti yöneticisi de sürüm başına çalışır.</p></details>
       <details><summary>Hangi Mac'lerde çalışır?</summary><p>Yalnızca Apple Silicon. Dağıtılan sürüm yerel bir <code>arm64</code> ikilisidir ve macOS 14 (Sonoma) veya üstünü gerektirir — Intel Mac'ler desteklenmez. Homebrew prefix'i (<code>/opt/homebrew</code>) otomatik algılanır.</p></details>
-      <details><summary>Claude gibi yapay zekâ araçları BRAMPP'i kullanabilir mi?</summary><p>Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar) her alana <i>izin yok</i>, <i>okuma</i> ya da <i>okuma + yazma</i> verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca <code>127.0.0.1</code> üzerinden dinler ve varsayılan olarak kapalıdır.</p></details>
+      <details><summary>Claude gibi yapay zekâ araçları BRAMPP'i kullanabilir mi?</summary><p>Evet — yerleşik MCP sunucusunu açtığınızda (Ayarlar → MCP) MCP destekleyen her istemci 19 araca kavuşur: alan adı listeleme/oluşturma/güncelleme, uygulama sunucusu başlat/durdur, servis durumu ve başlat/durdur/yeniden başlat, BRAMPP ve alan adı loglarını okuma, veritabanı listeleme/oluşturma, salt-okunur SQL, mysqldump/pg_dump ile yedekleme ve geri yükleme. Alan bazlı izinlerle (Alan Adları, Servisler, Veritabanları, Loglar, Paylaşım) her alana <i>izin yok</i>, <i>okuma</i> ya da <i>okuma + yazma</i> verilir — izin vermediğiniz araçlar istemcide hiç görünmez. Yalnızca <code>127.0.0.1</code> üzerinden dinler ve varsayılan olarak kapalıdır.</p></details>
       <details><summary>Nasıl kaldırırım?</summary><p>BRAMPP'ten çıkın, uygulamayı silin ve <code>~/Library/Application Support/BRAMPP</code> klasörünü kaldırın. Homebrew servisleriniz ve site klasörleriniz olduğu gibi kalır.</p></details>
     </div>
   </div>

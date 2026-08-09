@@ -664,6 +664,140 @@ final class BRAMPPTests: XCTestCase {
         }
     }
 
+
+    // MARK: - Tünel (Cloudflare Quick Tunnel)
+
+    /// cloudflared adresi bir kutu çiziminin İÇİNDE, satır ortasında yazar.
+    /// Satır başı/sonu araması yapılsaydı adres hiç bulunmazdı.
+    func testTunnel_ParsesURLFromRealLogOutput() {
+        let log = """
+        2026-08-09T10:00:00Z INF Thank you for trying Cloudflare Tunnel.
+        2026-08-09T10:00:02Z INF +--------------------------------------------------------+
+        2026-08-09T10:00:02Z INF |  Your quick Tunnel has been created! Visit it at:       |
+        2026-08-09T10:00:02Z INF |  https://calm-river-fox-42.trycloudflare.com            |
+        2026-08-09T10:00:02Z INF +--------------------------------------------------------+
+        """
+        XCTAssertEqual(TunnelManager.parsePublicURL(from: log),
+                       "https://calm-river-fox-42.trycloudflare.com")
+    }
+
+    func testTunnel_NoURLYetReturnsNil() {
+        let log = "2026-08-09T10:00:00Z INF Requesting new quick Tunnel on trycloudflare.com..."
+        XCTAssertNil(TunnelManager.parsePublicURL(from: log),
+                     "adres henüz yokken nil dönmeli — aksi halde ölü bağlantı gösterilir")
+    }
+
+    /// SSL AÇIK: HTTPS hedeflenmeli ve `--no-tls-verify` bulunmalı.
+    ///
+    /// HTTP hedeflenirse BRAMPP'ın koyduğu HTTP→HTTPS yönlendirmesi ziyaretçiyi
+    /// internette çözülmeyen `https://<ad>` adresine atar ve sayfa hiç açılmaz.
+    func testTunnel_CommandForSSLDomain() {
+        let d = Domain(name: "shop.test", platform: .php, sslEnabled: true, webServer: .apache)
+        let cmd = TunnelManager.buildCommand(for: d, cloudflaredPath: "/opt/homebrew/bin/cloudflared")
+
+        XCTAssertTrue(cmd.contains("https://shop.test"), "SSL açıkken HTTPS hedeflenmeli: \(cmd)")
+        XCTAssertTrue(cmd.contains("--no-tls-verify"), "mkcert sertifikası için gerekli")
+        XCTAssertTrue(cmd.contains("--http-host-header"),
+                      "isim tabanlı vhost'un eşleşmesi bu bayrağa bağlı")
+        XCTAssertTrue(cmd.contains("shop.test"), "Host başlığı alan adı olmalı")
+        XCTAssertFalse(cmd.contains("127.0.0.1:8"), "hedef IP değil alan adı olmalı")
+    }
+
+    /// SSL KAPALI: HTTP hedeflenir ve TLS doğrulaması atlanmaz — atlanacak TLS yok.
+    func testTunnel_CommandForPlainDomain() {
+        let d = Domain(name: "demo.test", platform: .php, sslEnabled: false, webServer: .apache)
+        let cmd = TunnelManager.buildCommand(for: d, cloudflaredPath: "/opt/homebrew/bin/cloudflared")
+
+        XCTAssertTrue(cmd.contains("http://demo.test"))
+        XCTAssertFalse(cmd.contains("https://demo.test"))
+        XCTAssertFalse(cmd.contains("--no-tls-verify"),
+                       "TLS yokken doğrulama atlama bayrağı anlamsız")
+        XCTAssertTrue(cmd.contains("--http-host-header"))
+    }
+
+    // MARK: - Konsol log dosyası
+
+    /// `.progress` YAZILMAZ: brew'un ilerleme çubuğu saniyede onlarca satır üretir,
+    /// bilgi taşımaz ve dosyayı kullanılamaz hâle getirir.
+    func testConsoleLogFile_SkipsProgressLines() {
+        XCTAssertFalse(ConsoleLogFile.shouldPersist(.progress))
+        for type in [ConsoleEntryType.info, .success, .warning, .error, .command] {
+            XCTAssertTrue(ConsoleLogFile.shouldPersist(type), "\(type) yazılmalı")
+        }
+    }
+
+    /// Çok satırlı çıktıda HER fiziksel satır kendi zaman damgasını almalı;
+    /// aksi halde tarihe göre süzme ilk satırdan sonrasını kaçırır.
+    func testConsoleLogFile_StampsEveryPhysicalLine() {
+        let out = ConsoleLogFile.format(date: Date(), level: "ERROR", text: "bir\niki\nüç")
+        let lines = out.split(separator: "\n")
+        XCTAssertEqual(lines.count, 3)
+        for line in lines {
+            XCTAssertTrue(line.contains("[ERROR]"), "her satır düzey etiketi taşımalı: \(line)")
+        }
+        XCTAssertTrue(out.hasSuffix("\n"), "dosyaya eklemede satır sonu korunmalı")
+    }
+
+    /// Silinecek dosyalar ADINDAN çözülür, mtime'dan değil: yedekten dönen bir
+    /// dosyanın değiştirilme tarihi bugünü gösterebilir.
+    func testConsoleLogFile_PrunesByNameNotModificationTime() {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        let now = Date()
+        func name(_ daysAgo: Int) -> String {
+            let d = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now)!
+            return "console-\(fmt.string(from: d)).log"
+        }
+        let files = [name(0), name(3), name(7), name(20), "not-a-log.txt", "console-bozuk.log"]
+        let removed = ConsoleLogFile.pruneOldFiles(now: now, fileNames: files)
+
+        XCTAssertTrue(removed.contains(name(20)), "20 günlük dosya silinmeli")
+        XCTAssertFalse(removed.contains(name(0)), "bugünün dosyası durmalı")
+        XCTAssertFalse(removed.contains(name(3)), "3 günlük dosya durmalı")
+        XCTAssertFalse(removed.contains("not-a-log.txt"), "ilgisiz dosyaya dokunulmamalı")
+        XCTAssertFalse(removed.contains("console-bozuk.log"), "tarihi çözülemeyen dosya silinmemeli")
+    }
+
+    // MARK: - read_log süzgeçleri
+
+    func testReadLogFilter_LevelWarningIncludesErrors() {
+        // "Sorunları göster" diyen kullanıcı hatayı dışarıda bırakmak istemez.
+        XCTAssertTrue(MCPServer.logLineMatches(level: "warning", search: nil,
+                                               entryLabel: "ERROR", text: "patladı"))
+        XCTAssertTrue(MCPServer.logLineMatches(level: "warning", search: nil,
+                                               entryLabel: "WARN", text: "dikkat"))
+        XCTAssertFalse(MCPServer.logLineMatches(level: "warning", search: nil,
+                                                entryLabel: "INFO", text: "olağan"))
+    }
+
+    func testReadLogFilter_ErrorIsStrictAndSearchIsCaseInsensitive() {
+        XCTAssertFalse(MCPServer.logLineMatches(level: "error", search: nil,
+                                                entryLabel: "WARN", text: "uyarı"))
+        XCTAssertTrue(MCPServer.logLineMatches(level: "all", search: "NGINX",
+                                               entryLabel: "INFO", text: "nginx başlatıldı"))
+        XCTAssertFalse(MCPServer.logLineMatches(level: "all", search: "apache",
+                                                entryLabel: "INFO", text: "nginx başlatıldı"))
+    }
+
+    func testReadLogFilter_ParsesFileLine() {
+        let p = MCPServer.parseFileLogLine("2026-08-09 14:03:11 [ERROR] mariadb başlatılamadı")
+        XCTAssertEqual(p?.date, "2026-08-09 14:03:11")
+        XCTAssertEqual(p?.label, "ERROR")
+        XCTAssertEqual(p?.text, "mariadb başlatılamadı")
+        XCTAssertNil(MCPServer.parseFileLogLine("düz metin, biçime uymuyor"))
+    }
+
+    /// Paylaşım araçları YAZMA izni ister ve varsayılan Erişim yok'tur —
+    /// ajanın makineyi kendiliğinden internete açamaması buna bağlı.
+    func testSharingScope_DefaultsToNoAccess() {
+        let fresh = AppSettings()
+        XCTAssertEqual(MCPScope.sharing.permission(in: fresh), .none,
+                       "paylaşım varsayılan olarak KAPALI olmalı")
+        XCTAssertNotEqual(MCPScope.domains.permission(in: fresh), .none,
+                          "diğer alanların varsayılanı değişmemeli")
+    }
+
     func testSkills_HaveDistinctInstallPaths() {
         XCTAssertNotEqual(ClaudeIntegration.skillPath, ClaudeIntegration.mysqlSkillPath)
         XCTAssertNotEqual(ClaudeIntegration.skillDirectory, ClaudeIntegration.mysqlSkillDirectory)

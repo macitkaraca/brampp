@@ -173,6 +173,7 @@ struct DomainRowView: View {
     @EnvironmentObject var loc: Localizer
 
     @EnvironmentObject var domainManager: DomainManager
+    @EnvironmentObject var tunnelManager: TunnelManager
 
     let domain: Domain
     let onOpenApache: () -> Void
@@ -191,6 +192,7 @@ struct DomainRowView: View {
     @State private var renameError:   String? = nil
     /// PID badge değeri — body'de her render'da senkron disk okumak yerine önbellek.
     @State private var cachedPID:     String? = nil
+    @State private var showShare:     Bool   = false
 
     private var isAppPlatform: Bool {
         [Platform.nodejs, .python, .dotnet].contains(domain.platform)
@@ -314,6 +316,15 @@ struct DomainRowView: View {
                     .help(loc.t("dom.settings"))
                 Button(action: onErrorLog) { Image(systemName: "exclamationmark.bubble") }
                     .help(loc.t("dom.logs"))
+                Button(action: { showShare = true }) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        // Etkin tünel görünür olmalı: kullanıcı sitesinin şu anda
+                        // internete açık olduğunu satıra bakınca anlamalı.
+                        .foregroundColor(tunnelManager.tunnel(for: domain.name)?.isLive == true
+                                         ? .orange : nil)
+                }
+                .help(tunnelManager.tunnel(for: domain.name)?.isLive == true
+                      ? loc.t("dom.share.stop") : loc.t("dom.share"))
                 Button(action: onDelete)   { Image(systemName: "trash").foregroundColor(.red) }
                     .help(loc.t("dom.delete"))
             }
@@ -363,6 +374,9 @@ struct DomainRowView: View {
             }
             Divider()
             Button(role: .destructive, action: onDelete) { Label(loc.t("common.delete"), systemImage: "trash") }
+        }
+        .sheet(isPresented: $showShare) {
+            ShareSheetView(domain: domain)
         }
         .sheet(isPresented: $showAppLog) {
             AppLogSheet(domain: domain)

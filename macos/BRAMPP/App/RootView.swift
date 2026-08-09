@@ -15,6 +15,7 @@ struct RootView: View {
                     .environmentObject(appState.serviceManager)
                     .environmentObject(appState.phpExtensionManager)
                     .environmentObject(appState.consoleStore)
+                    .environmentObject(appState.tunnelManager)
             } else {
                 SetupWizardView { appState.onSetupCompleted() }
             }
