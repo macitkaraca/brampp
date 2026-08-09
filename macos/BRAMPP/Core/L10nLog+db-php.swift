@@ -110,6 +110,21 @@ extension L10n {
              "en": "redis.conf settings saved"],
 
         // ── log.php.* — Eklenti listesi ──────────────────────────────────────
+        "log.php.profilerTrigger":
+            ["tr": "Profilleyici açık (PHP %@) — yalnızca XDEBUG_TRIGGER taşıyan istekler ölçülür",
+             "en": "Profiler on (PHP %@) — only requests carrying XDEBUG_TRIGGER are measured"],
+        "log.php.profilerAlways":
+            ["tr": "⚠️ Profilleyici HER istekte açık (PHP %@) — site yavaşlar ve disk hızla dolar",
+             "en": "⚠️ Profiler on for EVERY request (PHP %@) — the site slows down and the disk fills fast"],
+        "log.php.profilerOff":
+            ["tr": "Profilleyici kapatıldı (PHP %@)",
+             "en": "Profiler turned off (PHP %@)"],
+        "log.php.profilesCleared":
+            ["tr": "Profil dosyaları silindi",
+             "en": "Profile files deleted"],
+        "log.php.iniWriteFailed":
+            ["tr": "php.ini yazılamadı — yedek .brampp.bak olarak duruyor",
+             "en": "could not write php.ini — the backup is at .brampp.bak"],
         "log.php.loading":
             ["tr": "PHP %@ eklentileri yükleniyor...",
              "en": "Loading PHP %@ extensions…"],

@@ -31,6 +31,7 @@ class PHPExtensionManager: BaseManager {
         
         extensions = exts
         loadPHPIniSettings()
+        refreshProfiler()
         log(key: "log.php.loaded", args: ["\(extensions.filter { $0.isEnabled }.count)"], type: .success)
     }
     
@@ -51,6 +52,62 @@ class PHPExtensionManager: BaseManager {
             .map { $0.replacingOccurrences(of: "ext-", with: "").replacingOccurrences(of: ".ini", with: "") })
     }
     
+    // MARK: - Profilleyici (Xdebug profile kipi)
+
+    /// Seçili sürümde profilleyici açık mı?
+    @Published var profilerEnabled = false
+    /// Her istek mi profilleniyor (aksi hâlde yalnızca XDEBUG_TRIGGER taşıyanlar)?
+    @Published var profilerAlwaysOn = false
+    /// Üretilmiş profil dosyaları.
+    @Published var profiles: [PHPProfiler.ProfileFile] = []
+
+    /// Xdebug bu sürümde kurulu mu? Profilleyici ona bağlı.
+    var isXdebugReady: Bool {
+        extensions.first(where: { $0.name == "xdebug" })?.isEnabled ?? false
+    }
+
+    func refreshProfiler() {
+        let ini = PathConfig.phpIni(version: selectedPHPVersion.rawValue)
+        let content = FileHelper.readString(ini) ?? ""
+        profilerEnabled  = PHPProfiler.isEnabled(in: content)
+        profilerAlwaysOn = PHPProfiler.isAlwaysOn(in: content)
+        profiles = PHPProfiler.profiles()
+    }
+
+    /// Profilleyiciyi açar/kapatır. `php.ini` yazıldıktan sonra PHP-FPM'in yeniden
+    /// başlatılması gerekir — aksi halde ayar yalnızca CLI'da geçerli olur.
+    func setProfiler(enabled: Bool, alwaysOn: Bool) {
+        guard requireBrew(forKey: "log.op.phpIniUpdate") else { return }
+        let ini = PathConfig.phpIni(version: selectedPHPVersion.rawValue)
+        guard let content = FileHelper.readString(ini) else {
+            log(key: "log.php.iniNotFound", type: .error); return
+        }
+        // Yazmadan önce yedek: php.ini bozulursa o sürüm hiç çalışmaz.
+        _ = FileHelper.write(content, to: ini + ".brampp.bak")
+
+        _ = FileHelper.createDirectory(PHPProfiler.outputDir)
+        let updated = enabled ? PHPProfiler.applying(to: content, alwaysOn: alwaysOn)
+                              : PHPProfiler.removing(from: content)
+        guard FileHelper.write(updated, to: ini) else {
+            log(key: "log.php.iniWriteFailed", type: .error); return
+        }
+        log(key: enabled ? (alwaysOn ? "log.php.profilerAlways" : "log.php.profilerTrigger")
+                         : "log.php.profilerOff",
+            args: [selectedPHPVersion.rawValue], type: .success)
+        refreshProfiler()
+    }
+
+    func deleteProfile(_ file: PHPProfiler.ProfileFile) {
+        _ = FileHelper.remove(file.path)
+        refreshProfiler()
+    }
+
+    func clearProfiles() {
+        for f in PHPProfiler.profiles() { _ = FileHelper.remove(f.path) }
+        log(key: "log.php.profilesCleared", type: .info)
+        refreshProfiler()
+    }
+
     // MARK: - Enable / Disable
     
     func enableExtension(_ ext: PHPExtension) {

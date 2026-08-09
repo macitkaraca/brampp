@@ -666,6 +666,65 @@ final class BRAMPPTests: XCTestCase {
 
 
 
+
+    // MARK: - PHP Profilleyici
+
+    /// Blok eklenip çıkarıldığında kullanıcının php.ini'si BOZULMAMALI.
+    /// Bu dosya bozulursa o PHP sürümü hiç çalışmaz.
+    func testProfiler_RoundTripLeavesUserContentIntact() {
+        let original = """
+        [PHP]
+        memory_limit = 512M
+        upload_max_filesize = 64M
+
+        [xdebug]
+        xdebug.client_host = localhost
+        """
+        let on = PHPProfiler.applying(to: original, alwaysOn: false)
+        XCTAssertTrue(PHPProfiler.isEnabled(in: on))
+        XCTAssertTrue(on.contains("memory_limit = 512M"), "kullanıcı ayarı korunmalı")
+        XCTAssertTrue(on.contains("xdebug.client_host = localhost"),
+                      "kullanıcının kendi xdebug ayarına dokunulmamalı")
+
+        let off = PHPProfiler.removing(from: on)
+        XCTAssertFalse(PHPProfiler.isEnabled(in: off))
+        XCTAssertTrue(off.contains("memory_limit = 512M"))
+        XCTAssertTrue(off.contains("xdebug.client_host = localhost"))
+        XCTAssertFalse(off.contains("xdebug.output_dir"), "blok tamamen kalkmalı")
+    }
+
+    /// İki kez açmak bloğu ÇOĞALTMAMALI — yinelenen yönergeler php.ini'de
+    /// öngörülemez davranışa yol açar.
+    func testProfiler_EnablingTwiceDoesNotDuplicate() {
+        let base = "[PHP]\nmemory_limit = 256M\n"
+        let once = PHPProfiler.applying(to: base, alwaysOn: false)
+        let twice = PHPProfiler.applying(to: once, alwaysOn: true)
+        let marks = twice.components(separatedBy: PHPProfiler.beginMark).count - 1
+        XCTAssertEqual(marks, 1, "blok bir kez bulunmalı")
+        XCTAssertTrue(PHPProfiler.isAlwaysOn(in: twice), "ikinci çağrı kipi güncellemeli")
+    }
+
+    /// VARSAYILAN tetikleyici kipi olmalı: `start_with_request=yes` her isteği
+    /// profiller, dakikalar içinde yüzlerce MB üretir ve siteyi yavaşlatır.
+    func testProfiler_DefaultsToTriggerNotEveryRequest() {
+        let block = PHPProfiler.iniBlock()
+        XCTAssertTrue(block.contains("xdebug.start_with_request = trigger"))
+        XCTAssertFalse(block.contains("start_with_request = yes"))
+        XCTAssertTrue(block.contains("xdebug.mode = profile"))
+
+        let always = PHPProfiler.iniBlock(alwaysOn: true)
+        XCTAssertTrue(always.contains("xdebug.start_with_request = yes"))
+    }
+
+    /// İşaret yoksa içerik AYNEN dönmeli — profilleyici hiç açılmamış bir
+    /// php.ini'yi "temizlemek" onu değiştirmemeli.
+    func testProfiler_RemovingFromUntouchedFileChangesNothing() {
+        let original = "[PHP]\nmemory_limit = 128M\n"
+        XCTAssertEqual(PHPProfiler.removing(from: original), original)
+        XCTAssertFalse(PHPProfiler.isEnabled(in: original))
+        XCTAssertFalse(PHPProfiler.isAlwaysOn(in: original))
+    }
+
     // MARK: - Log akışı (LogTailer)
 
     /// Dosya küçüldüyse tutulan okuma konumu geçersizdir.

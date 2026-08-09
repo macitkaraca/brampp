@@ -39,6 +39,7 @@ struct PHPExtensionsTabView: View {
 
                     // php.ini Settings
                     if showIniSettings {
+                        PHPProfilerView()
                         phpIniSettingsView
                             .frame(minWidth: 330, maxWidth: 360)
                     }
