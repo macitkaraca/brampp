@@ -19,6 +19,7 @@ struct ShareSheetView: View {
     /// Önkoşul denetimi: sayfa açılır açılmaz koşar, düğme buna göre kilitlenir.
     @State private var block: TunnelManager.ShareBlock?
     @State private var isChecking = true
+    @State private var copied = false
 
     private var tunnel: Tunnel? { tunnelManager.tunnel(for: domain.name) }
 
@@ -38,13 +39,8 @@ struct ShareSheetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.title2).foregroundColor(.orange)
-                Text(loc.t("dom.share.title")).font(.title3.bold())
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            header
 
             if !TunnelManager.isCloudflaredInstalled {
                 notInstalled
@@ -59,6 +55,31 @@ struct ShareSheetView: View {
         .padding(22)
         .frame(width: 460)
     }
+
+    /// Başlık — yayın durumunu rozetle gösterir, gövdeyi okumadan anlaşılsın.
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: isLive ? "antenna.radiowaves.left.and.right"
+                                     : "antenna.radiowaves.left.and.right.slash")
+                .font(.title2)
+                .foregroundColor(isLive ? .green : .orange)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(loc.t("dom.share.title")).font(.title3.bold())
+                Text(domain.name).font(.caption).foregroundColor(.secondary)
+            }
+            Spacer()
+            if isLive {
+                Text(loc.t("dom.share.badgeLive"))
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Color.green.opacity(0.18))
+                    .foregroundColor(.green)
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private var isLive: Bool { tunnel?.publicURL != nil }
 
     // MARK: - Durumlar
 
@@ -82,9 +103,15 @@ struct ShareSheetView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            LabeledContent(loc.t("dom.share.target")) {
-                Text(TunnelManager.origin(for: domain)).font(.system(.footnote, design: .monospaced))
+            HStack(spacing: 6) {
+                Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
+                Text(TunnelManager.origin(for: domain))
+                    .font(.system(size: 11.5, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
             }
+
+            Divider()
 
             HStack {
                 Button(loc.t("common.cancel")) { dismiss() }
@@ -113,46 +140,93 @@ struct ShareSheetView: View {
     }
 
     private var starting: some View {
-        HStack(spacing: 10) {
-            ProgressView().controlSize(.small)
-            Text(loc.t("dom.share.starting")).foregroundColor(.secondary)
-            Spacer()
-            Button(loc.t("common.cancel")) {
-                Task { await tunnelManager.stop(domainName: domain.name); dismiss() }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(loc.t("dom.share.starting")).foregroundColor(.primary)
+                    // Bekleme boyunca ne olduğunu söyle: boş bir çubuk, tünelin
+                    // kilitlendiği izlenimi veriyordu. Gerçekte 7–10 sn sürüyor.
+                    Text(loc.t("dom.share.startingHint"))
+                        .font(.caption).foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            HStack(spacing: 6) {
+                Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
+                Text(TunnelManager.origin(for: domain))
+                    .font(.system(size: 11.5, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+            Divider()
+            HStack {
+                Spacer()
+                Button(loc.t("common.cancel")) {
+                    Task { await tunnelManager.stop(domainName: domain.name); dismiss() }
+                }
             }
         }
-        .frame(height: 120)
     }
 
     private func live(url: String) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            LabeledContent(loc.t("dom.share.public")) {
-                Text(url).font(.system(.footnote, design: .monospaced))
-                    .textSelection(.enabled).foregroundColor(.orange)
+        VStack(alignment: .leading, spacing: 16) {
+            // Adres SEÇİLEBİLİR ve tam genişlikte: sözcük ortasından kırılan bir URL
+            // elle kopyalanamaz, ekran görüntüsünden okunamaz.
+            VStack(alignment: .leading, spacing: 5) {
+                Text(loc.t("dom.share.public"))
+                    .font(.caption).foregroundColor(.secondary)
+                Text(url)
+                    .font(.system(size: 12.5, design: .monospaced))
+                    .foregroundColor(.orange)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            LabeledContent(loc.t("dom.share.target")) {
-                Text(TunnelManager.origin(for: domain)).font(.system(.footnote, design: .monospaced))
+            .padding(10)
+            .background(Color.orange.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            HStack(spacing: 6) {
+                Text(loc.t("dom.share.target")).font(.caption).foregroundColor(.secondary)
+                Text(TunnelManager.origin(for: domain))
+                    .font(.system(size: 11.5, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
             }
 
+            // Karekod beyaz zemin ister; koyu arayüzde kendi kartında durur.
             if let qr = Self.qrImage(for: url) {
                 HStack {
                     Spacer()
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Image(nsImage: qr).interpolation(.none)
-                            .resizable().frame(width: 140, height: 140)
-                        Text(loc.t("dom.share.qr")).font(.caption2).foregroundColor(.secondary)
+                            .resizable().frame(width: 124, height: 124)
+                            .padding(10)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        Text(loc.t("dom.share.qr"))
+                            .font(.caption2).foregroundColor(.secondary)
                     }
                     Spacer()
                 }
             }
 
-            HStack {
+            Divider()
+
+            HStack(spacing: 8) {
                 Button(loc.t("dom.share.copy")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(url, forType: .string)
+                    copied = true
                 }
                 Button(loc.t("common.open")) {
                     if let u = URL(string: url) { NSWorkspace.shared.open(u) }
+                }
+                if copied {
+                    Label(loc.t("dom.share.copied"), systemImage: "checkmark")
+                        .font(.caption).foregroundColor(.green)
+                        .transition(.opacity)
                 }
                 Spacer()
                 Button(loc.t("dom.share.stop"), role: .destructive) {
@@ -164,6 +238,7 @@ struct ShareSheetView: View {
                 Button(loc.t("common.close")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
+            .animation(.easeOut(duration: 0.15), value: copied)
         }
     }
 
