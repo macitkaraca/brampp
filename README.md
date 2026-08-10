@@ -468,8 +468,7 @@ see [`windows/README.md`](windows/README.md) and [`linux/README.md`](linux/READM
 the decisions each one has to make first.
 
 Nothing compiles across the three. What holds them together is written down in
-[`spec/`](spec/): the [MCP tool contract](spec/mcp-tools.md), the
-[`brampp.yml` manifest](spec/brampp-yml.md) and the
+[`spec/`](spec/): the [MCP tool contract](spec/mcp-tools.md) and the
 [update manifest](spec/update-manifest.md). A build is BRAMPP when it implements those.
 
 ## License

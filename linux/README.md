@@ -39,8 +39,6 @@ already exists for Apache-versus-Nginx has to widen to cover Apache-versus-Apach
 ## Still applies
 
 - The [MCP tool contract](../spec/mcp-tools.md)
-- [`brampp.yml`](../spec/brampp-yml.md) — the same file, working on both platforms, is the
-  clearest proof the manifest was worth writing
 - The [update manifest](../spec/update-manifest.md) at `updates/linux/stable.json`
 - MIT, published checksums, no lock-in
 

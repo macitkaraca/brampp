@@ -46,7 +46,6 @@ is to start building and let the architecture choose itself.
 Whatever is chosen, these still hold:
 
 - The [MCP tool contract](../spec/mcp-tools.md), so an assistant works the same everywhere.
-- [`brampp.yml`](../spec/brampp-yml.md), so a project moves between machines and platforms.
 - The [update manifest](../spec/update-manifest.md) at `updates/windows/stable.json`.
 - MIT, signed builds, published checksums.
 - No lock-in: removing BRAMPP leaves the services, the projects and the databases working.

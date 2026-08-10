@@ -106,8 +106,6 @@ enum L10n {
         "dom.share.qr":       ["tr": "Telefonla açmak için kodu okutun", "en": "Scan the code to open it on a phone"],
         "dom.act.menu":     ["tr": "Proje eylemleri", "en": "Project actions"],
         "dom.act.openIn":   ["tr": "%@ ile aç", "en": "Open in %@"],
-        "dom.act.writeManifest": ["tr": "brampp.yml oluştur", "en": "Write brampp.yml"],
-        "dom.act.applyManifest": ["tr": "brampp.yml'yi uygula", "en": "Apply brampp.yml"],
         "dom.act.terminal": ["tr": "Terminalde aç", "en": "Open in Terminal"],
         "diag.title":   ["tr": "Ortam Teşhisi", "en": "Environment Diagnostics"],
         "diag.sub":     ["tr": "Portlar, yapılandırma, sertifika ve hosts dosyası", "en": "Ports, configuration, certificates and the hosts file"],

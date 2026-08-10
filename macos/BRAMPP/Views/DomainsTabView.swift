@@ -233,12 +233,6 @@ struct DomainRowView: View {
                 TerminalHelper.runInNewWindow("cd \(Shell.quote(site)) && clear",
                                               title: domain.name)
             }
-            Divider()
-            // brampp.yml — projeyi başka bir Mac'te aynı kuran taşınabilir manifest
-            Button(loc.t("dom.act.writeManifest")) { writeManifest(site: site) }
-            if FileHelper.exists("\(site)/\(ProjectManifest.fileName)") {
-                Button(loc.t("dom.act.applyManifest")) { applyManifest(site: site) }
-            }
             if !tasks.isEmpty {
                 Divider()
                 ForEach(tasks) { task in
@@ -260,44 +254,6 @@ struct DomainRowView: View {
         .menuIndicator(.hidden)
         .frame(width: 22)
         .help(loc.t("dom.act.menu"))
-    }
-
-    /// Alan adı ayarlarını proje klasörüne `brampp.yml` olarak yazar.
-    private func writeManifest(site: String) {
-        // Framework algılaması yalnızca SERVİS önerisi için kullanılır; belge kökü
-        // gibi alanlar alan adının GERÇEK ayarlarından gelir — tahmin değil.
-        let files = Set(FileHelper.contentsOfDirectory(site))
-        let detection = FrameworkDetector.detect(
-            files: files,
-            composerJSON: FileHelper.readString("\(site)/composer.json"),
-            packageJSON: FileHelper.readString("\(site)/package.json"))
-        let m = ProjectManifest.from(domain: domain, services: detection?.suggestedServices ?? [])
-        let path = "\(site)/\(ProjectManifest.fileName)"
-        if FileHelper.write(m.yaml(), to: path) {
-            domainManager.log(key: "log.dom.manifestWritten", args: [domain.name], type: .success)
-            NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: site)
-        } else {
-            domainManager.log(key: "log.dom.manifestFailed", args: [path], type: .error)
-        }
-    }
-
-    /// Klasördeki `brampp.yml`'yi bu alan adına uygular.
-    private func applyManifest(site: String) {
-        let path = "\(site)/\(ProjectManifest.fileName)"
-        guard let text = FileHelper.readString(path),
-              let m = ProjectManifest.parse(text) else {
-            domainManager.log(key: "log.dom.manifestInvalid", args: [path], type: .error)
-            return
-        }
-        var updated = domain
-        let changes = ProjectManifest.apply(m, to: &updated)
-        guard !changes.isEmpty else {
-            domainManager.log(key: "log.dom.manifestNoChange", args: [domain.name], type: .info)
-            return
-        }
-        domainManager.updateDomain(updated)
-        domainManager.log(key: "log.dom.manifestApplied",
-                          args: [domain.name, changes.joined(separator: ", ")], type: .success)
     }
 
     private var isSharing: Bool {

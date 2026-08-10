@@ -470,8 +470,7 @@ Her birinin önce vermesi gereken kararlar [`windows/README.md`](windows/README.
 [`linux/README.md`](linux/README.md) dosyalarında.
 
 Üçü arasında paylaşılan kod yok. Onları bir arada tutan şey [`spec/`](spec/) altında
-yazılı: [MCP araç sözleşmesi](spec/mcp-tools.md),
-[`brampp.yml` manifesti](spec/brampp-yml.md) ve
+yazılı: [MCP araç sözleşmesi](spec/mcp-tools.md) ve
 [güncelleme manifesti](spec/update-manifest.md). Bir yapı, bunları uyguladığında BRAMPP'tır.
 
 ## Lisans

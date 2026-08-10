@@ -15,20 +15,6 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
-        "log.dom.manifestWritten":
-            ["tr": "%@ için brampp.yml yazıldı — depoya ekleyin, başka Mac'te ortam aynı kurulur",
-             "en": "brampp.yml written for %@ — commit it and the environment sets up the same on another Mac"],
-        "log.dom.manifestFailed":
-            ["tr": "❌ brampp.yml yazılamadı: %@", "en": "❌ could not write brampp.yml: %@"],
-        "log.dom.manifestInvalid":
-            ["tr": "❌ brampp.yml okunamadı ya da name/platform eksik: %@",
-             "en": "❌ brampp.yml is unreadable or missing name/platform: %@"],
-        "log.dom.manifestNoChange":
-            ["tr": "%@ zaten brampp.yml ile aynı — değişiklik yok",
-             "en": "%@ already matches brampp.yml — nothing changed"],
-        "log.dom.manifestApplied":
-            ["tr": "%@ brampp.yml ile güncellendi: %@",
-             "en": "%@ updated from brampp.yml: %@"],
         "log.diag.clean":
             ["tr": "Teşhis tamamlandı — sorun bulunamadı",
              "en": "Diagnostics finished — nothing wrong found"],
