@@ -38,6 +38,20 @@ The easiest first run by a distance, and the reason bundled stacks are popular. 
 makes BRAMPP the thing it currently defines itself against, and the positioning has to
 change with it — on Windows it would compete on quality, not on architecture.
 
+### Option D — Adopt what is there, manage what is not
+
+A provider behind one interface, tried in order: something already on `PATH`, then WinGet,
+then a runtime BRAMPP downloads and manages itself.
+
+This is the closest Windows gets to the macOS behaviour without pretending Homebrew exists.
+A developer who already has PHP keeps using it; one who has nothing gets a working stack
+without being sent to install a package manager first. The cost is that "what BRAMPP
+manages" stops being a single answer and becomes per-service state the UI has to show
+honestly — an adopted PHP that BRAMPP did not install cannot be upgraded by it either.
+
+Right now this looks like the strongest of the four, because it keeps the promise the
+product actually makes: *your stack, one control centre*, rather than *our stack*.
+
 ## Not decided yet
 
 Pick before writing code. Each option produces a different application, and the wrong order

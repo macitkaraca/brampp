@@ -14,6 +14,10 @@ Worth measuring before deciding, rather than arguing about:
 - How many already have WSL2 enabled?
 - What does first run look like in each case, counted in steps and minutes?
 
+See [`NOTES.md`](NOTES.md) for the platform facts that constrain these choices — nginx's
+beta status on Windows, the absence of PHP-FPM, and how coarse elevation is compared to
+macOS.
+
 ## 2. UI toolkit
 
 Follows from (1). WinUI 3 and Avalonia both fit a native application; Tauri fits if the
