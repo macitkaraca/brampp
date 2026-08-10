@@ -418,6 +418,7 @@ enum L10n {
         "set.mcp.revealBackup":    ["tr": "Yedeği Göster", "en": "Reveal Backup"],
         "set.mcp.permissions":     ["tr": "Erişim İzinleri", "en": "Access Permissions"],
         "set.mcp.permNote":        ["tr": "Yapay zekâ istemcisi yalnızca izin verdiğiniz araçları görür ve çağırabilir. Kapalı alanların araçları listede hiç görünmez.", "en": "The AI client only sees and can call the tools you allow. Tools of disabled areas never appear in the list."],
+        "set.mcp.reconnectNote":   ["tr": "Bu liste BRAMPP'ın sunduğu araçları gösterir. Bağlı bir istemci listeyi yalnızca BAĞLANIRKEN alır: bir izni yeni değiştirdiyseniz, yeni araçlar istemci yeniden bağlanana kadar orada görünmez.", "en": "This list is what BRAMPP offers. A connected client fetches the list only WHEN IT CONNECTS: if you just changed a permission, the new tools stay invisible there until the client reconnects."],
         "set.mcp.perm.none":       ["tr": "İzin yok", "en": "No access"],
         "set.mcp.perm.read":       ["tr": "Okuma", "en": "Read"],
         "set.mcp.perm.write":      ["tr": "Okuma + Yazma", "en": "Read + Write"],

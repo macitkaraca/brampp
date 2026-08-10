@@ -520,8 +520,14 @@ struct SettingsView: View {
             } header: {
                 Label(loc.t("set.mcp.toolsTitle"), systemImage: "wrench.and.screwdriver")
             } footer: {
-                Text(loc.t("set.mcp.security"))
-                    .font(.caption).foregroundColor(.secondary)
+                // Bu uyarı olmadan bölüm yanıltıyor: sayı izni değiştirir değiştirmez
+                // artıyor ama bağlı istemcinin listesi bağlantı anında dondu. Sunucu
+                // durumsuz HTTP olduğu için ona haber verecek bir kanal yok.
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(loc.t("set.mcp.reconnectNote"))
+                    Text(loc.t("set.mcp.security"))
+                }
+                .font(.caption).foregroundColor(.secondary)
             }
 
             // Claude Entegrasyonu — yapılandırma dosyası ve beceri dosyası
