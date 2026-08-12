@@ -111,10 +111,21 @@ final class UpdatePromptWindowController: NSObject, NSWindowDelegate {
     /// nedenin aynısı: MenuBarExtra popover'ı tıklama anında key penceredir ve
     /// kapanışında key durumunu geri alır; `.accessory → .regular` geçişleri de
     /// WindowServer'a bir tur sonra işler.
+    /// SIRA ÖNEMLİ — ve eskiden yanlıştı.
+    ///
+    /// Önce `makeKeyAndOrderFront`, sonra `activate` çağrılıyordu. Etkinleşme sırasında
+    /// AppKit uygulamanın KENDİ ana penceresini (WindowGroup'unkini) öne getiriyor ve az
+    /// önce öne alınmış güncelleme penceresi onun ARKASINDA kalıyordu: pencere açılıyor,
+    /// kullanıcı görmüyor. Önce etkinleştirip sonra öne almak bu yarışı ortadan kaldırır.
     private func focus(_ win: NSWindow) {
         DispatchQueue.main.async {
-            win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            win.makeKeyAndOrderFront(nil)
+            // `.accessory` kipinde (Dock ikonu kapalı, menü çubuğundan yaşayan kurulum)
+            // etkinleşme pencereyi öne almaya yetmiyor; bu, etkinlikten BAĞIMSIZ olarak
+            // en öne alır. Pencere seviyesi yükseltilmiyor: `.floating` başka
+            // uygulamaların da üstünde kalırdı ve bu bir uyarı değil, bir tekliftir.
+            win.orderFrontRegardless()
         }
     }
 
