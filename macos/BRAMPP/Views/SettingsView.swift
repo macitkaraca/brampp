@@ -66,13 +66,9 @@ struct SettingsView: View {
 
     // UYGULAMA güncellemesi artık kendi sekmesinde (Views/UpdatesSettingsView.swift):
     // durum, kanal, otomatik denetim ve indirme kipi orada tutulur. Burada
-    // yalnızca Homebrew PAKET güncellemeleri kaldı (aşağıdaki outdatedPackages).
     @State private var customSitesPath: String = AppSettings.load().sitesPath
 
     @State private var showResetAlert = false
-    // Güncelleme denetimi (brew outdated — yönetilen paketler)
-    @State private var isCheckingUpdates = false
-    @State private var outdatedPackages: [String]? = nil   // nil: henüz denetlenmedi
 
     var body: some View {
         TabView {
@@ -88,13 +84,15 @@ struct SettingsView: View {
                 .tabItem { Label(loc.t("set.tab.mcp"), systemImage: "sparkles") }
             UpdatesSettingsView()
                 .tabItem { Label(loc.t("set.tab.updates"), systemImage: "arrow.down.circle") }
+            BrewUpdatesSettingsView(brew: appState.brewUpdatesManager,
+                                    serviceManager: appState.serviceManager)
+                .tabItem { Label(loc.t("set.tab.brew"), systemImage: "shippingbox") }
             gelismisTab
                 .tabItem { Label(loc.t("set.tab.advanced"), systemImage: "wrench.and.screwdriver") }
         }
-        // 560 → 620: yedi sekme etiketi 560pt'ye sığmıyor ve macOS taşanları bir
-        // chevron'un arkasına katlıyor — yeni sekme kimsenin tıklamadığı bir
-        // menünün içinde kaybolurdu.
-        .frame(width: 620, height: 540)
+        // 560 → 620 → 700: sekme etiketleri sığmazsa macOS taşanları bir chevron'un
+        // arkasına katlıyor ve yeni sekme kimsenin tıklamadığı bir menüde kayboluyor.
+        .frame(width: 700, height: 540)
         .onAppear {
             pendingRefreshInterval = autoRefreshInterval
             // Sıfırlama sonrası ya da pencere yeniden açılınca bayat kalmasın
@@ -723,39 +721,6 @@ struct SettingsView: View {
             }
 
             // Güncelleme Denetimi (brew outdated — yönetilen paketler)
-            Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(loc.t("set.updates.check")).font(.subheadline)
-                        Text(loc.t("set.updates.desc"))
-                            .font(.caption).foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Button(isCheckingUpdates ? loc.t("set.updates.checking") : loc.t("set.updates.check.btn")) { checkUpdates() }
-                        .disabled(isCheckingUpdates || !Shell.isBrewInstalled)
-                }
-                if let pkgs = outdatedPackages {
-                    if pkgs.isEmpty {
-                        Label(loc.t("set.updates.upToDate"), systemImage: "checkmark.circle.fill")
-                            .font(.caption).foregroundColor(.green)
-                    } else {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Label(String(format: loc.t("set.updates.available"), pkgs.count), systemImage: "arrow.up.circle")
-                                .font(.caption).foregroundColor(.orange)
-                            ForEach(pkgs, id: \.self) { pkg in
-                                Text("• \(pkg)").font(.caption2.monospaced()).foregroundColor(.secondary)
-                            }
-                            Text(loc.t("set.updates.howto"))
-                                .font(.caption2).foregroundColor(.secondary).textSelection(.enabled)
-                        }
-                    }
-                }
-            } header: {
-                // Başlık eskiden "Güncellemeler" idi ve yeni Güncelleme SEKMESİYLE
-                // birebir aynı sözcüktü. İki ayrı kavram — uygulamanın sürümü ve
-                // Homebrew paketleri — aynı adla anılmamalı.
-                Label(loc.t("set.brewUpdates.header"), systemImage: "arrow.triangle.2.circlepath")
-            }
 
             // Sıfırlama
             Section {
@@ -796,22 +761,6 @@ struct SettingsView: View {
         }
     }
 
-    /// Yönetilen Homebrew paketlerinden hangileri güncellenebilir? (`brew outdated`)
-    /// Uygulamanın kendi self-update kanalı olmadığından, dev-ortamı için asıl anlamlı
-    /// güncelleme denetimi budur: PHP/servis paketlerinin güncelliği.
-    private func checkUpdates() {
-        isCheckingUpdates = true
-        Task {
-            // --formula: yalnızca formüller (cask'ları hariç tut); hızlı, ağ gerektirir
-            let r = await Shell.brewBashAsync("\(Shell.brewBin) outdated --formula --quiet 2>/dev/null")
-            let pkgs = r.output
-                .components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
-            outdatedPackages = pkgs
-            isCheckingUpdates = false
-        }
-    }
 
     // MARK: - MCP Sunucusu
 

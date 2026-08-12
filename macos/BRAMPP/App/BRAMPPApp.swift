@@ -200,6 +200,7 @@ class AppState: ObservableObject {
     let tunnelManager: TunnelManager
     /// Ortam teşhisi — portlar, yapılandırma, sertifika
     let diagnosticsManager: DiagnosticsManager
+    let brewUpdatesManager: BrewUpdatesManager
     /// Uygulama içi MCP sunucusu — manager'lar bootstrapManagers()'ta enjekte edilir
     let mcpServer = MCPServer()
 
@@ -252,6 +253,7 @@ class AppState: ObservableObject {
         // kapatılmalı; yoksa herkese açık adres varsayılan vhost'u yayınlamaya başlar.
         self.domainManager.tunnelManager = self.tunnelManager
         self.diagnosticsManager = DiagnosticsManager(consoleStore: store)
+        self.brewUpdatesManager = BrewUpdatesManager(consoleStore: store)
 
         serviceManager.objectWillChange
             .receive(on: DispatchQueue.main)

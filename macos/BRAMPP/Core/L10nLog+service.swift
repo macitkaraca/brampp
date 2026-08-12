@@ -16,6 +16,23 @@ extension L10n {
     static let logCatalog_service: [String: [String: String]] = [
 
         // ── Durum kontrolü ──────────────────────────────────────────────────
+        // %@ = toplam paket, %@ = yönetilen paket
+        "log.brew.checked":
+            ["tr": "Homebrew denetimi: %@ paket güncellenebilir (%@ tanesi BRAMPP'ın yönettiği)",
+             "en": "Homebrew check: %@ packages can be upgraded (%@ of them managed by BRAMPP)"],
+        // %@ = paket listesi
+        "log.brew.upgrading":
+            ["tr": "$ brew upgrade %@", "en": "$ brew upgrade %@"],
+        // %@ = paket sayısı
+        "log.brew.upgraded":
+            ["tr": "✅ %@ paket güncellendi", "en": "✅ %@ packages upgraded"],
+        // %@ = hata çıktısı
+        "log.brew.upgradeFailed":
+            ["tr": "❌ Güncelleme başarısız: %@", "en": "❌ Upgrade failed: %@"],
+        // %@ = servis adı
+        "log.brew.restarting":
+            ["tr": "%@ yükseltildi — çalışan süreç eskisini tuttuğu için yeniden başlatılıyor",
+             "en": "%@ was upgraded — restarting it because the running process still holds the old binary"],
         "log.svc.statusChecking":
             ["tr": "Servis durumları kontrol ediliyor...",
              "en": "Checking service statuses…"],

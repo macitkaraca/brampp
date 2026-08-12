@@ -678,6 +678,20 @@ enum L10n {
         // `set.updates` ("Güncellemeler") idi ve yeni sekmenin adıyla birebir
         // aynıydı — iki AYRI kavram (uygulama sürümü / Homebrew paketleri)
         // aynı sözcükle anılmamalı.
+        "set.tab.brew":  ["tr": "Homebrew", "en": "Homebrew"],
+        "set.brew.checkTitle": ["tr": "Güncellemeleri denetle", "en": "Check for updates"],
+        "set.brew.checkDesc":  ["tr": "Makinedeki Homebrew formüllerini tarar ve BRAMPP'ın yönettikleriyle diğerlerini ayırır.", "en": "Scans the Homebrew formulae on this machine and separates the ones BRAMPP manages from the rest."],
+        "set.brew.group.managed":      ["tr": "BRAMPP'ın yönettikleri", "en": "Managed by BRAMPP"],
+        "set.brew.group.managed.note": ["tr": "Web sunucusu, PHP, veritabanları ve diğer servisler — geliştirme ortamınızı doğrudan etkileyenler.", "en": "Web server, PHP, databases and the other services — the ones that directly affect your environment."],
+        "set.brew.group.related":      ["tr": "Bağımlılıklar", "en": "Dependencies"],
+        "set.brew.group.related.note": ["tr": "Yönetilen paketlerin bağımlılıkları. Yukarıdakileri yükseltirken çoğu zaten birlikte gelir; ayrı gösteriliyor ki yükseltmenin neden başka paketlere dokunduğu görünsün.", "en": "Dependencies of the managed packages. Most come along when you upgrade those; they are listed separately so it is visible why an upgrade touches other packages."],
+        "set.brew.group.other":        ["tr": "Diğer paketler", "en": "Other packages"],
+        "set.brew.group.other.note":   ["tr": "BRAMPP bunlara dokunmaz — makinenizde başka işler için kurulu formüller. Yükseltmek isterseniz seçebilirsiniz, ama gerekli değil.", "en": "BRAMPP does not touch these — formulae installed on your machine for other work. You can select them if you want, but nothing here requires it."],
+        "set.brew.selected":        ["tr": "%d paket seçili", "en": "%d packages selected"],
+        "set.brew.selectManaged":   ["tr": "Yönetilenleri seç", "en": "Select managed"],
+        "set.brew.upgradeSelected": ["tr": "Seçilenleri güncelle", "en": "Upgrade selected"],
+        "set.brew.upgrading":       ["tr": "Güncelleniyor…", "en": "Upgrading…"],
+        "set.brew.restartNote":     ["tr": "Çalışan bir servis yükseltilirse BRAMPP onu yeniden başlatır: yükseltme ikiliyi değiştirir ama çalışan süreç eskisini tutmaya devam eder.", "en": "If a running service is upgraded, BRAMPP restarts it: an upgrade replaces the binary but the running process keeps the old one."],
         "set.brewUpdates.header":   ["tr": "Homebrew paketleri", "en": "Homebrew packages"],
 
         "set.about.domains":       ["tr": "Kayıtlı alan adları:", "en": "Registered domains:"],

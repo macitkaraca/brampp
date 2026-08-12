@@ -3262,4 +3262,61 @@ final class BRAMPPTests: XCTestCase {
                        "yol çift tırnaklı metnin İÇİNE gömülmemeli")
         XCTAssertTrue(s.contains("'/Uyg $HOME/BRAMPP.app'"), "yol tek tırnakla korunmalı")
     }
+
+    // MARK: - Homebrew paket güncellemeleri
+
+    /// `brew outdated --verbose` biçimi. Sürümler olmadan kullanıcı "neyi neye
+    /// yükseltiyorum" sorusunu yanıtlayamaz; yalnızca ad göstermek bu yüzden yetmiyordu.
+    func testBrewOutdated_ParsesNameAndVersions() {
+        let out = """
+        httpd (2.4.62) < 2.4.63
+        php@8.3 (8.3.13, 8.3.14) < 8.3.15
+        """
+        let p = BrewUpdates.parseOutdated(out)
+        XCTAssertEqual(p.count, 2)
+        XCTAssertEqual(p[0], .init(name: "httpd", current: "2.4.62", latest: "2.4.63"))
+        XCTAssertEqual(p[1].current, "8.3.13, 8.3.14", "birden çok kurulu sürüm korunmalı")
+        XCTAssertEqual(p[1].latest, "8.3.15")
+    }
+
+    /// `!=` biçimi de güncellenebilir demektir (kurulu sürüm ileri gitmiş olabilir).
+    /// Ayrıştırılamayan satır ATILMAZ: paketi hiç görmemek, sürümsüz görmekten kötü.
+    func testBrewOutdated_HandlesNotEqualFormAndBareNames() {
+        let p = BrewUpdates.parseOutdated("mariadb (11.4.2) != 11.4.3\nredis\n")
+        XCTAssertEqual(p.count, 2)
+        XCTAssertEqual(p[0].latest, "11.4.3")
+        XCTAssertEqual(p[1], .init(name: "redis", current: "", latest: ""))
+    }
+
+    /// Asıl mesele: 49 paketlik bir listede `httpd` ile `jadx` aynı yerde duruyordu.
+    /// Yönetilen / bağımlılık / diğer ayrımı bunu çözüyor.
+    func testBrewSplit_SeparatesManagedFromNoise() {
+        let pkgs = BrewUpdates.parseOutdated("""
+        httpd (1) < 2
+        apr-util (1) < 2
+        jadx (1) < 2
+        """)
+        let s = BrewUpdates.split(pkgs, managed: ["httpd"], dependencies: ["apr-util"])
+        XCTAssertEqual(s.managed.map(\.name), ["httpd"])
+        XCTAssertEqual(s.related.map(\.name), ["apr-util"])
+        XCTAssertEqual(s.other.map(\.name),   ["jadx"], "BRAMPP'ın dokunmadığı paket ayrı durmalı")
+    }
+
+    /// Yönetilen ad listesi KATALOGDAN türetilmeli; elle yazılan bir liste katalog
+    /// büyüdüğünde sessizce eksik kalırdı.
+    func testBrewManagedNames_ComeFromTheServiceCatalogue() {
+        let names = BrewUpdates.managedNames(services: Service.defaultServices)
+        XCTAssertTrue(names.contains("httpd"))
+        XCTAssertTrue(names.contains("mariadb"))
+        XCTAssertFalse(names.contains("jadx"))
+    }
+
+    /// Yalnızca ÇALIŞAN servisler yeniden başlatılmalı: durmuş bir servisi yükseltmek
+    /// onu başlatmak için gerekçe değil, kullanıcı onu bilerek durdurmuş olabilir.
+    func testBrewRestart_OnlyTouchesRunningServices() {
+        let ids = BrewUpdates.servicesNeedingRestart(after: ["httpd", "mariadb"],
+                                                     runningServiceIDs: ["httpd"],
+                                                     services: Service.defaultServices)
+        XCTAssertEqual(ids, ["httpd"])
+    }
 }
