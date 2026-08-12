@@ -82,7 +82,23 @@
   </div>
 </section>
 
-<section id="tooling">
+<section id="whats-new">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Recently added</span>
+      <h2>A few more reasons to stay out of the terminal</h2>
+      <p class="lede">A development environment manager earns its place by not sending you to a shell. These are jobs BRAMPP used to do half of, leaving you the rest.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🌍</span><h3>Put a running site on a temporary address</h3><p>One click gives you an <code>https://…trycloudflare.com</code> link — to show a client, or to open the site on your phone. No Cloudflare account. If nothing is running behind it the share is <b>refused</b>: a link that serves visitors a 502 is worse than no link at all. Delete the domain and the share closes with it.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">⤵️</span><h3>Update and restart</h3><p>No opening the image and dragging. The new version is copied next to the app <i>while it is still running</i>, so after quitting only two renames remain and the moment where no application exists is measured in milliseconds. The old version is not deleted but <b>moved aside</b> — removed once the new one has launched and stayed alive, put back if it has not. Your Homebrew services keep running, and <b>no administrator password is ever asked for</b>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📦</span><h3>Homebrew packages, with the noise separated</h3><p><code>brew outdated</code> counts every formula on the machine — fifty on a typical developer's, where <code>httpd</code> and <code>php</code> are lost between <code>cocoapods</code> and <code>jadx</code>. Its own tab splits them three ways: what BRAMPP manages, what those depend on, and everything else it does not touch. Select what you want and upgrade that; a running service that was upgraded is restarted, because an upgrade replaces the binary while the running process keeps the old one.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🩺</span><h3>Environment diagnostics — and repair</h3><p>Ports, configuration validity, certificate trust and <code>/etc/hosts</code> on one screen. If an unexpected process holds a port, it names the process and the PID. When it recognises a fault it <b>offers to repair it</b>: back up the file, run <code>configtest</code>, restore from the backup if that fails — no work touching shared configuration should happen without all three.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="tooling">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">Tooling</span>

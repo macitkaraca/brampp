@@ -167,7 +167,7 @@ enum MCPToolsSkill {
     | `lines` | integer | Default 50, max 500 |
     | `level` | string | `all` (default), `error`, `warning`. `warning` includes errors |
     | `search` | string | Keep only lines containing this text (case-insensitive) |
-    | `since_minutes` | integer | Keep only the last N minutes |
+    | `since_minutes` | integer | Keep only the last N minutes. Omit it and the whole retained history on disk is searched |
     | `source` | string | `memory` (default) or `file` |
 
     > Example: `{"lines": 100}` · `{"level": "error", "since_minutes": 15}`
@@ -224,7 +224,11 @@ enum MCPToolsSkill {
     `set_domain_enabled`), then call `start_share` again.
 
     ### `stop_share`
-    Closes the domain's tunnel; the public address dies immediately. — *Sharing: write*
+    Closes the domain's tunnel. — *Sharing: write*
+
+    It can fail: if cloudflared survives both signals the address stays public and the
+    tool says so. Do NOT report the share as closed on an error — the site is still on
+    the internet and the console line carries the PID needed to kill it by hand.
 
     | Argument | Type | Description |
     | --- | --- | --- |
