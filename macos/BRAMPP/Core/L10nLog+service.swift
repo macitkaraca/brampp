@@ -17,6 +17,14 @@ extension L10n {
 
         // ── Durum kontrolü ──────────────────────────────────────────────────
         // %@ = toplam paket, %@ = yönetilen paket
+        // %@ = php.ini yolu
+        // %@ = uzantı adı
+        "log.php.installBusy":
+            ["tr": "%@ için kurulum zaten sürüyor — ikinci kurulum başlatılmadı",
+             "en": "An install is already running for %@ — a second one was not started"],
+        "log.php.iniBackupFailed":
+            ["tr": "❌ php.ini yedeği alınamadı (%@) — değişiklik YAPILMADI",
+             "en": "❌ Could not back up php.ini (%@) — nothing was changed"],
         "log.brew.checked":
             ["tr": "Homebrew denetimi: %@ paket güncellenebilir (%@ tanesi BRAMPP'ın yönettiği)",
              "en": "Homebrew check: %@ packages can be upgraded (%@ of them managed by BRAMPP)"],

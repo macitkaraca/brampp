@@ -174,11 +174,14 @@ struct PHPExtensionsTabView: View {
     }
     
     private func saveIniSettings() {
-        for draft in draftIniSettings {
-            guard let original = phpExtensionManager.phpIniSettings.first(where: { $0.id == draft.id }) else { continue }
-            guard original.currentValue != draft.currentValue else { continue }
-            phpExtensionManager.updatePHPIniSetting(draft, value: draft.currentValue)
+        // TEK çağrı: her direktif için ayrı çağrı, her biri kendi PHP-FPM yeniden
+        // başlatmasını tetikliyordu.
+        let changes = draftIniSettings.compactMap { draft -> (PHPIniSetting, String)? in
+            guard let original = phpExtensionManager.phpIniSettings.first(where: { $0.id == draft.id }),
+                  original.currentValue != draft.currentValue else { return nil }
+            return (draft, draft.currentValue)
         }
+        phpExtensionManager.updatePHPIniSettings(changes)
     }
     
     private func resetIniSettingsToDefaults() {

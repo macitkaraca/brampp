@@ -3363,4 +3363,45 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(p.rssKB, 100)
         XCTAssertNil(p.command)
     }
+
+    // MARK: - PHP alt sistemi
+
+    /// Xdebug'ın RESMÎ yönergesi mutlak yol verir. Yol karşılaştırıldığı için satır
+    /// hiç temizlenmiyor, uzantı devre dışı bırakıldıktan sonra bile yükleniyordu.
+    func testMainIniExtensions_ResolvesAbsolutePathsAndQuotes() {
+        let names = PHPExtensionManager.mainIniExtensionNames(in: """
+        extension=redis
+        extension="soap.so"
+        zend_extension=/opt/homebrew/lib/php/pecl/20230831/xdebug.so
+        ; extension=disabled_one
+        extension_dir = "/opt/homebrew/lib/php/pecl"
+        """)
+        XCTAssertEqual(names, ["redis", "soap", "xdebug"],
+                       "yorumlanmış satır ve extension_dir sayılmamalı")
+    }
+
+    /// `isAlwaysOn` YALNIZCA BRAMPP bloğuna bakmalı: kullanıcının dosyanın başka
+    /// yerindeki kendi satırı, bloğun üstünde olduğu için önce görülüp paneli
+    /// kilitliyordu.
+    func testProfilerAlwaysOn_ReadsOnlyInsideTheManagedBlock() {
+        let ini = """
+        xdebug.start_with_request = yes
+        \(PHPProfiler.beginMark)
+        xdebug.mode = profile
+        xdebug.start_with_request = trigger
+        \(PHPProfiler.endMark)
+        """
+        XCTAssertFalse(PHPProfiler.isAlwaysOn(in: ini),
+                       "blok DIŞINDAKİ kullanıcı satırı okunmamalı")
+    }
+
+    func testProfilerAlwaysOn_TrueWhenTheManagedBlockSaysYes() {
+        let ini = """
+        \(PHPProfiler.beginMark)
+        xdebug.mode = profile
+        xdebug.start_with_request = yes
+        \(PHPProfiler.endMark)
+        """
+        XCTAssertTrue(PHPProfiler.isAlwaysOn(in: ini))
+    }
 }

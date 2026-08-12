@@ -74,9 +74,37 @@ class PHPExtensionManager: BaseManager {
 
     private func getEnabledExtensions() -> Set<String> {
         let confD = PathConfig.phpConfD(version: selectedPHPVersion.rawValue)
-        return Set(FileHelper.contentsOfDirectory(confD)
+        let fromConfD = Set(FileHelper.contentsOfDirectory(confD)
             .filter { $0.starts(with: "ext-") && $0.hasSuffix(".ini") && !$0.contains(".disabled") }
             .map { $0.replacingOccurrences(of: "ext-", with: "").replacingOccurrences(of: ".ini", with: "") })
+        // ANA php.ini de sayılır. Yalnızca conf.d'ye bakılıyordu: elle (ya da başka bir
+        // araçla) php.ini'ye `extension=redis` yazılmış bir uzantı panelde DEVRE DIŞI
+        // görünüyor, kullanıcı açınca conf.d'ye İKİNCİ bir kayıt düşüyor ve PHP aynı
+        // uzantıyı iki kez yükleyip "Module already loaded" uyarısı veriyordu.
+        let ini = PathConfig.phpIni(version: selectedPHPVersion.rawValue)
+        let fromIni = Self.mainIniExtensionNames(in: FileHelper.readString(ini) ?? "")
+        return fromConfD.union(fromIni)
+    }
+
+    /// Ana `php.ini` içinde `extension=` / `zend_extension=` ile kayıtlı uzantı adları.
+    /// SAF — mutlak yol biçimi de çözülür: `…/pecl/20230831/xdebug.so` → `xdebug`.
+    static func mainIniExtensionNames(in content: String) -> Set<String> {
+        var out: Set<String> = []
+        for line in content.components(separatedBy: .newlines) {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            guard !t.hasPrefix(";"), !t.hasPrefix("#"),
+                  let eq = t.firstIndex(of: "=") else { continue }
+            // Direktif adı TAM eşleşmeli. Önek denetimi `extension_dir`i de yakalıyor
+            // ve onun değerinin son bileşenini (`pecl`) uzantı adı sanıyordu.
+            let directive = t[t.startIndex..<eq].trimmingCharacters(in: .whitespaces).lowercased()
+            guard directive == "extension" || directive == "zend_extension" else { continue }
+            let value = t[t.index(after: eq)...]
+                .trimmingCharacters(in: CharacterSet(charactersIn: " \t\"'"))
+            let file = (value as NSString).lastPathComponent
+            let base = file.hasSuffix(".so") ? String(file.dropLast(3)) : file
+            if !base.isEmpty { out.insert(base.lowercased()) }
+        }
+        return out
     }
     
     // MARK: - Profilleyici (Xdebug profile kipi)
@@ -110,7 +138,11 @@ class PHPExtensionManager: BaseManager {
             log(key: "log.php.iniNotFound", type: .error); return
         }
         // Yazmadan önce yedek: php.ini bozulursa o sürüm hiç çalışmaz.
-        _ = FileHelper.write(content, to: ini + ".brampp.bak")
+        // YEDEK ALINAMIYORSA ASIL YAZIMA HİÇ GİRİLMEZ. Sonuç yok sayılıyordu: kullanıcı
+        // "yedek alındı" varsayımıyla devam ediyor, oysa geri dönecek dosya yoktu.
+        guard FileHelper.write(content, to: ini + ".brampp.bak") else {
+            log(key: "log.php.iniBackupFailed", args: [ini], type: .error); return
+        }
 
         _ = FileHelper.createDirectory(PHPProfiler.outputDir)
         let updated = enabled ? PHPProfiler.applying(to: content, alwaysOn: alwaysOn)
@@ -121,6 +153,12 @@ class PHPExtensionManager: BaseManager {
         log(key: enabled ? (alwaysOn ? "log.php.profilerAlways" : "log.php.profilerTrigger")
                          : "log.php.profilerOff",
             args: [selectedPHPVersion.rawValue], type: .success)
+        // php.ini YALNIZCA süreç başlangıcında okunur. Yeniden başlatılmazsa çalışan
+        // FPM havuzu `xdebug.mode=profile` ile ayakta kalmaya devam eder: kullanıcı
+        // profilleyiciyi kapattığını sanır, cachegrind dosyaları üretilmeye ve disk
+        // dolmaya devam eder. Uyarı da gösterilmiyordu, çünkü uyarı kutusu yalnızca
+        // profilleyici AÇIKKEN çiziliyordu — kapatma anında hiç görünmüyordu.
+        restartBrewService(selectedPHPVersion.brewService, displayName: "PHP-FPM")
         refreshProfiler()
     }
 
@@ -187,16 +225,33 @@ class PHPExtensionManager: BaseManager {
     
     // MARK: - Install
 
+    /// Kurulumu SÜREN uzantılar. İkinci tıklama ikinci bir `pecl` derlemesi ve ikinci
+    /// bir Terminal penceresi açıyordu; ikisi aynı dosyalara yazınca sonuç belirsiz.
+    @Published private(set) var installingExtensions: Set<String> = []
+
     func installExtension(_ ext: PHPExtension) {
         guard requireBrew(forKey: "log.op.extInstall") else { return }
+        // AYNI uzantıya ikinci kurulum başlatılmaz: iki `pecl` derlemesi aynı dosyalara
+        // yazar ve hangisinin kazandığı belirsizdir. Kilit, imagick dalından ÖNCE
+        // konur — o yol da Terminal penceresi açıyor.
+        guard !installingExtensions.contains(ext.name) else {
+            log(key: "log.php.installBusy", args: [ext.name], type: .warning); return
+        }
+        installingExtensions.insert(ext.name)
 
         // imagick için özel kurulum süreci
         if ext.name == "imagick" {
+            // Terminal penceresinde sürüyor: bittiğini buradan göremeyiz, o yüzden
+            // kilit hemen çözülür. Yine de değer var — arka arkaya iki tıklamada
+            // ikinci pencere açılmaz.
             installImagick()
+            installingExtensions.remove(ext.name)
             return
         }
 
-        guard let i = extensions.firstIndex(where: { $0.id == ext.id }) else { return }
+        guard let i = extensions.firstIndex(where: { $0.id == ext.id }) else {
+            installingExtensions.remove(ext.name); return
+        }
 
         extensions[i].isInstalled = false; isLoading = true
         log(key: "log.php.installing", args: [ext.name], type: .command)
@@ -232,6 +287,9 @@ class PHPExtensionManager: BaseManager {
             } else {
                 log(key: "log.php.installFailed", args: [ext.name, r.error], type: .error)
             }
+            // Kilit BAŞARIDA DA BAŞARISIZLIKTA DA çözülür: yalnızca başarıda çözülseydi
+            // bir kez patlayan uzantı, uygulama kapanana dek yeniden denenemezdi.
+            installingExtensions.remove(ext.name)
             isLoading = false; loadExtensions()
         }
     }
@@ -254,11 +312,16 @@ class PHPExtensionManager: BaseManager {
             let key = t[t.startIndex..<eq].trimmingCharacters(in: .whitespaces).lowercased()
             guard key == "extension" || key == "zend_extension" else { return true }
 
-            // extension=redis / extension="redis.so" biçimlerinin ikisi de yakalanır
+            // Üç biçim de yakalanır: `extension=redis`, `extension="redis.so"` ve
+            // `zend_extension=/opt/homebrew/lib/php/pecl/20230831/xdebug.so`.
+            // Sonuncusu önemli: Xdebug'ın RESMÎ yönergesi mutlak yol verir ve yol
+            // karşılaştırıldığı için satır hiç temizlenmiyordu — uzantı devre dışı
+            // bırakıldıktan sonra bile php.ini'den yükleniyordu.
             let value = t[t.index(after: eq)...]
                 .trimmingCharacters(in: CharacterSet(charactersIn: " \t\"'"))
-            let base = value.hasSuffix(".so") ? String(value.dropLast(3)) : value
-            return base != name
+            let file = (value as NSString).lastPathComponent
+            let base = file.hasSuffix(".so") ? String(file.dropLast(3)) : file
+            return base.lowercased() != name.lowercased()
         }.joined(separator: "\n")
 
         guard kept != content else { return }
@@ -499,42 +562,77 @@ class PHPExtensionManager: BaseManager {
     
     func loadPHPIniSettings() {
         guard Shell.isBrewInstalled else { return }
+        // HER YÜKLEMEDE BAŞTAN KURULUR. Eskiden yalnızca regex EŞLEŞİRSE değer
+        // yazılıyor, eşleşmezse öncekinin değeri olduğu gibi kalıyordu. İki sonucu
+        // vardı: (a) dosyada hiç tanımlı olmayan bir direktif için panel varsayılanı
+        // gerçek değermiş gibi gösteriyordu, (b) PHP sürümü değiştirilince ÖNCEKİ
+        // sürümün değerleri yeni sürümün panelinde kalıyordu.
+        var fresh = PHPIniSetting.commonSettings
         let iniPath = PathConfig.phpIni(version: selectedPHPVersion.rawValue)
-        guard let content = FileHelper.readString(iniPath) else { return }
-        
-        for i in 0..<phpIniSettings.count {
-            let escaped = NSRegularExpression.escapedPattern(for: phpIniSettings[i].name)
+        guard let content = FileHelper.readString(iniPath) else {
+            phpIniSettings = fresh; return
+        }
+
+        for i in 0..<fresh.count {
+            let escaped = NSRegularExpression.escapedPattern(for: fresh[i].name)
             if let regex = try? NSRegularExpression(pattern: "^\\s*\(escaped)\\s*=\\s*(.+)$", options: .anchorsMatchLines),
                let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
                let range = Range(match.range(at: 1), in: content) {
-                phpIniSettings[i].currentValue = String(content[range]).trimmingCharacters(in: .whitespaces)
+                let v = String(content[range]).trimmingCharacters(in: .whitespaces)
+                if !v.isEmpty {
+                    fresh[i].currentValue = v
+                    fresh[i].isDefined = true
+                }
             }
         }
+        phpIniSettings = fresh
     }
     
+    /// Tek direktif — toplu yola indirgenir ki iki ayrı yazma/restart mantığı olmasın.
     func updatePHPIniSetting(_ setting: PHPIniSetting, value: String) {
-        guard requireBrew(forKey: "log.op.phpIniUpdate") else { return }
-        guard let idx = phpIniSettings.firstIndex(where: { $0.id == setting.id }) else { return }
-        
+        updatePHPIniSettings([(setting, value)])
+    }
+
+    /// Birden çok direktifi TEK dosya yazımı ve TEK FPM yeniden başlatmasıyla uygular.
+    ///
+    /// Eskiden her direktif için ayrı çağrı yapılıyordu ve her biri kendi
+    /// `restartBrewService`ini tetikliyordu: üç ayarı değiştirip bir kez "Kaydet"e
+    /// basmak ÜÇ bağımsız `brew services stop` + `run` çifti demekti. Bunlar gerçekten
+    /// eşzamanlı koşuyor, Homebrew'un servis kilidi çakışıyor ve kilidi kaçıran `run`
+    /// sessizce düşerse PHP-FPM DURMUŞ kalıyordu.
+    func updatePHPIniSettings(_ changes: [(setting: PHPIniSetting, value: String)]) {
+        guard requireBrew(forKey: "log.op.phpIniUpdate"), !changes.isEmpty else { return }
+
         let iniPath = PathConfig.phpIni(version: selectedPHPVersion.rawValue)
-        guard var content = FileHelper.readString(iniPath) else { log(key: "log.php.iniNotFound", type: .error); return }
-        
-        let escaped = NSRegularExpression.escapedPattern(for: setting.name)
-        if let regex = try? NSRegularExpression(pattern: "^\\s*;?\\s*\(escaped)\\s*=.*$", options: .anchorsMatchLines),
-           let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
-           let range = Range(match.range, in: content) {
-            content.replaceSubrange(range, with: "\(setting.name) = \(value)")
-        } else {
-            content += "\n\(setting.name) = \(value)"
+        guard var content = FileHelper.readString(iniPath) else {
+            log(key: "log.php.iniNotFound", type: .error); return
         }
-        
-        if FileHelper.write(content, to: iniPath) {
-            phpIniSettings[idx].currentValue = value
-            restartBrewService(selectedPHPVersion.brewService, displayName: "PHP-FPM")
-            log(key: "log.php.iniUpdated", args: [setting.name, value], type: .success)
-        } else {
-            log(key: "log.php.iniUpdateFailed", type: .error)
+        guard FileHelper.write(content, to: iniPath + ".brampp.bak") else {
+            log(key: "log.php.iniBackupFailed", args: [iniPath], type: .error); return
         }
+
+        for c in changes {
+            let escaped = NSRegularExpression.escapedPattern(for: c.setting.name)
+            if let regex = try? NSRegularExpression(pattern: "^\\s*;?\\s*\(escaped)\\s*=.*$",
+                                                    options: .anchorsMatchLines),
+               let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
+               let range = Range(match.range, in: content) {
+                content.replaceSubrange(range, with: "\(c.setting.name) = \(c.value)")
+            } else {
+                content += "\n\(c.setting.name) = \(c.value)"
+            }
+        }
+
+        guard FileHelper.write(content, to: iniPath) else {
+            log(key: "log.php.iniUpdateFailed", type: .error); return
+        }
+        for c in changes {
+            if let idx = phpIniSettings.firstIndex(where: { $0.id == c.setting.id }) {
+                phpIniSettings[idx].currentValue = c.value
+            }
+            log(key: "log.php.iniUpdated", args: [c.setting.name, c.value], type: .success)
+        }
+        restartBrewService(selectedPHPVersion.brewService, displayName: "PHP-FPM")
     }
     
     // MARK: - Helpers

@@ -67,12 +67,27 @@ enum PHPProfiler {
     }
 
     /// Blok her isteği mi profilliyor?
+    /// YALNIZCA BRAMPP bloğunun içine bakılır.
+    ///
+    /// Tüm dosya taranıyordu: kullanıcının dosyanın başka bir yerindeki kendi
+    /// `xdebug.start_with_request` satırı — bloğun ÜSTÜNDE olduğu için önce görülüp —
+    /// paneli kilitliyordu. Anahtar açık görünüp kapanmıyor, kapalı görünüp açılmıyordu,
+    /// çünkü panel bizim yazdığımız değeri değil kullanıcınınkini okuyordu.
     static func isAlwaysOn(in content: String) -> Bool {
         guard isEnabled(in: content) else { return false }
+        var inside = false
         for line in content.components(separatedBy: "\n") {
             let t = line.trimmingCharacters(in: .whitespaces)
-            guard t.hasPrefix("xdebug.start_with_request") else { continue }
-            return t.contains("yes")
+            if t == beginMark { inside = true; continue }
+            if t == endMark   { break }
+            guard inside, t.hasPrefix("xdebug.start_with_request") else { continue }
+            // Değer `=`in SAĞINDAN okunur: satırın herhangi bir yerinde "yes" aramak,
+            // `; …yes demeyin` gibi bir yorumu değer sanardı.
+            guard let eq = t.firstIndex(of: "=") else { continue }
+            return t[t.index(after: eq)...]
+                .trimmingCharacters(in: .whitespaces)
+                .lowercased()
+                .hasPrefix("yes")
         }
         return false
     }

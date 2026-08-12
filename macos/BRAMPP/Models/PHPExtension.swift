@@ -269,7 +269,10 @@ struct PHPIniSetting: Identifiable {
     let description: String
     let options: [String]
     var currentValue: String
-    
+    /// Direktif php.ini'de GERÇEKTEN tanımlı mı? `false` iken `currentValue`
+    /// yalnızca varsayılandır — panel onu dosyadaki değermiş gibi gösteriyordu.
+    var isDefined: Bool = false
+
     init(name: String, description: String, options: [String], defaultValue: String) {
         self.id = name
         self.name = name
