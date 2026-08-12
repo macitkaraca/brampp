@@ -31,6 +31,9 @@ extension L10n {
         "log.diag.repaired":
             ["tr": "✅ %@ yapılandırma dosyasındaki Alias sırası düzeltildi, Apache yeniden başlatıldı (.brampp.bak yedeği duruyor)",
              "en": "✅ Alias order fixed in %@ configuration file(s) and Apache restarted (the .brampp.bak backup is kept)"],
+        "log.dom.companionsKeptConfigWasBroken":
+            ["tr": "⚠️ Apache yapılandırması bu yazımdan ÖNCE de geçersizdi — companion vhost'lar bırakıldı, silmek sorunu çözmezdi",
+             "en": "⚠️ The Apache configuration was already invalid before this write — the companion vhosts were kept, removing them would not have fixed it"],
         "log.diag.clean":
             ["tr": "Teşhis tamamlandı — sorun bulunamadı",
              "en": "Diagnostics finished — nothing wrong found"],

@@ -3319,4 +3319,20 @@ final class BRAMPPTests: XCTestCase {
                                                      services: Service.defaultServices)
         XCTAssertEqual(ids, ["httpd"])
     }
+
+    // MARK: - /etc/hosts sonundaki newline
+
+    /// `echo … >>` yalnızca SONA newline koyar. Dosya newline'sız bitiyorsa yeni girdi
+    /// son satırın kuyruğuna yapışır: hem yeni ad çözülmez hem de yapıştığı satır
+    /// kalıcı olarak bozulur. Garanti, ekleme zincirinden ÖNCE gelmeli.
+    func testHostsCommand_PutsTheNewlineGuardBeforeTheAppend() {
+        let cmd = DomainManager.hostsCommand(appending: "echo x >> /etc/hosts")
+        XCTAssertTrue(cmd.hasPrefix(DomainManager.hostsEnsureTrailingNewline),
+                      "garanti zincirin BAŞINDA olmalı")
+        XCTAssertTrue(cmd.hasSuffix("echo x >> /etc/hosts"), "zincir korunmalı")
+        XCTAssertTrue(DomainManager.hostsEnsureTrailingNewline.contains("tail -c 1"),
+                      "son bayt denetlenmeli")
+        // Boş dosyada newline EKLENMEMELİ: `-s` koruması bunun için var.
+        XCTAssertTrue(DomainManager.hostsEnsureTrailingNewline.contains("-s /etc/hosts"))
+    }
 }

@@ -483,6 +483,18 @@ class DomainManager: BaseManager {
         isLoading = true
         log(key: "log.dom.deleting", args: [domain.name], type: .command)
 
+        // Uçuştaki `updateDomain` görevinin neslini GEÇERSİZ KIL. Aşağıda dört `await`
+        // var — `removeFromHosts` yönetici parolası isteyebilir, yani pencere saniyeler
+        // sürebilir — ve o süre boyunca eski görev uyanıp silinen alan adının vhost'unu
+        // GERİ YAZARDI. `setDomainEnabled` ile `renameDomain` tam bu nedenle aynı
+        // korumayı taşıyor; silme yolunda eksikti.
+        updateGenerations[domain.id, default: 0] += 1
+        // Kayıt da şimdi düşer: `await`ler boyunca domain listede durmaya devam
+        // etseydi, o sırada koşan başka bir akış onu hâlâ var sayardı.
+        domains.removeAll { $0.id == domain.id }
+        updateUsedPorts()
+        saveDomains()
+
         await stopShareBeforeVHostChange(domain.name)
 
         // Çalışan uygulama sürecini durdur (hayalet process kalmasın)
@@ -509,10 +521,6 @@ class DomainManager: BaseManager {
         // autoStart:false — silmede durmuş sunucuyu ayağa kaldırmaya gerek yok.
         // (nginx dalı companion nedeniyle Apache'yi de yeniler; ayrı çağrı gerekmez.)
         await reloadWebServer(for: domain)
-
-        domains.removeAll { $0.id == domain.id }
-        updateUsedPorts()
-        saveDomains()
 
         log(key: "log.dom.deleted", args: [domain.name], type: .success)
         isLoading = false
@@ -1117,6 +1125,12 @@ class DomainManager: BaseManager {
             // kilit dışında yapıldığından, eşzamanlı bir createVHostConfigLocked doğrulaması
             // yarım yazılmış companion setini görüp MASUM kendi domainini geri alabilirdi.
             await withConfigWriteLock {
+                // Yazımdan ÖNCE Apache yapılandırması zaten geçerli miydi? Değilse
+                // `configtest`in düşmesi companion'ların suçu DEĞİLDİR ve yazdıklarımızı
+                // silmek, bozukluğu gidermeden çalışan tek şeyi de götürür.
+                // `createVHostConfigLocked` ve `writeApacheCompanionIfNeeded` bu deseni
+                // zaten uyguluyor; burada eksikti.
+                let wasValid = await self.webServerConfigValid(.apache)
                 var writtenPaths: [String] = []
                 for d in pending {
                     let path = self.apacheCompanionPath(for: d.name)
@@ -1131,11 +1145,14 @@ class DomainManager: BaseManager {
                 if await self.webServerConfigValid(.apache) {
                     self.log(key: "log.dom.companionsCreated", type: .info)
                     await self.reloadApache()
-                } else {
-                    // Bu turda yazılan dosyaları GERİ AL — bozuk companion diskte kalırsa
-                    // her sonraki configtest/reload/start başarısız olurdu.
+                } else if wasValid {
+                    // Yalnızca ÖNCEDEN geçerliyken geri al: o zaman bozukluğu bu tur
+                    // getirmiştir. Config baştan bozuksa yazdıklarımızı silmek onu
+                    // düzeltmez, yalnızca companion'ları da kaybettirir.
                     for p in writtenPaths { FileHelper.remove(p) }
                     self.log(key: "log.dom.companionsRolledBack", args: ["\(writtenPaths.count)"], type: .warning)
+                } else {
+                    self.log(key: "log.dom.companionsKeptConfigWasBroken", type: .warning)
                 }
             }
         }
@@ -1265,13 +1282,34 @@ class DomainManager: BaseManager {
         "awk -v d=\(Shell.quote(domain)) '/^[[:space:]]*#/ {next} $1==\"127.0.0.1\" {for(i=2;i<=NF;i++) if($i==d){f=1;exit}} END{exit(f?0:1)}' /etc/hosts"
     }
 
+    /// `/etc/hosts` newline ile bitmiyorsa bir newline ekler.
+    ///
+    /// `echo … >>` yalnızca SONA newline koyar, başa koymaz. Dosya newline'sız
+    /// bitiyorsa yeni girdi mevcut son satırın kuyruğuna yapışır — ör.
+    /// `255.255.255.255 broadcasthost127.0.0.1\tfoo.test`. Sonuç iki katlı: yeni ad
+    /// çözülmez VE yapıştığı satır kalıcı olarak bozulur.
+    ///
+    /// `$(…)` sondaki newline'ları kırptığı için `tail -c 1` çıktısı BOŞSA son bayt
+    /// zaten newline'dır.
+    static let hostsEnsureTrailingNewline =
+        "{ [ -s /etc/hosts ] && [ -n \"$(tail -c 1 /etc/hosts)\" ] && printf '\\n' >> /etc/hosts; } || true"
+
+    /// Ekleme zincirini newline garantisiyle sarar — SAF, testten geçer.
+    ///
+    /// Sarmalayıcı ayrı bir işlev, çünkü ekleme yapan İKİ yol var (`addToHosts` ve
+    /// `repairHosts`) ve garantiyi birinde unutmak sessizce eski hataya dönerdi.
+    static func hostsCommand(appending chain: String) -> String {
+        "\(hostsEnsureTrailingNewline); \(chain)"
+    }
+
     @discardableResult
     private func addToHosts(_ domain: String) async -> Bool {
         log(key: "log.dom.hostsAdding", type: .info)
         // Tırnaklar elle yazılmaz: root ile çalışan komutta ad Shell.quote ile sarılır
         // (savunma katmanı — adlar yüklemede zaten doğrulanıyor).
         let entry = Shell.quote("127.0.0.1\t\(domain)")
-        let cmd = "\(hostsHasEntryCmd(domain)) || echo \(entry) >> /etc/hosts"
+        let cmd = Self.hostsCommand(
+            appending: "\(hostsHasEntryCmd(domain)) || echo \(entry) >> /etc/hosts")
         return await hostsUpdate(cmd, successKey: "log.dom.hostsUpdated", failKey: "log.dom.hostsUpdateFailed")
     }
 
@@ -1309,7 +1347,10 @@ class DomainManager: BaseManager {
             let entry = Shell.quote("127.0.0.1\t\(name)")
             return "\(hostsHasEntryCmd(name)) || echo \(entry) >> /etc/hosts"
         }.joined(separator: "; ")
-        return await hostsUpdate(appends, successKey: "log.dom.hostsRepaired",
+        // Zincirin İLK `echo`su da aynı tuzağa düşer: dosya newline'sız bitiyorsa ilk
+        // girdi son satırın kuyruğuna yapışır ve o satırı da bozar.
+        let cmd = Self.hostsCommand(appending: appends)
+        return await hostsUpdate(cmd, successKey: "log.dom.hostsRepaired",
                                  successArgs: ["\(missing.count)"], failKey: "log.dom.hostsRepairFailed")
     }
 
