@@ -63,6 +63,16 @@ extension L10n {
         "log.tunnel.stopped":
             ["tr": "%@ paylaşımı durduruldu",
              "en": "sharing stopped for %@"],
+        // %@1 = alan adı / port anahtarı, %@2 = cloudflared PID'i
+        "log.tunnel.stopStuck":
+            ["tr": "❌ %@ paylaşımı DURDURULAMADI — cloudflared (pid %@) SIGTERM'i de SIGKILL'i de atlattı. Adres HÂLÂ herkese açık; süreci elle kapatın: kill -9 %@",
+             "en": "❌ could NOT stop sharing for %@ — cloudflared (pid %@) survived both SIGTERM and SIGKILL. The address is STILL public; kill the process by hand: kill -9 %@"],
+        "log.tunnel.startInProgress":
+            ["tr": "%@ için bir paylaşım zaten başlatılıyor — ikinci tünel açılmadı",
+             "en": "a share is already starting for %@ — a second tunnel was not opened"],
+        "log.tunnel.died":
+            ["tr": "⚠️ %@ paylaşımı beklenmedik şekilde sona erdi — cloudflared süreci yok. Adres artık çalışmıyor; paylaşmak için yeniden başlatın.",
+             "en": "⚠️ sharing for %@ ended unexpectedly — the cloudflared process is gone. The address no longer works; start the share again to publish it."],
         "log.dom.depReady":
             ["tr": "↳ bağımlılık hazır: %@",
              "en": "↳ dependency ready: %@"],

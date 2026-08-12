@@ -614,6 +614,40 @@ final class BRAMPPTests: XCTestCase {
         }
     }
 
+    /// **KATALOGDA OLMAYAN LOG ANAHTARI HAM HÂLİYLE YAZILIR.**
+    ///
+    /// `L10n.logText` anahtarı bulamazsa anahtarın KENDİSİNİ döndürür; Debug'da bu göze
+    /// çarpmaz çünkü konsola bakan biri olmayabilir, Release'de ise kullanıcı
+    /// "log.svc.apachePortsRolledBack" satırını görür. Bu üçü tam olarak öyleydi:
+    /// çağrılıyorlardı, hiçbir katalogda yoktular.
+    func testLogCatalog_ServiceKeysReferencedByServiceManagerExist() {
+        let keys = ["log.svc.quitStoppingDomains",
+                    "log.svc.apacheVhostPortsUpdated",
+                    "log.svc.apachePortsRolledBack"]
+        for key in keys {
+            guard let entry = L10n.logEntry(for: key) else {
+                XCTFail("\(key) hiçbir log katalogunda yok — Release'de ham anahtar yazılır")
+                continue
+            }
+            for lang in ["tr", "en"] {
+                XCTAssertFalse((entry[lang] ?? "").isEmpty, "\(key) için \(lang) çevirisi boş")
+            }
+            // Anahtarın katalogda bulunması yetmez: çözüm gerçekten METİN döndürmeli.
+            // (Release'de eksik anahtar `key`in kendisi, Debug'da `⟨key⟩` olarak döner.)
+            let rendered = L10n.renderLog(key: key, args: ["3"])
+            XCTAssertNotEqual(rendered, key)
+            XCTAssertNotEqual(rendered, "⟨\(key)⟩")
+        }
+        // Argümanlı iki anahtar sayıyı gerçekten yerleştirmeli — `%@`si düşmüş bir
+        // metin "Apache vhost portları güncellendi ( dosya)" üretirdi.
+        for key in ["log.svc.quitStoppingDomains", "log.svc.apacheVhostPortsUpdated"] {
+            for lang in ["tr", "en"] {
+                XCTAssertTrue((L10n.logEntry(for: key)?[lang] ?? "").contains("%@"),
+                              "\(key) (\(lang)) sayıyı yerleştirecek belirteci taşımalı")
+            }
+        }
+    }
+
     /// Uyarı metinleri Swift içinde SABİT yazılmamalı.
     ///
     /// DomainManager'daki sekiz uyarı sabit Türkçeydi; İngilizce arayüzde de Türkçe
@@ -694,60 +728,6 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(cf.brewName, "cloudflared")
     }
 
-
-    // MARK: - Framework algılama
-
-    /// `public/` klasörünün varlığı TEK BAŞINA belge kökünü değiştirmek için yeterli
-    /// değil. Laravel'de kök gerçekten public/ ama düz bir PHP sitesinde public/ yalnızca
-    /// varlık klasörü olabilir — kökü oraya taşımak siteyi bozar. Bu makinedeki gerçek
-    /// projelerin çoğunda public/ var ve hiçbiri Laravel değil.
-    func testFramework_PublicFolderAloneDoesNotMoveDocumentRoot() {
-        let düzPHP = FrameworkDetector.detect(
-            files: ["index.php", "public", "composer.json"],
-            composerJSON: "{\"require\":{\"php\":\"^8.2\"}}")
-        XCTAssertEqual(düzPHP?.platform, .php)
-        XCTAssertNil(düzPHP?.documentRootSuffix, "framework tanınmadan kök taşınmamalı")
-
-        let laravel = FrameworkDetector.detect(files: ["artisan", "composer.json", "public"])
-        XCTAssertEqual(laravel?.framework, "Laravel")
-        XCTAssertEqual(laravel?.documentRootSuffix, "public", "Laravel'de kök public/")
-        XCTAssertEqual(laravel?.confidence, .certain)
-    }
-
-    func testFramework_RecognisesSignatureFiles() {
-        XCTAssertEqual(FrameworkDetector.detect(files: ["wp-config.php", "wp-content"])?.framework,
-                       "WordPress")
-        XCTAssertEqual(FrameworkDetector.detect(files: ["manage.py"])?.platform, .python)
-        XCTAssertEqual(FrameworkDetector.detect(files: ["Api.csproj", "Program.cs"])?.platform,
-                       .dotnet)
-        // WordPress kökü taşınmaz — index.php köktedir
-        XCTAssertNil(FrameworkDetector.detect(files: ["wp-config.php"])?.documentRootSuffix)
-    }
-
-    /// Node projelerinde ayrım BAĞIMLILIKTAN gelir; package.json'ın varlığı yetmez.
-    func testFramework_TellsNodeFrameworksApartByDependency() {
-        let next = FrameworkDetector.detect(
-            files: ["package.json"], packageJSON: "{\"dependencies\":{\"next\":\"14\"}}")
-        XCTAssertEqual(next?.framework, "Next.js")
-        XCTAssertEqual(next?.runCommand, "npm run dev")
-
-        // Vite/SPA süreç istemez — derleme çıktısı statik sunulur
-        let spa = FrameworkDetector.detect(
-            files: ["package.json", "dist"],
-            packageJSON: "{\"devDependencies\":{\"vite\":\"5\"}}")
-        XCTAssertEqual(spa?.platform, .static_)
-        XCTAssertEqual(spa?.documentRootSuffix, "dist")
-
-        let bilinmeyen = FrameworkDetector.detect(
-            files: ["package.json"], packageJSON: "{\"dependencies\":{\"lodash\":\"4\"}}")
-        XCTAssertEqual(bilinmeyen?.platform, .nodejs)
-        XCTAssertEqual(bilinmeyen?.confidence, .guess, "tahmin olduğu söylenmeli")
-    }
-
-    func testFramework_ReturnsNilWhenNothingRecognisable() {
-        XCTAssertNil(FrameworkDetector.detect(files: ["README.md", ".git"]))
-        XCTAssertNil(FrameworkDetector.detect(files: []))
-    }
 
     // MARK: - Proje eylemleri
 
@@ -1541,6 +1521,775 @@ final class BRAMPPTests: XCTestCase {
                                             than: UpdateChecker.normalize("1.1")))
     }
 
+    // MARK: - Açılışta bildirim kararı (UpdateChecker.decide)
+
+    /// Kısayol: testlerin okunur kalması için varsayılanlı sarmalayıcı.
+    private func decide(current: String = "1.5", latest: String = "1.6",
+                        skipped: String = "", snooze: Date = .distantPast,
+                        mandatory: Bool = false, blocked: Bool = false,
+                        now: Date = Date(timeIntervalSince1970: 1_000_000)
+    ) -> UpdateChecker.PromptDecision {
+        UpdateChecker.decide(current: current, latest: latest,
+                             skippedVersion: skipped, snoozeUntil: snooze,
+                             mandatory: mandatory, blockedCurrent: blocked, now: now)
+    }
+
+    func testUpdatePrompt_ShowsWhenNewerAndNothingSuppressesIt() {
+        XCTAssertEqual(decide(), .show)
+    }
+
+    func testUpdatePrompt_NoNewerVersionIsNotShown() {
+        XCTAssertEqual(decide(current: "1.6", latest: "1.6"), .upToDate)
+        // 1.10 > 1.9 — saf dizgi karşılaştırması burada "upToDate" derdi
+        XCTAssertEqual(decide(current: "1.9", latest: "1.10"), .show)
+    }
+
+    /// "Bu sürümü atla" TAM sürüme bağlıdır.
+    func testUpdatePrompt_SkipMatchesExactVersionOnly() {
+        XCTAssertEqual(decide(latest: "1.6", skipped: "1.6"), .skippedVersion)
+        // Elle düzenlenmiş settings.json "v1.6" yazmış olabilir → yine eşleşmeli
+        XCTAssertEqual(decide(latest: "1.6", skipped: "v1.6"), .skippedVersion)
+    }
+
+    /// ATLAMA İLERİ TAŞINMAZ: 1.6 atlandıysa 1.7 yine sorulur. Naif bir
+    /// "atlanan varsa sus" mantığı bu testte kalır.
+    func testUpdatePrompt_SkipDoesNotCarryToANewerVersion() {
+        XCTAssertEqual(decide(current: "1.5", latest: "1.7", skipped: "1.6"), .show)
+    }
+
+    func testUpdatePrompt_ActiveSnoozeSuppresses_ExpiredDoesNot() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(decide(snooze: now.addingTimeInterval(3600), now: now), .snoozed)
+        XCTAssertEqual(decide(snooze: now.addingTimeInterval(-1), now: now), .show)
+        // Sınır anı: erteleme bitiş ANINDA artık susturmaz
+        XCTAssertEqual(decide(snooze: now, now: now), .show)
+    }
+
+    /// ERTELEME, ARAYA YENİ BİR SÜRÜM GİRDİ DİYE BOZULMAZ. "Bir hafta sessizlik"
+    /// sözünü her yayının delmesi denetimi yalana çevirirdi.
+    func testUpdatePrompt_SnoozeSurvivesANewerRelease() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(decide(current: "1.5", latest: "9.9",
+                              snooze: now.addingTimeInterval(86_400), now: now), .snoozed)
+    }
+
+    /// Zorunlu güncelleme atlamayı da ertelemeyi de deler.
+    func testUpdatePrompt_MandatoryPiercesSkipAndSnooze() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(decide(latest: "1.6", skipped: "1.6", mandatory: true, now: now), .show)
+        XCTAssertEqual(decide(snooze: now.addingTimeInterval(86_400),
+                              mandatory: true, now: now), .show)
+    }
+
+    /// Kurulu sürüm SORUNLU işaretlenmişse uyarı susturulamaz
+    /// (spec/update-manifest.md: "blockedVersions outranks mandatory").
+    func testUpdatePrompt_BlockedCurrentPiercesEverything() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(decide(latest: "1.6", skipped: "1.6",
+                              snooze: now.addingTimeInterval(86_400),
+                              blocked: true, now: now), .show)
+    }
+
+    /// Bayat bir erteleme ile taze bir atlama çakışırsa sonuç DETERMİNİSTİK
+    /// olarak "atlandı" olmalı — daha açık kullanıcı iradesi odur.
+    func testUpdatePrompt_SkipBeatsStaleSnooze() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(decide(latest: "1.6", skipped: "1.6",
+                              snooze: now.addingTimeInterval(86_400), now: now),
+                       .skippedVersion)
+    }
+
+    // MARK: - UpdateVerifier: indirme adresi güveni
+
+    func testUpdateVerifier_TrustsOnlyTheExpectedReleaseAddresses() {
+        // docs/updates/macos/stable.json içindeki GERÇEK varlık adresi
+        XCTAssertTrue(UpdateVerifier.isTrustedReleaseURL(
+            URL(string: "https://github.com/macitkaraca/brampp/releases/download/v1.4/BRAMPP-1.4.dmg")))
+        // Yönlendirmenin indiği CDN
+        XCTAssertTrue(UpdateVerifier.isTrustedReleaseURL(
+            URL(string: "https://objects.githubusercontent.com/github-production-release-asset/x")))
+    }
+
+    func testUpdateVerifier_RejectsLookalikeAndInsecureAddresses() {
+        let bad = [
+            // http — şifresiz
+            "http://github.com/macitkaraca/brampp/releases/download/v1.4/BRAMPP-1.4.dmg",
+            // sonek eşleşmesi kullanılsaydı GEÇERDİ
+            "https://evilgithub.com/macitkaraca/brampp/releases/download/v1.4/BRAMPP-1.4.dmg",
+            // alt alan adı hilesi
+            "https://github.com.attacker.net/macitkaraca/brampp/releases/download/v1.4/x.dmg",
+            // doğru alan, BAŞKA depo
+            "https://github.com/someoneelse/repo/releases/download/v1/x.dmg",
+            // doğru alan, yayın varlığı olmayan yol
+            "https://github.com/macitkaraca/brampp/blob/main/x.dmg",
+            // kullanıcı-bilgisi hilesi: gerçek ana bilgisayar evil.example
+            "https://github.com@evil.example/macitkaraca/brampp/releases/download/v1/x.dmg"
+        ]
+        for s in bad {
+            XCTAssertFalse(UpdateVerifier.isTrustedReleaseURL(URL(string: s)),
+                           "güvenilmemeli: \(s)")
+        }
+        XCTAssertFalse(UpdateVerifier.isTrustedReleaseURL(nil))
+    }
+
+    /// **YOL GEZİNMESİ.** `URL.path` yolu NORMALLEŞTİRMEZ; `hasPrefix` denetimi
+    /// `.../releases/download/../../../someoneelse/repo/x.dmg` adresini geçirirdi
+    /// oysa sunucu onu bambaşka bir depoya çözer. Tek başına sömürülebilir değil
+    /// (sha256/codesign/Team ID/spctl kapıları duruyor) ama bu fonksiyon tam olarak
+    /// "beklenen yayın varlığı mı" kapısıdır — dört kapıyı üçe indiremez.
+    func testUpdateVerifier_RejectsPathTraversalInReleaseURLs() {
+        let traversal = [
+            "https://github.com/macitkaraca/brampp/releases/download/../../../someoneelse/repo/x.dmg",
+            "https://github.com/macitkaraca/brampp/releases/download/v1.4/../../../../x.dmg",
+            "https://github.com/macitkaraca/brampp/releases/download/v1.4/..%2F..%2Fx.dmg"
+        ]
+        for s in traversal {
+            XCTAssertFalse(UpdateVerifier.isTrustedReleaseURL(URL(string: s)),
+                           "yol gezinmesi geçmemeli: \(s)")
+        }
+        // Normalleştirmenin DOĞRU adresi bozmadığı da doğrulanır
+        XCTAssertTrue(UpdateVerifier.isTrustedReleaseURL(
+            URL(string: "https://github.com/macitkaraca/brampp/releases/download/v1.5/BRAMPP-1.5.dmg")))
+    }
+
+    /// İNMEMİŞ bir dosya için "indirilen dosya silindi" denmez. `.checksumMismatch`
+    /// bu durumun nöbetçisi olarak kullanılıyordu; kendi nedeni var.
+    func testUpdateVerifier_MissingChecksumHasItsOwnReason() {
+        XCTAssertEqual(UpdateVerifier.Failure.noChecksum.messageKey, "upd.fail.noHash")
+        XCTAssertNotEqual(UpdateVerifier.Failure.noChecksum.messageKey,
+                          UpdateVerifier.Failure.checksumMismatch.messageKey)
+    }
+
+    // MARK: - Hazırlık dizini KOŞU BAŞINA türetilir (PathConfig)
+
+    /// **Dizin sürümden türetilirse aynı sürümün iki koşusu ÇAKIŞIR** — ve kurucu
+    /// bunu ancak "yeni koşu öncekinin bitmesini beklesin" diyerek önleyebiliyordu.
+    /// O bekleyiş `_ = await previous?.value` idi; `Task<Void, Never>.value` bekleyenin
+    /// iptalini dinlemediği için bitmeyen bir koşu kurucuyu OTURUM BOYUNCA kilitliyordu:
+    /// aşama `.verifying`de donuyor, "Durdur" işe yaramış görünüyor ve sonraki her
+    /// "İndir ve doğrula" tıklaması hiçbir şey yapmıyordu.
+    ///
+    /// Bu testin koruduğu değişmez: AYNI sürüm, FARKLI koşu ⇒ FARKLI dizin.
+    /// Sağlanıyorsa beklemeye gerek kalmaz.
+    func testPathConfig_StagingDirectoryIsPerRunNotPerVersion() {
+        let first  = PathConfig.updateStagingName(version: "1.6", run: 1)
+        let second = PathConfig.updateStagingName(version: "1.6", run: 2)
+        XCTAssertNotEqual(first, second, "aynı sürümün iki koşusu aynı dizini PAYLAŞAMAZ")
+
+        // Sürüm adın içinde kalır: kullanıcı `updates/` içine baktığında ne olduğunu
+        // görebilmeli ve prune adı ayrıştırmadan çalışabilmeli.
+        XCTAssertTrue(first.hasPrefix("1.6"))
+        XCTAssertEqual(first, "1.6-1")
+        XCTAssertEqual(second, "1.6-2")
+
+        // Tam yol `updates/` altında kalır — ve yola ".." sokulamaz.
+        XCTAssertEqual(PathConfig.updateStaging(version: "1.6", run: 3),
+                       "\(PathConfig.updates)/1.6-3")
+        XCTAssertEqual(PathConfig.updateStaging(name: first), "\(PathConfig.updates)/1.6-1")
+        XCTAssertFalse(PathConfig.updateStaging(version: "1.6", run: 3).contains(".."))
+    }
+
+    // MARK: - Hazırlık dizini temizliği (UpdateInstaller.pruneOldStaging)
+
+    /// Doğrulanan disk kalıbı kullanıcı kurana kadar durur — ve kullanıcı
+    /// KURMAYABİLİR. Yalnızca aynı sürümün dizinini temizlemek, her yayında ~60 MB'ı
+    /// kullanıcının varlığından habersiz olduğu bir dizinde bırakıyordu.
+    /// `names` verildiğinde diske DOKUNULMAZ — bu yüzden test edilebilir.
+    func testUpdateInstaller_PrunesEveryStagingDirectoryButTheCurrentRun() {
+        let onDisk = ["1.3-1", "1.4-1", "1.5-2", ".DS_Store"]
+        XCTAssertEqual(Set(UpdateInstaller.pruneOldStaging(keeping: ["1.5-2"], names: onDisk)),
+                       ["1.3-1", "1.4-1"])
+        // Açılışta hiçbiri korunmaz: bekleyen bir kurulum yoktur, hepsi bayattır
+        XCTAssertEqual(Set(UpdateInstaller.pruneOldStaging(keeping: [], names: onDisk)),
+                       ["1.3-1", "1.4-1", "1.5-2"])
+        // Gizli girdiler hiçbir hâlde silinmez
+        XCTAssertFalse(UpdateInstaller.pruneOldStaging(keeping: [], names: onDisk).contains(".DS_Store"))
+    }
+
+    /// **KORUNAN, TEK BİR AD DEĞİL YAŞAYAN KOŞULARIN TAMAMIDIR.**
+    ///
+    /// Yeni koşu artık öncekinin bitmesini beklemiyor, yani bir koşu inerken ondan
+    /// önce başlamış bir koşu hâlâ sarılıp çözülüyor olabilir. Prune yalnızca "şu anki"
+    /// dizini korusaydı, yeni koşu yanı başındaki koşunun dosyasını silerdi — koşu
+    /// başına dizine geçerken ortadan kaldırdığımız hatanın TIPATIP aynısı, iki kırmızı
+    /// hata ve sıfır indirme.
+    func testUpdateInstaller_PruneKeepsEveryLiveRunNotJustTheNewest() {
+        // 1.6'nın 4. koşusu inerken 3. koşu hâlâ çözülüyor; 1.5'ten kalıntı var.
+        let onDisk = ["1.5-1", "1.6-3", "1.6-4"]
+        let live: Set<String> = ["1.6-3", "1.6-4"]
+
+        let removed = Set(UpdateInstaller.pruneOldStaging(keeping: live, names: onDisk))
+        XCTAssertEqual(removed, ["1.5-1"])
+        XCTAssertFalse(removed.contains("1.6-3"), "yan yana koşan bir işin dizini SİLİNEMEZ")
+        XCTAssertFalse(removed.contains("1.6-4"))
+
+        // Aynı SÜRÜMÜN başka bir koşusu "aynı sürüm" diye korunmaz: kimlik dizin ADIDIR.
+        XCTAssertEqual(Set(UpdateInstaller.pruneOldStaging(keeping: ["1.6-4"], names: onDisk)),
+                       ["1.5-1", "1.6-3"])
+    }
+
+    // MARK: - "Sağlama yayınlanmamış" şeridi (UpdatePromptView)
+
+    /// Testler için yayın bilgisi üretir; yalnızca ilgilenilen alanlar verilir.
+    private func release(sha256: String?,
+                         requiredOS: String? = nil,
+                         blockedCurrent: Bool = false) -> UpdateChecker.ReleaseInfo {
+        UpdateChecker.ReleaseInfo(
+            version: "1.6",
+            tag: "v1.6",
+            pageURL: URL(string: "https://github.com/macitkaraca/brampp/releases/tag/v1.6")!,
+            notes: "",
+            assetURL: URL(string: "https://github.com/macitkaraca/brampp/releases/download/v1.6/BRAMPP-1.6.dmg"),
+            sha256: sha256,
+            mandatory: false,
+            blockedCurrent: blockedCurrent,
+            channel: "stable",
+            publishedAt: nil,
+            manifestBacked: true,
+            requiredOS: requiredOS)
+    }
+
+    /// **"Doğrulanabilir sağlama yayınlanmamış" YALAN OLMAMALI.**
+    ///
+    /// Şerit yalnızca `sha256 == nil`e bakıyordu; oysa `sha256`, indirmeyi KAPATMANIN
+    /// da yolu: `minimumOS` bu makineye yetmediğinde ve kurulu sürüm engellendiğinde de
+    /// nil'lenir. macOS 14'teki kullanıcı, 15.0 isteyen PEKÂLÂ sağlaması yayınlanmış bir
+    /// yayın için hem "macOS 15.0 gerekiyor" hem "sağlama yok" görüyordu — ikincisi
+    /// yanlış ve gerçek nedeni gölgeliyor.
+    func testUpdatePromptView_NoChecksumStripOnlyWhenTheChecksumIsTrulyAbsent() {
+        // Manifest okunamadı / bu mimari için giriş yok → şerit DOĞRU
+        XCTAssertTrue(UpdatePromptView.showsNoChecksumNotice(release(sha256: nil)))
+
+        // macOS yetmiyor: sağlama YAYINLANMIŞTIR, yalnızca indirme kapalıdır
+        XCTAssertFalse(UpdatePromptView.showsNoChecksumNotice(
+            release(sha256: nil, requiredOS: "15.0")))
+
+        // Kurulu sürüm `blockedVersions` listesinde: neden yine sağlamanın yokluğu değil
+        XCTAssertFalse(UpdatePromptView.showsNoChecksumNotice(
+            release(sha256: nil, blockedCurrent: true)))
+
+        // Sağlama varsa şerit zaten hiç çıkmaz — hangi durumda olursa olsun
+        XCTAssertFalse(UpdatePromptView.showsNoChecksumNotice(release(sha256: String(repeating: "a", count: 64))))
+        XCTAssertFalse(UpdatePromptView.showsNoChecksumNotice(
+            release(sha256: String(repeating: "a", count: 64), requiredOS: "15.0")))
+    }
+
+    // MARK: - UpdateVerifier: codesign / spctl çıktı ayrıştırma
+
+    /// `codesign -dv --verbose=4` çıktısından yakalanmış gerçek biçim.
+    private let codesignBlock = """
+    Executable=/Volumes/BRAMPP/BRAMPP.app/Contents/MacOS/BRAMPP
+    Identifier=com.karaca.BRAMPP
+    Format=app bundle with Mach-O universal (arm64)
+    CodeDirectory v=20500 size=1234 flags=0x10000(runtime) hashes=30+7
+    Signature size=9000
+    Authority=Developer ID Application: Macit Karaca (AB12CD34EF)
+    Authority=Developer ID Certification Authority
+    Authority=Apple Root CA
+    TeamIdentifier=AB12CD34EF
+    Sealed Resources version=2 rules=13 files=42
+    """
+
+    func testUpdateVerifier_ExtractsTeamIdentifier() {
+        XCTAssertEqual(UpdateVerifier.teamIdentifier(inCodesignOutput: codesignBlock), "AB12CD34EF")
+        XCTAssertEqual(UpdateVerifier.authorities(inCodesignOutput: codesignBlock).first,
+                       "Developer ID Application: Macit Karaca (AB12CD34EF)")
+        XCTAssertEqual(UpdateVerifier.authorities(inCodesignOutput: codesignBlock).count, 3)
+    }
+
+    /// İmzasız/ad-hoc paketlerde `codesign` harfi harfine "not set" yazar. Bunu bir
+    /// kimlik saymak, iki imzasız paketi "aynı geliştirici" ilan etmek olurdu.
+    func testUpdateVerifier_NotSetTeamIdentifierIsNil() {
+        XCTAssertNil(UpdateVerifier.teamIdentifier(inCodesignOutput: "TeamIdentifier=not set"))
+        XCTAssertNil(UpdateVerifier.teamIdentifier(inCodesignOutput: "TeamIdentifier="))
+        XCTAssertNil(UpdateVerifier.teamIdentifier(inCodesignOutput: "Identifier=com.karaca.BRAMPP"))
+    }
+
+    func testUpdateVerifier_CodesignVerdictComesFromExitCodeOnly() {
+        XCTAssertTrue(UpdateVerifier.isCodesignVerified(exitCode: 0, stderr: "x: valid on disk"))
+        XCTAssertFalse(UpdateVerifier.isCodesignVerified(exitCode: 1, stderr: "x: valid on disk"))
+        XCTAssertFalse(UpdateVerifier.isCodesignVerified(exitCode: -1, stderr: ""))
+    }
+
+    /// İŞİN KALBİ: `spctl` çıkış kodu 0 OLSA BİLE, noter onayı görülmeden kabul yok.
+    /// Yalnızca çıkış koduna bakan naif bir denetim bu testte kalır.
+    func testUpdateVerifier_UnnotarizedIsRejectedEvenWithExitCodeZero() {
+        let notarized = "/Volumes/BRAMPP/BRAMPP.app: accepted\nsource=Notarized Developer ID\norigin=Developer ID Application: Macit Karaca (AB12CD34EF)"
+        let unnotarized = "/Volumes/BRAMPP/BRAMPP.app: accepted\nsource=Unnotarized Developer ID\norigin=Developer ID Application: Macit Karaca (AB12CD34EF)"
+        let plainDevID = "/Volumes/BRAMPP/BRAMPP.app: accepted\nsource=Developer ID"
+
+        XCTAssertTrue(UpdateVerifier.isNotarizedAccepted(exitCode: 0, output: notarized))
+        XCTAssertFalse(UpdateVerifier.isNotarizedAccepted(exitCode: 0, output: unnotarized))
+        XCTAssertFalse(UpdateVerifier.isNotarizedAccepted(exitCode: 0, output: plainDevID))
+        // Reddedilen paket
+        XCTAssertFalse(UpdateVerifier.isNotarizedAccepted(exitCode: 3, output: notarized))
+    }
+
+    func testUpdateVerifier_ChecksumComparison() {
+        let a = String(repeating: "a", count: 64)
+        XCTAssertTrue(UpdateVerifier.checksumsMatch(a, a.uppercased()))
+        XCTAssertTrue(UpdateVerifier.checksumsMatch("  \(a)\n", a))
+        XCTAssertFalse(UpdateVerifier.checksumsMatch(a, String(repeating: "b", count: 64)))
+        // Yanlış uzunluk (kırpılmış çıktı) kabul edilmez
+        XCTAssertFalse(UpdateVerifier.checksumsMatch(String(a.dropLast()), String(a.dropLast())))
+        // BOŞ–BOŞ EŞİT SAYILMAZ: eksik alan yüzünden doğrulamanın sessizce geçmesi,
+        // bu fonksiyonun engellemek için var olduğu tek şeydir.
+        XCTAssertFalse(UpdateVerifier.checksumsMatch("", ""))
+        // Onaltılık olmayan karakter
+        XCTAssertFalse(UpdateVerifier.checksumsMatch(String(repeating: "z", count: 64),
+                                                     String(repeating: "z", count: 64)))
+    }
+
+    // MARK: - UpdateManifest çözümleme
+
+    /// docs/updates/macos/stable.json ile birebir aynı şekil.
+    private let macManifestJSON = """
+    {
+      "version": "1.4",
+      "channel": "stable",
+      "published": "2026-08-10",
+      "release": "https://github.com/macitkaraca/brampp/releases/tag/v1.4",
+      "minimumOS": "14.0",
+      "mandatory": false,
+      "blockedVersions": ["1.2"],
+      "downloads": {
+        "arm64": {
+          "url": "https://github.com/macitkaraca/brampp/releases/download/v1.4/BRAMPP-1.4.dmg",
+          "sha256": "6d9079fb353c8bc0fb202b2acce1d16c3c9a0a3e765ca46ee05c2ca9c77e03aa"
+        }
+      }
+    }
+    """
+
+    func testUpdateManifest_ParsesTheRealMacOSShape() throws {
+        let m = try XCTUnwrap(UpdateManifest.parse(Data(macManifestJSON.utf8)))
+        XCTAssertEqual(m.version, "1.4")
+        XCTAssertEqual(m.channel, "stable")
+        XCTAssertFalse(m.isMandatory)
+        let dl = try XCTUnwrap(m.download(forArch: "arm64"))
+        XCTAssertEqual(dl.sha256?.count, 64)
+        XCTAssertTrue(UpdateVerifier.isTrustedReleaseURL(dl.assetURL))
+        // Intel'de giriş YOK → nil, çökme değil
+        XCTAssertNil(m.download(forArch: "x86_64"))
+        // blockedVersions normalize edilerek karşılaştırılır
+        XCTAssertTrue(m.isBlocked("v1.2"))
+        XCTAssertFalse(m.isBlocked("1.3"))
+        XCTAssertNotNil(m.publishedDate)
+    }
+
+    /// windows/linux dosyaları GERÇEKTEN `"version": null` ve `minimumOS` YOK.
+    /// Bu bir hata değil, "bu kanalda henüz yayın yok" demektir.
+    func testUpdateManifest_ToleratesNullVersionAndMissingKeys() throws {
+        let json = """
+        {"version": null, "channel": "stable", "published": null, "release": null,
+         "mandatory": false, "blockedVersions": [], "downloads": {},
+         "note": "No windows build has been released yet."}
+        """
+        let m = try XCTUnwrap(UpdateManifest.parse(Data(json.utf8)))
+        XCTAssertNil(m.version)
+        XCTAssertNil(m.minimumOS)
+        XCTAssertNil(m.download(forArch: "arm64"))
+        XCTAssertFalse(m.isBlocked("1.5"))
+        // minimumOS yoksa kısıtlama da yok
+        XCTAssertTrue(m.meetsMinimumOS(OperatingSystemVersion(majorVersion: 14, minorVersion: 0, patchVersion: 0)))
+    }
+
+    func testUpdateManifest_MinimumOSIsComparedNumerically() throws {
+        let m = try XCTUnwrap(UpdateManifest.parse(Data(macManifestJSON.utf8)))
+        XCTAssertTrue(m.meetsMinimumOS(OperatingSystemVersion(majorVersion: 14, minorVersion: 0, patchVersion: 0)))
+        XCTAssertTrue(m.meetsMinimumOS(OperatingSystemVersion(majorVersion: 15, minorVersion: 1, patchVersion: 0)))
+        XCTAssertFalse(m.meetsMinimumOS(OperatingSystemVersion(majorVersion: 13, minorVersion: 6, patchVersion: 0)))
+    }
+
+    func testUpdateManifest_URLIsBuiltOnlyFromTheDocumentedPattern() {
+        XCTAssertEqual(UpdateManifest.url(channel: .stable)?.absoluteString,
+                       "https://macitkaraca.github.io/brampp/updates/macos/stable.json")
+        XCTAssertEqual(UpdateManifest.url(channel: .nightly)?.absoluteString,
+                       "https://macitkaraca.github.io/brampp/updates/macos/nightly.json")
+        // Bilinmeyen kanal adı kararlıya düşer — olmayan bir dosya sonsuza dek sorulmaz
+        XCTAssertEqual(UpdateChannel.from("kanalyok"), .stable)
+        XCTAssertEqual(UpdateChannel.from("beta"), .beta)
+        // Bugün GERÇEKTEN yayınlanan tek kanal
+        XCTAssertTrue(UpdateChannel.stable.isPublished)
+        XCTAssertFalse(UpdateChannel.beta.isPublished)
+    }
+
+    func testUpdateManifest_GarbageJSONIsNotAnError() {
+        XCTAssertNil(UpdateManifest.parse(Data("bu json değil".utf8)))
+        XCTAssertNil(UpdateManifest.parse(Data()))
+    }
+
+    // MARK: - Manifest ↔ API sürüm önceliği (UpdateChecker.resolve)
+
+    /// Verilen alanlarla bir manifest kurar. JSON üzerinden gider ki testler
+    /// çözümleyicinin kendisini de kullansın — üretimde okunan yol budur.
+    private func manifest(version: String?,
+                          minimumOS: String? = "14.0",
+                          mandatory: Bool = false,
+                          blocked: [String] = []) -> UpdateManifest {
+        let v = version.map { "\"\($0)\"" } ?? "null"
+        let os = minimumOS.map { "\"\($0)\"" } ?? "null"
+        let blockedList = blocked.map { "\"\($0)\"" }.joined(separator: ", ")
+        let json = """
+        {
+          "version": \(v),
+          "channel": "stable",
+          "published": "2026-08-10",
+          "release": "https://github.com/macitkaraca/brampp/releases/tag/v\(version ?? "0")",
+          "minimumOS": \(os),
+          "mandatory": \(mandatory),
+          "blockedVersions": [\(blockedList)],
+          "downloads": {
+            "arm64": {
+              "url": "https://github.com/macitkaraca/brampp/releases/download/v\(version ?? "0")/BRAMPP-\(version ?? "0").dmg",
+              "sha256": "\(String(repeating: "a", count: 64))"
+            }
+          }
+        }
+        """
+        // swiftlint:disable:next force_unwrapping — sabit, testin kendi ürettiği JSON
+        return UpdateManifest.parse(Data(json.utf8))!
+    }
+
+    private func apiRelease(_ version: String) -> UpdateChecker.APIRelease {
+        UpdateChecker.APIRelease(
+            version: version,
+            tag: "v\(version)",
+            pageURL: URL(string: "https://github.com/macitkaraca/brampp/releases/tag/v\(version)")!,
+            notes: "notlar \(version)",
+            publishedAt: nil)
+    }
+
+    private let sonoma = OperatingSystemVersion(majorVersion: 14, minorVersion: 4, patchVersion: 1)
+    private let sequoia = OperatingSystemVersion(majorVersion: 15, minorVersion: 1, patchVersion: 0)
+
+    /// **YAŞANMIŞ HATA.** 1.5 yayınlanmıştı, `docs/updates/macos/stable.json` hâlâ
+    /// "1.4" diyordu ve hiçbir betik o dosyayı yazmıyordu. Manifesti TEK kaynak sayan
+    /// denetim HERKESE sonsuza dek "güncelsiniz" derdi — üstelik eski API tabanlı
+    /// denetleyiciye göre bir GERİLEME. Bayat manifest SESSİZLİK ANLAMINA GELEMEZ.
+    func testUpdateResolve_LaggingManifestStillYieldsTheAPIVersion() {
+        let r = UpdateChecker.resolve(current: "1.5",
+                                      manifest: manifest(version: "1.4"),
+                                      api: apiRelease("1.6"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .updateAvailable(let current, let release) = r else {
+            return XCTFail("bayat manifest güncellemeyi yutmamalı, gelen: \(r)")
+        }
+        XCTAssertEqual(current, "1.5")
+        XCTAssertEqual(release.version, "1.6")
+        // Manifest 1.6'yı ANLATMIYOR: oradaki sha256 başka bir dosyanın özeti.
+        // Doğrulanamayacak bir indirme sunulmaz — kullanıcı sürüm sayfasına gider.
+        XCTAssertNil(release.sha256, "bayat manifestin sağlaması BAŞKA sürüme ait")
+        XCTAssertNil(release.assetURL)
+        XCTAssertFalse(release.manifestBacked)
+        // Notlar API'den gelir ve o sürüme aittir
+        XCTAssertEqual(release.notes, "notlar 1.6")
+    }
+
+    /// Manifest ÖNDEYSE ayrıntıların kaynağı odur: sha256 olmadan uygulama içi
+    /// indirme hiç açılmaz, dolayısıyla bu yol özelliğin çalıştığı tek yoldur.
+    func testUpdateResolve_ManifestWinsWhenItIsTheNewerSource() {
+        let r = UpdateChecker.resolve(current: "1.5",
+                                      manifest: manifest(version: "1.6", mandatory: true),
+                                      api: apiRelease("1.5"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .updateAvailable(_, let release) = r else { return XCTFail("gelen: \(r)") }
+        XCTAssertEqual(release.version, "1.6")
+        XCTAssertEqual(release.sha256?.count, 64)
+        XCTAssertNotNil(release.assetURL)
+        XCTAssertTrue(release.manifestBacked)
+        XCTAssertTrue(release.mandatory)
+        // API 1.5'i gösteriyor — 1.5'in notlarını 1.6 başlığının altına koymak yalan olurdu
+        XCTAssertEqual(release.notes, "")
+    }
+
+    /// İki kaynak da AYNI sürümü söylüyorsa ayrıntılar manifestten gelir ve
+    /// notlar da kullanılır — özelliğin normal günü budur.
+    func testUpdateResolve_AgreementUsesManifestDetailsAndAPINotes() {
+        let r = UpdateChecker.resolve(current: "1.5",
+                                      manifest: manifest(version: "1.6"),
+                                      api: apiRelease("1.6"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .updateAvailable(_, let release) = r else { return XCTFail("gelen: \(r)") }
+        XCTAssertEqual(release.sha256?.count, 64)
+        XCTAssertEqual(release.notes, "notlar 1.6")
+    }
+
+    /// Manifest okunamadıysa (ağ yok, 404, bozuk JSON) API'ye düşülür — eski
+    /// davranış korunur, ama sağlama yoktur.
+    func testUpdateResolve_FallsBackToTheAPIWhenTheManifestIsUnreadable() {
+        let r = UpdateChecker.resolve(current: "1.5", manifest: nil, api: apiRelease("1.6"),
+                                      channel: "stable", os: sonoma)
+        guard case .updateAvailable(_, let release) = r else { return XCTFail("gelen: \(r)") }
+        XCTAssertEqual(release.version, "1.6")
+        XCTAssertNil(release.sha256)
+        XCTAssertFalse(release.manifestBacked)
+    }
+
+    /// Hiçbir kaynağa ULAŞILAMADIYSA başarısızlık; manifest okunup "bu kanalda
+    /// yayın yok" dediyse HATA DEĞİL (spec: "A missing manifest is not an error").
+    func testUpdateResolve_NoSourceIsFailure_NullVersionIsNot() {
+        XCTAssertEqual(UpdateChecker.resolve(current: "1.5", manifest: nil, api: nil,
+                                             channel: "stable", os: sonoma), .failed)
+        XCTAssertEqual(UpdateChecker.resolve(current: "1.5",
+                                             manifest: manifest(version: nil),
+                                             api: nil, channel: "stable", os: sonoma),
+                       .upToDate(current: "1.5"))
+    }
+
+    // MARK: - Sorunlu KURULU sürüm (blockedVersions)
+
+    /// **ASIL SENARYO** (spec/update-manifest.md): 1.6 yayınlandı, zararlı çıktı,
+    /// listeye eklendi. Manifestin `version`'ı HÂLÂ 1.6 — yani "daha yeni sürüm"
+    /// yok. Yalnızca `isNewer`e bakan bir denetim tam da uyarılması gereken
+    /// kullanıcıya "güncelsiniz" der ve `blockedVersions` hiç ateşlenemez.
+    func testUpdateResolve_BlockedCurrentWarnsEvenWithNoNewerVersion() {
+        let r = UpdateChecker.resolve(current: "1.6",
+                                      manifest: manifest(version: "1.6", blocked: ["1.6"]),
+                                      api: apiRelease("1.6"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .currentBlocked(let current, let release) = r else {
+            return XCTFail("sorunlu kurulu sürüm susturulamaz, gelen: \(r)")
+        }
+        XCTAssertEqual(current, "1.6")
+        XCTAssertTrue(release.blockedCurrent)
+        // Kurulacak bir şey YOK — kullanıcının zaten çalıştırdığı sürümü yeniden
+        // indirtmek anlamsız olurdu; arayüz yalnızca sürüm sayfasını önerir.
+        XCTAssertNil(release.assetURL)
+        XCTAssertNil(release.sha256)
+    }
+
+    /// `blockedVersions` manifestin KENDİ sürümünü değil, KURULU sürümü anlatır —
+    /// bu yüzden manifest bayatken de okunur ve API yolundaki sonuca taşınır.
+    func testUpdateResolve_BlockedCurrentSurvivesALaggingManifest() {
+        let r = UpdateChecker.resolve(current: "1.5",
+                                      manifest: manifest(version: "1.4", blocked: ["v1.5"]),
+                                      api: apiRelease("1.6"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .updateAvailable(_, let release) = r else { return XCTFail("gelen: \(r)") }
+        XCTAssertEqual(release.version, "1.6")
+        XCTAssertTrue(release.blockedCurrent, "sorunlu işaret bayat manifestte de geçerlidir")
+    }
+
+    /// Kurulu sürüm sorunlu DEĞİLSE ve yenisi de yoksa sonuç sade "güncel"dir.
+    func testUpdateResolve_UpToDateWhenNothingIsWrong() {
+        XCTAssertEqual(UpdateChecker.resolve(current: "1.6",
+                                             manifest: manifest(version: "1.6"),
+                                             api: apiRelease("1.6"),
+                                             channel: "stable", os: sonoma),
+                       .upToDate(current: "1.6"))
+    }
+
+    /// `decide()` 0. kuralı `latest == current` iken de çalışmalı: sorunlu sürüm
+    /// uyarısını taşıyan tek yol o. Kural 1'in `guard`ı önce dönseydi uyarı ölürdü.
+    func testUpdatePrompt_BlockedCurrentShowsWithNoNewerVersion() {
+        XCTAssertEqual(decide(current: "1.6", latest: "1.6", blocked: true), .show)
+    }
+
+    // MARK: - minimumOS kapısı
+
+    /// Manifest macOS 15 istiyorsa macOS 14'teki kullanıcıya İNDİRME SUNULMAZ.
+    /// Aksi halde ~60 MB iner, dört kapıdan da geçer, kurulur ve AÇILMAZ.
+    func testUpdateResolve_MinimumOSClosesTheDownloadButDoesNotSilence() {
+        let m = manifest(version: "1.6", minimumOS: "15.0")
+        let blocked = UpdateChecker.resolve(current: "1.5", manifest: m, api: apiRelease("1.6"),
+                                            channel: "stable", os: sonoma)
+        guard case .updateAvailable(_, let release) = blocked else {
+            return XCTFail("sürüm GERÇEKTEN var — susmak yalan olurdu, gelen: \(blocked)")
+        }
+        XCTAssertNil(release.assetURL, "macOS yetmiyorken indirme adresi verilmemeli")
+        XCTAssertNil(release.sha256)
+        XCTAssertEqual(release.requiredOS, "15.0", "arayüz nedeni söyleyebilmeli")
+
+        // Aynı manifest, yeterli macOS → indirme açık
+        let ok = UpdateChecker.resolve(current: "1.5", manifest: m, api: apiRelease("1.6"),
+                                       channel: "stable", os: sequoia)
+        guard case .updateAvailable(_, let okRelease) = ok else { return XCTFail("gelen: \(ok)") }
+        XCTAssertNotNil(okRelease.assetURL)
+        XCTAssertNil(okRelease.requiredOS)
+    }
+
+    /// `minimumOS` manifestin KENDİ sürümünü anlatır. Manifest bayatken API'nin
+    /// gösterdiği sürüme uygulanması, ilgisiz bir kısıtı dayatmak olurdu.
+    func testUpdateResolve_MinimumOSDoesNotLeakOntoTheAPIVersion() {
+        let r = UpdateChecker.resolve(current: "1.5",
+                                      manifest: manifest(version: "1.4", minimumOS: "15.0"),
+                                      api: apiRelease("1.6"),
+                                      channel: "stable",
+                                      os: sonoma)
+        guard case .updateAvailable(_, let release) = r else { return XCTFail("gelen: \(r)") }
+        XCTAssertEqual(release.version, "1.6")
+        XCTAssertNil(release.requiredOS, "bayat manifestin minimumOS'u 1.6'yı bağlamaz")
+    }
+
+    // MARK: - Sürüm notu çözümleme (UpdateNotes)
+
+    func testUpdateNotes_SplitsHeadingsBulletsAndRules() {
+        let raw = """
+        ## Yenilikler\r
+        - İlk madde
+        * İkinci madde
+        3. Üçüncü madde
+
+        ---
+
+        Düz bir paragraf.
+        """
+        let (blocks, truncated) = UpdateNotes.render(raw)
+        XCTAssertFalse(truncated)
+        guard blocks.count == 6 else {
+            return XCTFail("6 blok bekleniyordu, \(blocks.count) geldi")
+        }
+        XCTAssertEqual(blocks[0], .heading("Yenilikler"))   // \r\n normalize edilmeli
+        if case .bullet(let a) = blocks[1] { XCTAssertEqual(String(a.characters), "İlk madde") }
+        else { XCTFail("madde bekleniyordu") }
+        if case .bullet = blocks[2] {} else { XCTFail("* maddesi bekleniyordu") }
+        if case .bullet = blocks[3] {} else { XCTFail("numaralı madde bekleniyordu") }
+        XCTAssertEqual(blocks[4], .rule)
+        if case .paragraph = blocks[5] {} else { XCTFail("paragraf bekleniyordu") }
+    }
+
+    /// Boş satırlar blok ÜRETMEZ — aksi halde notların yarısı boş paragraf olurdu.
+    func testUpdateNotes_BlankLinesCollapseAndEmptyInputYieldsNothing() {
+        let (blocks, _) = UpdateNotes.render("\n\n\n   \n\n")
+        XCTAssertTrue(blocks.isEmpty)
+        XCTAssertTrue(UpdateNotes.render("").blocks.isEmpty)
+        // Tek satır, boş satırlarla çevrili → tek blok
+        XCTAssertEqual(UpdateNotes.render("\n\nmerhaba\n\n\n").blocks.count, 1)
+    }
+
+    func testUpdateNotes_TruncatesAtALineBoundary() {
+        let raw = (1...200).map { "satır \($0) ------------------------------" }.joined(separator: "\n")
+        let (blocks, truncated) = UpdateNotes.render(raw, limit: 300)
+        XCTAssertTrue(truncated)
+        XCTAssertFalse(blocks.isEmpty)
+        // Kesme satır sınırında: son blok yarım bir satır olmamalı
+        let text = UpdateNotes.plainText(blocks)
+        XCTAssertTrue(text.hasSuffix("------"), "satır ortasından kesilmiş: \(text.suffix(40))")
+        XCTAssertLessThanOrEqual(text.count, 300)
+        // Sınırın altındaki metin hiç kısaltılmaz
+        XCTAssertFalse(UpdateNotes.render("kısa", limit: 300).truncated)
+    }
+
+    /// Sürüm notu UYGULAMANIN DIŞINDA yazılmış, ağdan gelen metindir. `file://`
+    /// ya da özel şemalı bir bağlantı tıklanabilir kalmamalı.
+    func testUpdateNotes_StripsNonHTTPLinks() {
+        // Markdown çözümleyicisi file:// ve javascript: bağlantılarını GERÇEKTEN üretir —
+        // süzgeç olmasa üçü de tıklanabilir kalırdı.
+        let (blocks, _) = UpdateNotes.render(
+            "[zararsız](https://example.com) [dosya](file:///etc/passwd) [betik](javascript:x)")
+        guard case .paragraph(let attributed) = blocks.first else {
+            return XCTFail("paragraf bekleniyordu")
+        }
+        let links = attributed.runs.compactMap { $0.link?.scheme }
+        XCTAssertEqual(links, ["https"], "http(s) dışı şema tıklanabilir kaldı: \(links)")
+        // Metin KAYBOLMAZ, yalnızca bağlantılığı gider
+        XCTAssertTrue(String(attributed.characters).contains("dosya"))
+        XCTAssertTrue(String(attributed.characters).contains("betik"))
+    }
+
+    /// Süzgeç doğrudan: elle kurulmuş bir `file://` bağlantısı da düşürülmeli.
+    func testUpdateNotes_StripUnsafeLinksKeepsTextDropsScheme() {
+        var safe = AttributedString("güvenli ")
+        safe.link = URL(string: "https://x.example")
+        var unsafe = AttributedString("tehlikeli")
+        unsafe.link = URL(string: "file:///etc/passwd")
+        var combined = safe + unsafe
+        XCTAssertEqual(combined.runs.compactMap { $0.link }.count, 2)
+
+        UpdateNotes.stripUnsafeLinks(&combined)
+        XCTAssertEqual(combined.runs.compactMap { $0.link?.scheme }, ["https"])
+        XCTAssertEqual(String(combined.characters), "güvenli tehlikeli")
+    }
+
+    func testUpdateNotes_LineClassifiersAreStrict() {
+        XCTAssertTrue(UpdateNotes.isRule("---"))
+        XCTAssertTrue(UpdateNotes.isRule("***"))
+        XCTAssertFalse(UpdateNotes.isRule("--"))
+        XCTAssertFalse(UpdateNotes.isRule("-*-"))
+        XCTAssertEqual(UpdateNotes.headingText("### Başlık"), "Başlık")
+        XCTAssertNil(UpdateNotes.headingText("#Boşluksuz"))         // Markdown değil
+        XCTAssertNil(UpdateNotes.headingText("####### Yedi diyez"))  // en fazla 6
+        XCTAssertEqual(UpdateNotes.bulletText("- madde"), "madde")
+        XCTAssertEqual(UpdateNotes.bulletText("12. madde"), "madde")
+        XCTAssertNil(UpdateNotes.bulletText("-tire, madde değil"))
+        XCTAssertNil(UpdateNotes.bulletText("2026. yılında"))        // 4 hane → numaralı madde değil
+    }
+
+    // MARK: - AppSettings: güncelleme alanları
+
+    /// **VARSAYILANLAR BORU HATTINI ULAŞILABİLİR BIRAKMALI.** `updateMode` `notify`
+    /// iken bildirim penceresinin ana düğmesi yalnızca sürüm sayfasını açar
+    /// (`UpdatePromptView.primaryAction`), yani kutudan çıktığı hâliyle indirme +
+    /// sha256 + codesign + Team ID + noter onayı zincirini HİÇBİR kullanıcı görmezdi.
+    /// İki alan iki ayrı soruyu yanıtlar ve varsayılanları bilerek farklı yönde:
+    /// düğme indirmeyi SUNAR, ama tıklanmadan hiçbir şey İNMEZ.
+    func testAppSettings_UpdateFieldDefaults() {
+        let s = AppSettings()
+        XCTAssertEqual(s.updateChannel, "stable")
+        XCTAssertTrue(s.updateAutoCheck)
+        XCTAssertFalse(s.updateAutoDownload)          // indirme kullanıcının bilinçli tercihi
+        XCTAssertEqual(s.updateMode, "download")
+        XCTAssertNotEqual(s.updateMode, UpdateMode.notify.rawValue,
+                          "varsayılan `notify` olursa indirme/doğrulama boru hattı ULAŞILAMAZ")
+        // Pencerenin ana düğmesinin indirmeyi sunması için gereken tam koşul
+        XCTAssertNotEqual(UpdateMode.from(s.updateMode), .notify)
+        XCTAssertEqual(s.updateSkippedVersion, "")
+        XCTAssertEqual(s.updateSnoozeUntil, 0)
+        XCTAssertEqual(s.updateLastCheck, 0)
+    }
+
+    /// GÜNCELLEME ALANLARINDAN ÖNCEKİ bir settings.json hâlâ çözülmeli.
+    func testAppSettings_PreUpdateJSONStillDecodes() throws {
+        let legacy = """
+        {"defaultPHPVersion":"8.4","autoStartServices":true,"mcpServerPort":9000}
+        """
+        let s = try JSONDecoder().decode(AppSettings.self, from: Data(legacy.utf8))
+        XCTAssertEqual(s.defaultPHPVersion, .v84)
+        XCTAssertTrue(s.autoStartServices)
+        XCTAssertEqual(s.mcpServerPort, 9000)
+        // Yeni alanlar varsayılana düşer, throw YOK
+        XCTAssertEqual(s.updateChannel, "stable")
+        XCTAssertTrue(s.updateAutoCheck)
+        XCTAssertEqual(s.updateSnoozeUntil, 0)
+        // Eski dosyadan gelen kullanıcı da boru hattını görebilmeli — çözme yolundaki
+        // varsayılan `init()` ile AYNI olmalı, yoksa aynı ürünün iki farklı davranışı olur.
+        XCTAssertEqual(s.updateMode, AppSettings().updateMode)
+        XCTAssertNotEqual(UpdateMode.from(s.updateMode), .notify)
+    }
+
+    func testAppSettings_UpdateFieldsSurviveARoundTrip() throws {
+        var s = AppSettings()
+        s.updateChannel        = "beta"
+        s.updateAutoCheck      = false
+        s.updateAutoDownload   = true
+        s.updateMode           = "downloadAndOpen"
+        s.updateSkippedVersion = "1.6"
+        s.updateSnoozeUntil    = 1_800_000_000
+        s.updateLastCheck      = 1_700_000_000
+        let back = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(back.updateChannel, "beta")
+        XCTAssertFalse(back.updateAutoCheck)
+        XCTAssertTrue(back.updateAutoDownload)
+        XCTAssertEqual(back.updateMode, "downloadAndOpen")
+        XCTAssertEqual(back.updateSkippedVersion, "1.6")
+        XCTAssertEqual(back.updateSnoozeUntil, 1_800_000_000)
+        XCTAssertEqual(back.updateLastCheck, 1_700_000_000)
+        XCTAssertEqual(UpdateMode.from(back.updateMode), .downloadAndOpen)
+        XCTAssertEqual(UpdateMode.from("uydurma"), .notify)
+    }
+
+    /// Açılışta kendiliğinden pencere açma kapısı — test ana uygulamasında KAPALI.
+    func testProcessRole_TestHostMayNotPresentLaunchUI() {
+        XCTAssertFalse(ProcessRole.mayPresentLaunchUI,
+                       "test ana uygulaması açılışta pencere göstermemeli")
+    }
+
     // MARK: - Süreç canlılık denetimi
 
     /// PID dosyası süreç öldükten sonra da diskte kalır. `app_status` bunu doğrulamadan
@@ -1687,5 +2436,600 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertNil(d.serviceDependencies)
         XCTAssertEqual(DomainManager.dependencyOrder(for: d, apacheCompanionAvailable: true),
                        ["httpd"])
+    }
+
+    // MARK: - Tünel sahiplik / eşitleme / durdurma
+    //
+    // Bu bölüm, aynı $HOME'u paylaşan iki BRAMPP kopyasının birbirinin canlı
+    // tünelini öldürmesi olayının düzeltmelerini kilitler. Hepsi gerçek makineye
+    // DOKUNMADAN koşar: süreç sorgusu, dizin listesi ve mtime enjekte edilir.
+
+    /// Yardımcı — testlerde kayıt kurmak için.
+    private func makeTunnel(_ name: String, pid: Int?, state: Tunnel.State,
+                            startedAt: Date, url: String? = nil) -> Tunnel {
+        Tunnel(domainName: name, origin: "http://127.0.0.1:8080",
+               publicURL: url, pid: pid, startedAt: startedAt, state: state)
+    }
+
+    // MARK: reconcile — ölü tespiti
+
+    /// `kill(pid,0)` başarısızlığı KESİN sonuçtur: süreç yoksa kayıt ölüdür.
+    func testReconcile_DeadWhenProcessGone() {
+        let now = Date()
+        let table = [
+            "live.test": makeTunnel("live.test", pid: 111, state: .active,
+                                    startedAt: now, url: "https://a.trycloudflare.com"),
+            "gone.test": makeTunnel("gone.test", pid: 222, state: .active,
+                                    startedAt: now, url: "https://b.trycloudflare.com"),
+        ]
+        let dead = TunnelManager.deadCandidates(in: table, now: now, isAlive: { $0 == 111 })
+        XCTAssertEqual(dead, ["gone.test"])
+    }
+
+    /// PID'i henüz yazılmamış `.starting` kaydı, adres + DNS beklemesinin TOPLAMI
+    /// dolmadan ölü SAYILMAZ — `start` akışı hâlâ sürüyor olabilir.
+    func testReconcile_FreshStartingRecordIsNotDead() {
+        let now = Date()
+        let table = ["boot.test": makeTunnel("boot.test", pid: nil, state: .starting,
+                                             startedAt: now.addingTimeInterval(-5))]
+        XCTAssertTrue(TunnelManager.deadCandidates(in: table, now: now, isAlive: { _ in true }).isEmpty)
+    }
+
+    /// Aynı kayıt beklemenin toplamını aşmışsa takılı kalmıştır — sonsuza kadar
+    /// "başlatılıyor" göstermemeli.
+    func testReconcile_StuckStartingRecordIsDead() {
+        let now = Date()
+        let stale = now.addingTimeInterval(-(TunnelManager.urlTimeout + TunnelManager.dnsTimeout + 1))
+        let table = ["stuck.test": makeTunnel("stuck.test", pid: nil, state: .starting, startedAt: stale)]
+        XCTAssertEqual(TunnelManager.deadCandidates(in: table, now: now, isAlive: { _ in true }),
+                       ["stuck.test"])
+    }
+
+    /// Zaten `.failed` işaretli kayıt tekrar ölü ilan edilmez — yoksa her turda
+    /// yeni bir "paylaşım sona erdi" satırı yazılırdı.
+    func testReconcile_FailedRecordIsSkipped() {
+        let now = Date()
+        let table = ["dead.test": makeTunnel("dead.test", pid: 5, state: .failed("süreç yok"),
+                                             startedAt: now.addingTimeInterval(-10_000))]
+        XCTAssertTrue(TunnelManager.deadCandidates(in: table, now: now, isAlive: { _ in false }).isEmpty)
+    }
+
+    /// `ps -o pid=,comm=` çıktısında yalnızca comm'u cloudflared olan PID doğrulanır;
+    /// geri dönüştürülmüş numarada oturan başka bir süreç canlı sayılmaz.
+    func testReconcile_ConfirmsIdentityFromPsOutput() {
+        let out = " 111 cloudflared\n 222 Google Chrome Helper\n 333 cloudflared\n"
+        XCTAssertEqual(TunnelManager.parseCloudflaredPIDs(from: out), [111, 333])
+    }
+
+    // MARK: markDead — kuşak (generation) denetimi
+
+    /// GERİLEME TESTİ: `reconcile` ölü listesini `ps` beklemesinden ÖNCE hesaplar,
+    /// uygular ise SONRA. O pencerede aynı alan adı yeniden paylaşıma açılırsa eski
+    /// karar YENİ kaydı bozmamalı — yoksa geriye pid'i unutulmuş, dosyası silinmiş,
+    /// ama internete AÇIK bir tünel kalır.
+    func testMarkDead_DoesNotTouchRestartedRecord() {
+        let manager = TunnelManager(consoleStore: ConsoleStore())
+        let observed = makeTunnel("race.invalid", pid: 111, state: .active,
+                                  startedAt: Date(timeIntervalSince1970: 1_000),
+                                  url: "https://old.trycloudflare.com")
+        // `ps` beklemesi sırasında yeniden başlatılmış YENİ kayıt
+        let restarted = makeTunnel("race.invalid", pid: 222, state: .starting,
+                                   startedAt: Date(timeIntervalSince1970: 2_000))
+        manager.setTunnelsForTesting(["race.invalid": restarted])
+
+        manager.markDead("race.invalid", observed: observed)
+
+        let current = manager.tunnel(for: "race.invalid")
+        XCTAssertEqual(current?.pid, 222, "yeni kaydın PID'i unutulmamalıydı")
+        XCTAssertEqual(current?.state, .starting, "yeni kayıt ölü işaretlenmemeliydi")
+    }
+
+    /// Kayıt DEĞİŞMEMİŞSE karar uygulanır — düzeltme, gerçek ölümleri kaçırmamalı.
+    func testMarkDead_AppliesToUnchangedRecord() {
+        let manager = TunnelManager(consoleStore: ConsoleStore())
+        let record = makeTunnel("dead.invalid", pid: 111, state: .active,
+                                startedAt: Date(timeIntervalSince1970: 1_000),
+                                url: "https://x.trycloudflare.com")
+        manager.setTunnelsForTesting(["dead.invalid": record])
+
+        manager.markDead("dead.invalid", observed: record)
+
+        let current = manager.tunnel(for: "dead.invalid")
+        XCTAssertNil(current?.pid)
+        XCTAssertNil(current?.publicURL)
+        XCTAssertFalse(current?.isLive ?? true)
+    }
+
+    /// Kimlik ölçütü: `startedAt` kuşak jetonu + PID.
+    func testMarkDead_IdentityPredicate() {
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        let t1 = Date(timeIntervalSince1970: 2_000)
+        let a = makeTunnel("x", pid: 111, state: .active, startedAt: t0)
+        XCTAssertTrue(TunnelManager.deadRecordStillApplies(observed: a, current: a))
+        // Aynı kuşak ama PID sonradan yazılmış (yer tutucu → gerçek süreç)
+        XCTAssertFalse(TunnelManager.deadRecordStillApplies(
+            observed: makeTunnel("x", pid: nil, state: .starting, startedAt: t0), current: a))
+        // Yeni kuşak
+        XCTAssertFalse(TunnelManager.deadRecordStillApplies(
+            observed: a, current: makeTunnel("x", pid: 111, state: .active, startedAt: t1)))
+        // Kayıt tamamen silinmiş
+        XCTAssertFalse(TunnelManager.deadRecordStillApplies(observed: a, current: nil))
+    }
+
+    // MARK: Sahiplik — açılış toparlaması ve çıkış kapatması
+
+    /// Açılış toparlaması BU sürecin tünellerine dokunmaz; sahipsiz olanları öldürür,
+    /// süreci olmayan kayıtların yalnızca dosyalarını siler.
+    func testReap_SparesOwnedPIDs() {
+        let decision = TunnelManager.reapDecision(
+            entries: ["mine.test": 111, "orphan.test": 222, "stale.test": 333, "junk.test": nil],
+            isAlive: { $0 != 333 },
+            owned: [111])
+        XCTAssertEqual(decision.kill, ["orphan.test": 222], "yalnızca sahipsiz canlı süreç öldürülür")
+        XCTAssertEqual(decision.discard, ["junk.test", "stale.test"])
+        XCTAssertNil(decision.kill["mine.test"], "bu sürecin canlı tüneline DOKUNULMAZ")
+    }
+
+    /// Sahiplik kaydı PID → dizin anahtarı eşlemesini taşır: çıkışta hangi
+    /// `.pid`/`.log` dosyalarının bize ait olduğu ancak böyle bilinir.
+    func testOwnership_RegistryTracksKeys() {
+        TunnelManager.resetOwnedForTesting()
+        defer { TunnelManager.resetOwnedForTesting() }
+
+        TunnelManager.rememberOwned(4242, key: "mine.test")
+        XCTAssertTrue(TunnelManager.isOwned(4242))
+        XCTAssertEqual(TunnelManager.ownedSnapshot[4242], "mine.test")
+        XCTAssertFalse(TunnelManager.isOwned(4243), "başka sürecin PID'i sahiplenilmiş görünmemeli")
+
+        TunnelManager.forgetOwned(4242)
+        XCTAssertFalse(TunnelManager.isOwned(4242))
+        XCTAssertTrue(TunnelManager.ownedSnapshot.isEmpty)
+    }
+
+    /// GERİLEME TESTİ (asıl hatanın çıkış yoluna taşınmış hâli): çıkış kapatması
+    /// dizini SÜPÜRMEZ. Sahiplik kaydı boşken tünel dizinindeki yabancı bir kayıt
+    /// olduğu gibi durmalı — eski kod onu siler, canlıysa SIGTERM gönderirdi.
+    func testExitSweep_LeavesForeignTunnelRecordsAlone() {
+        TunnelManager.resetOwnedForTesting()
+        let key  = "brampp-unit-test-foreign.invalid"
+        let path = PathConfig.tunnelPid(domain: key)
+        defer { _ = FileHelper.remove(path) }
+
+        _ = FileHelper.createDirectory(PathConfig.tunnels)
+        // Ölü ama var olmayan bir numara: eski süpürme bunu "artık" sayıp dosyayı
+        // silerdi. Sinyal gönderilmesi mümkün değil (böyle bir süreç yok).
+        XCTAssertTrue(FileHelper.write("999999", to: path))
+
+        TunnelManager.killAllSynchronously(waitForExit: false)
+
+        XCTAssertTrue(FileHelper.exists(path),
+                      "çıkış kapatması SAHİPLENİLMEMİŞ bir tünel kaydına dokunmamalı")
+    }
+
+    // MARK: stop — SIGTERM → SIGKILL yükseltmesi
+
+    /// Sahte süreç denetimi: gerçek makineye sinyal göndermeden yükseltmeyi sınar.
+    private final class FakeProcess {
+        var alive = true
+        var isCloudflared = true
+        /// SIGTERM'i yutuyor mu? (cloudflared'in 30 sn'lik grace-period'ü bunu gerçek yapar)
+        var ignoresTerm = false
+        var immortal = false
+        private(set) var signals: [Int32] = []
+
+        func control() -> TunnelManager.ProcessControl {
+            TunnelManager.ProcessControl(
+                isAlive: { [self] _ in alive },
+                isCloudflared: { [self] _ in isCloudflared },
+                signal: { [self] _, sig in
+                    signals.append(sig)
+                    if immortal { return }
+                    if sig == SIGKILL { alive = false }
+                    if sig == SIGTERM && !ignoresTerm { alive = false }
+                },
+                tick: { _ in }
+            )
+        }
+    }
+
+    func testStop_SigtermIsEnough() async {
+        let fake = FakeProcess()
+        let outcome = await TunnelManager.terminate(pid: 1, control: fake.control(),
+                                                    graceSeconds: 0.2, killSeconds: 0.2, step: 0.01)
+        XCTAssertEqual(outcome, .terminated)
+        XCTAssertEqual(fake.signals, [SIGTERM], "gereksiz yere SIGKILL gönderilmemeli")
+        XCTAssertTrue(outcome.isGone)
+    }
+
+    /// GERİLEME TESTİ: SIGTERM'i yutan cloudflared SIGKILL ile alınır. Eski kodda
+    /// yükseltme YOKTU; 0,4 sn bekleyip yine de "durduruldu" yazıyordu.
+    func testStop_EscalatesToSigkill() async {
+        let fake = FakeProcess()
+        fake.ignoresTerm = true
+        let outcome = await TunnelManager.terminate(pid: 1, control: fake.control(),
+                                                    graceSeconds: 0.2, killSeconds: 0.2, step: 0.01)
+        XCTAssertEqual(outcome, .killed)
+        XCTAssertEqual(fake.signals, [SIGTERM, SIGKILL])
+        XCTAssertTrue(outcome.isGone, "süreç gerçekten gitti → kayıt ve PID dosyası silinebilir")
+    }
+
+    /// GERİLEME TESTİ: hiçbir sinyal işe yaramadıysa BAŞARI BİLDİRİLMEZ. `isGone`
+    /// false olduğu sürece `stop` kaydı silmez ve "durduruldu" satırını yazmaz —
+    /// yayında olan bir adresin tutamağı kaybolmamalı.
+    func testStop_ReportsFailureWhenProcessSurvives() async {
+        let fake = FakeProcess()
+        fake.immortal = true
+        let outcome = await TunnelManager.terminate(pid: 1, control: fake.control(),
+                                                    graceSeconds: 0.1, killSeconds: 0.1, step: 0.01)
+        XCTAssertEqual(outcome, .survived)
+        XCTAssertFalse(outcome.isGone)
+        XCTAssertEqual(fake.signals, [SIGTERM, SIGKILL], "yükseltme yine de denenmiş olmalı")
+    }
+
+    /// PID geri dönüştürülmüşse HİÇBİR sinyal gönderilmez — başkasının süreci öldürülmez.
+    func testStop_NeverSignalsARecycledPID() async {
+        let fake = FakeProcess()
+        fake.isCloudflared = false
+        let outcome = await TunnelManager.terminate(pid: 1, control: fake.control(),
+                                                    graceSeconds: 0.1, killSeconds: 0.1, step: 0.01)
+        XCTAssertEqual(outcome, .notRunning)
+        XCTAssertTrue(fake.signals.isEmpty, "cloudflared olmayan bir PID'e sinyal GÖNDERİLMEZ")
+        XCTAssertTrue(outcome.isGone, "bize ait olmayan kayıt temizlenebilir")
+    }
+
+    // MARK: stopAll — ölü kayıtlara sahte "durduruldu" satırı yazılmaz
+
+    func testStopAll_SkipsAlreadyFailedRecords() {
+        let now = Date()
+        let table = [
+            "live.test":   makeTunnel("live.test", pid: 1, state: .active, startedAt: now,
+                                      url: "https://a.trycloudflare.com"),
+            "boot.test":   makeTunnel("boot.test", pid: nil, state: .starting, startedAt: now),
+            "dead.test":   makeTunnel("dead.test", pid: nil, state: .failed("süreç yok"), startedAt: now),
+        ]
+        let targets = TunnelManager.stopTargets(in: table)
+        XCTAssertEqual(targets.stop, ["boot.test", "live.test"],
+                       "adres bekleyen paylaşım da durdurulabilmeli")
+        XCTAssertEqual(targets.discard, ["dead.test"],
+                       "ölü kayıt sessizce düşmeli — sahte 'durduruldu' satırı yazılmamalı")
+    }
+
+    // MARK: start — aynı ad için eşzamanlı ikinci süreç doğurulmaz
+
+    /// GERİLEME TESTİ: eski kod yalnızca `isLive` durumunda kısa devre yapıyordu;
+    /// `.starting` bir kayıt varken ikinci çağrı İKİNCİ bir cloudflared başlatıyor ve
+    /// birincisi takipsiz kalıyordu.
+    func testStart_SecondCallIsRefusedWhileFirstIsStarting() {
+        let now = Date()
+        let starting = makeTunnel("x.test", pid: 123, state: .starting,
+                                  startedAt: now.addingTimeInterval(-3))
+        XCTAssertEqual(TunnelManager.startConflict(existing: starting, now: now), .inProgress)
+    }
+
+    func testStart_LiveShareShortCircuits() {
+        let now = Date()
+        let live = makeTunnel("x.test", pid: 1, state: .active, startedAt: now,
+                              url: "https://a.trycloudflare.com")
+        XCTAssertEqual(TunnelManager.startConflict(existing: live, now: now), .alreadyLive)
+    }
+
+    /// Takılı kalmış `.starting` kaydı yeniden denemeyi SONSUZA KADAR engellememeli;
+    /// önce eski süreç kapatılır (`.stale`).
+    func testStart_StuckStartingAllowsRetryAfterCleanup() {
+        let now = Date()
+        let stale = makeTunnel("x.test", pid: 123, state: .starting,
+                               startedAt: now.addingTimeInterval(-(TunnelManager.urlTimeout + TunnelManager.dnsTimeout + 1)))
+        XCTAssertEqual(TunnelManager.startConflict(existing: stale, now: now), .stale)
+    }
+
+    func testStart_NoRecordOrFailedRecordDoesNotConflict() {
+        let now = Date()
+        XCTAssertNil(TunnelManager.startConflict(existing: nil, now: now))
+        XCTAssertNil(TunnelManager.startConflict(
+            existing: makeTunnel("x.test", pid: nil, state: .failed("süreç yok"), startedAt: now),
+            now: now))
+    }
+
+    // MARK: Sahipsiz log temizliği
+
+    /// PID dosyası olan log'a DOKUNULMAZ (tünel yaşıyor); sahipsiz olan yalnızca
+    /// yaş sınırını aşarsa silinir — bugünkü kanıt durur, geçen haftaki gider.
+    func testStrandedLogs_OnlyOldOwnerlessLogsAreRemoved() {
+        let now = Date()
+        let names = ["live.test.pid", "live.test.log", "old.test.log", "recent.test.log"]
+        let ages: [String: Date] = [
+            "live.test":   now.addingTimeInterval(-30 * 86_400),
+            "old.test":    now.addingTimeInterval(-30 * 86_400),
+            "recent.test": now.addingTimeInterval(-1 * 86_400),
+        ]
+        let targets = TunnelManager.strandedLogTargets(names: names, now: now, retentionDays: 7,
+                                                       modified: { ages[$0] })
+        XCTAssertEqual(targets, ["old.test"])
+    }
+
+    /// mtime okunamayan dosya silinmez — bilinmeyen yaş, silme gerekçesi değildir.
+    func testStrandedLogs_UnknownAgeIsKept() {
+        let targets = TunnelManager.strandedLogTargets(names: ["mystery.test.log"], now: Date(),
+                                                       retentionDays: 7, modified: { _ in nil })
+        XCTAssertTrue(targets.isEmpty)
+    }
+
+    // MARK: Paylaşılan konsol dosyasında süreç kimliği
+
+    /// Dosya adı yalnızca TARİHE bağlı: kurulu uygulama, Xcode derlemesi, XCTest ana
+    /// uygulaması ve önizlemeler aynı dosyaya yazar. Satır KİMİN yazdığını söylemeli —
+    /// olayın teşhisini bu eksiklik günlerce geciktirdi.
+    func testConsoleLogFile_LineIdentifiesTheWritingProcess() {
+        let out = ConsoleLogFile.format(date: Date(), level: "INFO", text: "bir\niki",
+                                        process: "app 1689")
+        for line in out.split(separator: "\n") {
+            XCTAssertTrue(line.contains("(app 1689)"), "her satır yazan süreci taşımalı: \(line)")
+        }
+        // Varsayılan imza da boş olmamalı ve PID içermeli.
+        XCTAssertTrue(ProcessRole.signature.contains("\(ProcessInfo.processInfo.processIdentifier)"))
+    }
+
+    /// Testler ORTAK ortama yazmamalı — düzeltmenin kalbi bu. Test ana uygulamasında
+    /// kapı kapalı olmalı (bu test zaten bir XCTest ana uygulamasında koşuyor).
+    func testProcessRole_TestHostMayNotMutateSharedEnvironment() {
+        XCTAssertTrue(ProcessRole.isTestHost, "bu süreç bir XCTest ana uygulaması")
+        XCTAssertFalse(ProcessRole.mayMutateSharedEnvironment,
+                       "test ana uygulaması makinenin ortak durumuna yazmamalı")
+        XCTAssertFalse(TunnelManager.reapOrphansAtLaunch(),
+                       "test ana uygulaması tünel dizinini toparlamamalı")
+    }
+
+    // MARK: - Kaldırma planı: yapılandırma mı, VERİ mi?
+
+    /// Onay diyaloğu tek bir sabit cümleydi: "Paket ve yapılandırma dosyaları silinecek."
+    /// Oysa betik `var/mysql`i `rm -rf` ediyordu — geliştiricinin kendi makinesinde
+    /// 29 veritabanı. Plan artık veriyi AYRI sınıflandırır ve adıyla söyler.
+    func testUninstall_MariaDBReportsTheDataDirectory() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/brewtest")
+        XCTAssertTrue(plan.destroysData, "mariadb kaldırma VERİ siler")
+        XCTAssertEqual(plan.dataPaths, ["/brewtest/var/mysql"])
+        XCTAssertTrue(plan.configurationPaths.contains("/brewtest/etc/my.cnf"))
+        XCTAssertFalse(plan.configurationPaths.contains("/brewtest/var/mysql"),
+                       "veri dizini yapılandırma diye gösterilmemeli")
+        XCTAssertEqual(plan.dataWarningKey, "svc.uninstall.dataWarn.databases")
+    }
+
+    func testUninstall_PostgresClusterIsData() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "postgresql@17", brewPrefix: "/brewtest")
+        XCTAssertTrue(plan.destroysData)
+        XCTAssertEqual(plan.dataPaths, ["/brewtest/var/postgresql@17"])
+        XCTAssertEqual(plan.configurationPaths, ["/brewtest/etc/postgresql@17"])
+        XCTAssertEqual(plan.dataWarningKey, "svc.uninstall.dataWarn.databases")
+    }
+
+    /// site-packages kullanıcının pip ile kurduğu HER ŞEYDİR; `opt/` ise brew'un
+    /// paket dizini. İkisi aynı kefeye konmamalı.
+    func testUninstall_PythonSitePackagesAreData() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "python@3.12", brewPrefix: "/brewtest")
+        XCTAssertTrue(plan.destroysData)
+        XCTAssertEqual(plan.dataPaths, ["/brewtest/lib/python3.12",
+                                        "/brewtest/Frameworks/Python.framework/Versions/3.12"])
+        XCTAssertEqual(plan.configurationPaths, ["/brewtest/opt/python@3.12"])
+        XCTAssertEqual(plan.dataWarningKey, "svc.uninstall.dataWarn.packages")
+    }
+
+    /// Veri silmeyen servislerde EK SÜRTÜNME OLMAMALI — yazarak onay yalnızca
+    /// gerçekten kaybedilecek bir şey varken istenir.
+    func testUninstall_SafeServicesDestroyNoData() {
+        for id in ["httpd", "nginx", "redis", "memcached", "php@8.3", "node@22", "dotnet@8", "cloudflared"] {
+            let plan = ServiceManager.uninstallPlan(forServiceID: id, brewPrefix: "/brewtest")
+            XCTAssertFalse(plan.destroysData, "\(id) veri silmemeli")
+            XCTAssertTrue(plan.dataPaths.isEmpty, "\(id)")
+            XCTAssertNil(plan.dataWarningKey, "\(id)")
+        }
+    }
+
+    /// Betiğe giden SIRA ve KÜME değişmemeli: sınıflandırma eklendi, silinen yollar aynı.
+    func testUninstall_ScriptPathsAreUnchangedAndFullyClassified() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/brewtest")
+        XCTAssertEqual(Array(plan.allPaths.prefix(2)),
+                       ["/brewtest/etc/my.cnf", "/brewtest/var/mysql"],
+                       "betik sırası korunmalı")
+        XCTAssertEqual(Set(plan.allPaths),
+                       Set(plan.configurationPaths).union(plan.dataPaths),
+                       "her yol tam olarak bir sınıfa düşmeli")
+        XCTAssertEqual(plan.allPaths.count, plan.configurationPaths.count + plan.dataPaths.count)
+    }
+
+    /// Diyalog ile betik AYRIŞAMAZ: betiğin GERÇEKTEN sildiği/düzenlediği her yol onay
+    /// metninde adıyla geçer — ve ölçüm betiğin METNİ üzerinde yapılır.
+    ///
+    /// Eski hâli totolojikti: aynı plan nesnesinden üretilen mesajı yine o planın
+    /// yollarıyla karşılaştırıyordu. Betiğe elle gömülmüş `rm -rf "…/share/phpmyadmin"`
+    /// ile `sed -i '' … httpd.conf` ikisi de plan dışındaydı ve test bunu göremiyordu.
+    func testUninstall_ScriptTouchesNothingOutsideThePlan() {
+        let base = "/brewtest"
+        let cases: [(id: String, name: String, brew: String)] = [
+            ("mariadb", "MariaDB", "mariadb"),
+            ("httpd", "Apache", "httpd"),
+            ("nginx", "Nginx", "nginx"),
+            ("postgresql@16", "PostgreSQL 16", "postgresql@16"),
+            ("python@3.13", "Python 3.13", "python@3.13"),
+            ("node@22", "Node.js 22", "node@22"),
+            ("redis", "Redis", "redis"),
+            ("memcached", "Memcached", "memcached")
+        ]
+        for c in cases {
+            let plan   = ServiceManager.uninstallPlan(forServiceID: c.id, brewPrefix: base)
+            let script = ServiceManager.uninstallScript(serviceID: c.id, serviceName: c.name,
+                                                        brewName: c.brew, brewPrefix: base)
+            let message = plan.confirmationMessage { $0 }   // çeviri yerine anahtarın kendisi
+
+            // 1) Temizlik listesi ile plan aynı kaynaktan gelmeli
+            XCTAssertEqual(ServiceManager.uninstallCleanupPaths(forServiceID: c.id, brewPrefix: base),
+                           plan.allPaths, "\(c.id): betiğe giden liste planla aynı olmalı")
+
+            // 2) Betiğin sildiği yollar = planın yolları (iki yönlü)
+            let removed = doubleQuotedTargets(after: "rm -rf ", in: script)
+            XCTAssertEqual(Set(removed), Set(plan.allPaths),
+                           "\(c.id): betiğin rm -rf hedefleri planla birebir aynı olmalı")
+
+            // 3) Betiğin `sed -i ''` ile DÜZENLEDİĞİ dosyalar = planın editedPaths'i
+            let edited = doubleQuotedTargets(after: "sed -i '' ", in: script)
+            XCTAssertEqual(Set(edited), Set(plan.editedPaths),
+                           "\(c.id): betiğin düzenlediği dosyalar planda bildirilmeli")
+
+            // 4) Ve hepsi onay metninde adıyla geçmeli
+            for path in plan.allPaths + plan.editedPaths {
+                XCTAssertTrue(message.contains(path), "\(c.id): \(path) onay metninde yok")
+            }
+        }
+    }
+
+    /// `rm -rf "X"` / `sed -i '' … "X"` gibi satırlardan çift tırnaklı ilk hedefi çıkarır.
+    private func doubleQuotedTargets(after marker: String, in script: String) -> [String] {
+        script.components(separatedBy: .newlines).compactMap { line -> String? in
+            guard let m = line.range(of: marker) else { return nil }
+            let rest = line[m.upperBound...]
+            guard let open = rest.firstIndex(of: "\"") else { return nil }
+            let afterOpen = rest.index(after: open)
+            guard let close = rest[afterOpen...].firstIndex(of: "\"") else { return nil }
+            return String(rest[afterOpen..<close])
+        }
+    }
+
+    /// MariaDB kaldırması phpMyAdmin'in web kökünü siliyor ve httpd.conf'u düzenliyordu;
+    /// diyalog ikisini de hiç anmıyordu. Artık ikisi de planda ve metinde.
+    func testUninstall_MariaDBDeclaresPhpMyAdminDirAndHttpdConfEdit() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/brewtest")
+        XCTAssertTrue(plan.configurationPaths.contains("/brewtest/share/phpmyadmin"),
+                      "phpMyAdmin web kökü yapılandırma olarak bildirilmeli")
+        XCTAssertFalse(plan.dataPaths.contains("/brewtest/share/phpmyadmin"),
+                       "paket dizini kullanıcı verisi DEĞİL")
+        XCTAssertEqual(plan.editedPaths, ["/brewtest/etc/httpd/httpd.conf"])
+        // httpd.conf SİLİNMEZ — sadece düzenlenir. Silme listesinde görünürse felaket olur.
+        XCTAssertFalse(plan.allPaths.contains("/brewtest/etc/httpd/httpd.conf"),
+                       "httpd.conf rm -rf listesine SIZMAMALI")
+
+        let message = plan.confirmationMessage { $0 }
+        XCTAssertTrue(message.contains("svc.uninstall.editedHeader"),
+                      "düzenlenen dosyalar ayrı başlıkta gösterilmeli")
+    }
+
+    func testUninstall_ConfirmationMessageSeparatesDataFromConfiguration() {
+        let maria = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/brewtest")
+            .confirmationMessage { $0 }
+        XCTAssertTrue(maria.contains("svc.uninstall.dataHeader"), "VERİ başlığı olmalı")
+        XCTAssertTrue(maria.contains("svc.uninstall.dataWarn.databases"),
+                      "ne kaybedileceği somut söylenmeli")
+        XCTAssertTrue(maria.contains("svc.uninstall.configHeader"))
+
+        let redis = ServiceManager.uninstallPlan(forServiceID: "redis", brewPrefix: "/brewtest")
+            .confirmationMessage { $0 }
+        XCTAssertFalse(redis.contains("svc.uninstall.dataHeader"),
+                       "veri silinmiyorsa VERİ başlığı gösterilmemeli")
+        XCTAssertTrue(redis.contains("svc.uninstall.configHeader"))
+    }
+
+    /// httpd/nginx kaldırmasında vhost'lar KORUNUR — diyalog bunu da söylemeli.
+    /// Önek PARAMETRE: bu test `brew --prefix` çağırmaz, geliştiricinin makinesine bağlı değildir.
+    func testUninstall_PreservedPathsAreShown() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "httpd", brewPrefix: "/brewtest")
+        XCTAssertEqual(plan.preservedPaths, ["/brewtest/etc/httpd/VirtualHosts"])
+        XCTAssertTrue(plan.confirmationMessage { $0 }.contains("/brewtest/etc/httpd/VirtualHosts"))
+    }
+
+    /// Plan GERÇEKTEN saf mı? Doküman "dosya sistemine dokunmaz" diyordu ama döndürdüğü
+    /// her `PathConfig` sabiti `Shell.brewPrefix` üzerinden gerçek makineye bağlıydı.
+    /// Verilen önek dışında hiçbir yol üretilmemeli.
+    func testUninstall_PlanIsPureWithRespectToTheGivenPrefix() {
+        for id in ["httpd", "nginx", "mariadb", "redis", "php@8.3",
+                   "postgresql@17", "node@22", "python@3.12", "dotnet@8"] {
+            let plan = ServiceManager.uninstallPlan(forServiceID: id, brewPrefix: "/brewtest")
+            for path in plan.allPaths + plan.editedPaths + plan.preservedPaths {
+                XCTAssertTrue(path.hasPrefix("/brewtest/"),
+                              "\(id): \(path) verilen önekten türemiyor (gerçek brew önekine kaçmış)")
+            }
+        }
+        // Aynı kimlik, farklı önek → farklı yollar. (Sabitlere bağlı olsaydı değişmezdi.)
+        let a = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/opt/a")
+        let b = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/opt/b")
+        XCTAssertNotEqual(a.allPaths, b.allPaths)
+    }
+
+    /// Veri silen kaldırmalarda onay YAZILARAK verilir (db.deleteConfirm ile aynı fikir).
+    func testUninstall_TypedConfirmationRequiresTheServiceName() {
+        let plan = ServiceManager.uninstallPlan(forServiceID: "mariadb", brewPrefix: "/brewtest")
+        XCTAssertTrue(plan.typedConfirmationMatches("MariaDB", serviceName: "MariaDB"))
+        XCTAssertTrue(plan.typedConfirmationMatches("  mariadb ", serviceName: "MariaDB"),
+                      "boşluk ve büyük/küçük harf önemsiz")
+        XCTAssertFalse(plan.typedConfirmationMatches("", serviceName: "MariaDB"))
+        XCTAssertFalse(plan.typedConfirmationMatches("maria", serviceName: "MariaDB"))
+        XCTAssertFalse(plan.typedConfirmationMatches("evet", serviceName: "MariaDB"))
+    }
+
+    /// Veri silen kaldırma ASLA `.alert`e düşmemeli.
+    ///
+    /// `.alert`in actions ViewBuilder'ının sunumdan sonra yeniden değerlendirileceği
+    /// SwiftUI'da garanti değildir: yazarak onay ya sonsuza dek kapalı bir düğmeye
+    /// (MariaDB bir daha kaldırılamaz) ya da sessizce hiçbir şey yapmayan bir tıklamaya
+    /// dönüşür. Yazarak onay yalnızca canlı binding'li sheet'te güvenlidir.
+    func testUninstall_DataDestroyingServicesUseTheTypedConfirmationSheet() {
+        for id in ["mariadb", "postgresql@16", "postgresql@17", "python@3.12", "python@3.13"] {
+            let plan = ServiceManager.uninstallPlan(forServiceID: id, brewPrefix: "/brewtest")
+            XCTAssertEqual(ServiceRowView.confirmationStyle(for: plan), .typedConfirmationSheet,
+                           "\(id): veri silen kaldırma yazarak onay sheet'i kullanmalı")
+        }
+        // Veri silmeyenlerde EK SÜRTÜNME OLMAMALI — basit uyarı yeterli.
+        for id in ["httpd", "nginx", "redis", "memcached", "php@8.3", "node@22", "dotnet@8"] {
+            let plan = ServiceManager.uninstallPlan(forServiceID: id, brewPrefix: "/brewtest")
+            XCTAssertEqual(ServiceRowView.confirmationStyle(for: plan), .simpleAlert, "\(id)")
+        }
+    }
+
+    func testUninstall_DialogKeysAreLocalizedInBothLanguages() {
+        let keys = ["svc.uninstall.dataHeader", "svc.uninstall.configHeader",
+                    "svc.uninstall.editedHeader",
+                    "svc.uninstall.preserved", "svc.uninstall.dataWarn.databases",
+                    "svc.uninstall.dataWarn.packages", "svc.uninstall.dataWarn.generic",
+                    "svc.uninstall.typeToConfirm", "svc.uninstall.dataTitle",
+                    "svc.uninstall.mismatch", "svc.uninstall.matched", "svc.uninstall.fieldLabel"]
+        for key in keys {
+            guard let entry = L10n.catalog[key] else { XCTFail("\(key) katalogda yok"); continue }
+            for lang in ["tr", "en"] {
+                XCTAssertFalse((entry[lang] ?? "").isEmpty, "\(key) için \(lang) çevirisi boş")
+            }
+        }
+    }
+
+    // MARK: - Apache configtest yorumlama (sihirbaz)
+
+    /// Sihirbaz üç ✅ basıyordu ve 15 denetiminin tamamı geçiyordu; oysa httpd hiç
+    /// başlamıyordu. configtest çıktısı SEBEBİYLE birlikte okunmalı — sebep İKİNCİ satırda.
+    func testConfigTest_StockSSLConfFailureNamesTheMissingCertificate() {
+        let real = """
+        AH00526: Syntax error on line 144 of /opt/homebrew/etc/httpd/extra/httpd-ssl.conf:
+        SSLCertificateFile: file '/opt/homebrew/etc/httpd/server.crt' does not exist or is empty
+        """
+        let failure = Diagnostics.configTestFailure(output: real, exitOK: false)
+        XCTAssertNotNil(failure, "bu çıktı BAŞARISIZ sayılmalı")
+        XCTAssertTrue(failure?.contains("httpd-ssl.conf") ?? false, "hangi dosya söylenmeli")
+        XCTAssertTrue(failure?.contains("server.crt") ?? false, "eksik olan şey söylenmeli")
+        XCTAssertTrue(failure?.contains("does not exist") ?? false)
+    }
+
+    func testConfigTest_SyntaxOKIsNotAFailure() {
+        XCTAssertNil(Diagnostics.configTestFailure(output: "Syntax OK\n", exitOK: true))
+        // apachectl bazen 0 dönerken uyarı basar; ifade tek başına da yeterli olmalı
+        XCTAssertNil(Diagnostics.configTestFailure(output: "Syntax OK\n", exitOK: false))
+    }
+
+    /// Uyarı hata değildir — ServerName uyarısı yüzünden geri alma yapılmamalı.
+    func testConfigTest_WarningIsNotAFailure() {
+        let out = """
+        [Mon Aug 10 12:00:00.000000 2026] [alias:warn] [pid 1] AH00671: The Alias directive overlaps
+        Syntax OK
+        """
+        XCTAssertNil(Diagnostics.configTestFailure(output: out, exitOK: true))
+    }
+
+    /// Çıktısız bir başarısızlık da başarısızlıktır; nil dönmek "geçerli" demek olurdu.
+    func testConfigTest_EmptyOutputFailureIsStillAFailure() {
+        XCTAssertNotNil(Diagnostics.configTestFailure(output: "", exitOK: false))
     }
 }

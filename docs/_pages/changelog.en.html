@@ -5,12 +5,104 @@
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="next">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">In development</span>
-      <h2>Next release</h2>
-      <p class="lede">On <code>main</code>, not yet published. Build from source if you want it early.</p>
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.6</h2>
+      <p class="lede">The state BRAMPP keeps belongs to the machine, not to a process — and until this release a second copy of the app, or a test run, would walk all over it. Also: BRAMPP now tells you when there is a new version, and verifies the download five ways before it opens.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Running the unit tests — or simply having a second copy of BRAMPP open — tore down the live environment.</b> Cloudflare tunnels were killed, their pid and log files deleted, the MCP port was bound on top of the copy already holding it, Homebrew services were started, and the "last running services" list was overwritten. The machine-wide state BRAMPP keeps belongs to the machine, not to a process; only the primary instance touches it now (<code>Core/ProcessRole.swift</code>). Console lines also carry which process wrote them, because the installed app, an Xcode build, the test host and previews all append to one file — that is what made this so hard to see.</li>
+      <li><b>A share kept being reported as live after its cloudflared had died.</b> The Services row stayed green, the MCP <code>list_shares</code> tool still handed out the address, and Cloudflare answered Error 1033. Tunnels are now checked against reality on the refresh loop that was already running.</li>
+      <li><b>Quitting a second copy of BRAMPP killed the first copy's live tunnels.</b> A quitting process now only stops the tunnels it started itself.</li>
+      <li><b>"Stop sharing" reported success while the site stayed public.</b> There was no SIGKILL escalation and the wait was 0.4 s against cloudflared's 30-second grace period.</li>
+      <li><b>Restoring a database reported success when it had failed.</b> The script ran <code>if psql …; then exit 0; fi</code> and read <code>rc=$?</code> afterwards — in POSIX an <code>if</code> whose condition fails and which has no <code>else</code> exits 0, so the failure code was never seen. Both PostgreSQL and MariaDB.</li>
+      <li><b>Uninstalling MariaDB, PostgreSQL or Python said only that "the package and its config files will be removed"</b> — while the script deleted the data directory: every database, or the whole site-packages tree. The confirmation now names the concrete paths, separates configuration from data, says what dies, and asks you to type the service name.</li>
+      <li><b>The generated phpMyAdmin and Adminer Apache configs made <code>apachectl configtest</code> warn AH00671.</b> The two <code>Alias</code> directives were in the wrong order, so the second could never match.</li>
+      <li><b>Three console lines printed their raw translation key</b> instead of text.</li>
+    </ul>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>An update notice on launch</b> — the installed version, the new version, the release notes as a scrollable list, and the choice to skip that version or be reminded later.</li>
+      <li><b>A dedicated Updates tab in Settings</b>: channel, check now, automatic checking, automatic download, and what to do when one is found.</li>
+      <li><b>Downloads are verified before anything opens</b> — the checksum published in the update manifest, that the file really came from the expected release asset (re-checked after redirects), the code signature, that the Team Identifier matches the running app's own, and Gatekeeper's notarization verdict. Any failure deletes the download. BRAMPP never replaces itself: the verified disk image is handed to you.</li>
+      <li><b>The manifest's <code>blockedVersions</code> and <code>minimumOS</code> are honoured</b>, so a release that turns out to be harmful can warn the people already running it.</li>
+      <li><b>A button on the cloudflared row in Services that stops every open share at once</b>, next to the menu bar command that already did it.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>Update checking reads the published manifest for the version and the checksum, and GitHub only for the release notes</b> — so the host that serves the file is not also the host that vouches for it. When the manifest lags behind, the check falls back to GitHub and offers the release page instead of an unverifiable download.</li>
+      <li><b>The release script publishes that manifest itself</b>, with the real checksum, and only for a build that was actually notarized.</li>
+      <li><b>The unused project framework detector was removed.</b></li>
+    </ul>
+  </div>
+</section>
+
+<section id="v15">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.5</h2>
+      <p class="lede">Tagged but never packaged: no DMG was published for this number and its contents shipped with 1.6. The tag earns its place anyway — the <code>v1.4</code> tag does not build a 1.4.</p>
+    </div>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>Release builds use <code>-Osize</code> instead of <code>-O</code>.</b> An end-to-end Release build went from 35 minutes to 46 seconds. Type checking was not the cause — the whole module type-checks in 3.3 seconds — and compiler statistics put 97.8% of the work in SIL optimization. Measured on the same module: <code>-O</code> takes 1615 seconds, <code>-Osize</code> takes 54, and the object is smaller, 12.5 MB against 13.3.</li>
+      <li><b>Settings now says that a permission change needs the client to reconnect.</b> The MCP section counts enabled tools live, so raising the sharing permission to write immediately reads "23 tools enabled" — while the connected client is still working from the 20 it fetched when it connected. The server is stateless HTTP with no event stream, so there is no channel to push <code>notifications/tools/list_changed</code> over, and <code>initialize</code> correctly does not claim a capability it cannot honour.</li>
+      <li><b>The <code>brampp.yml</code> project manifest was removed.</b> It was built so a domain's settings could travel with the repository, and it turned out not to be wanted. Removing it rather than leaving it unused follows the same rule: a menu item that writes a file nobody reads is worse than no menu item.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Building from the <code>v1.4</code> tag produced an app calling itself 1.3.</b> <code>MARKETING_VERSION</code> stayed at 1.3 there and the released binary got its number from an uncommitted command-line override. The number now lives in the project file, where a build can find it.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v14">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">10 August 2026</span>
+      <h2>1.4</h2>
+      <p class="lede">Sharing gets the two fixes it needed to be dependable, and the checks the app already ran internally — port ownership, config syntax, the mkcert trust store — become something you can ask for.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Services can be installed from the assistant too</b> — <code>install_service</code>, limited to BRAMPP's own catalogue so an arbitrary formula name is refused.</li>
+      <li><b>Project actions on the domain row</b> — open the folder in an installed editor, open a terminal there, run composer or npm. Nothing appears unless it applies: no <code>composer.json</code> means no composer entry, and npm scripts are read from <code>package.json</code>. A menu item that errors on click is worse than no menu item. Editors are found by their <code>.app</code> bundle rather than their command, because a perfectly normal install can leave the CLI off <code>PATH</code>.</li>
+      <li><b>Mailpit</b>, as a real brew service — unlike cloudflared it is a proper daemon. Mail sent to <code>127.0.0.1:1025</code> stays on the machine, and there is a button to open the mailbox once it is running.</li>
+      <li><b>An environment diagnostics panel.</b> The port-ownership, config-syntax and mkcert trust-store checks now run together, on demand, from the Services tab, rather than surfacing as log lines after something has already failed. A port finding names the process and PID holding it rather than saying "in use", because which one it is decides what you do next.</li>
+      <li><b>A <code>brampp.yml</code> project manifest</b>, carrying a domain's settings in the project folder so cloning the repo on another Mac sets the environment up the same way, alongside framework detection that names what it finds in a project. (Both removed in 1.5 and 1.6.)</li>
+      <li><b>Static update manifests for all three platforms</b> were published. The ones without a release carry a <code>null</code> version, so a client can tell "nothing released" apart from "could not check".</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>A shared site no longer pays for name resolution on every request.</b> The tunnel used to point at the domain, which on a <code>.local</code> name goes to Multicast DNS and times out after <b>five seconds</b> before falling back to the hosts file — measured on a real site: 5.01s with the name, 0.012s straight to the address. It now connects to <code>127.0.0.1</code> and carries the domain in both the <code>Host</code> header and the TLS server name, so the vhost and the certificate still match. Sending only the header returns 421.</li>
+      <li><b>The address is not handed to you until it resolves.</b> It was reported the moment it appeared in cloudflared's log, while the DNS record was not yet visible to the machine — open it then and you get ERR_NAME_NOT_RESOLVED. The wait now goes through <code>getaddrinfo</code>, the same path the browser takes. <code>dig</code> was the wrong check: it queries the server in <code>resolv.conf</code> directly and can succeed while the system resolver still fails. Measured against a fresh tunnel name: Google DNS answered 1 of 6 attempts, Cloudflare's own resolver 6 of 6. If the wait runs out the address is still returned, with a console line naming the cause.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>cloudflared reported as not installed while sitting in <code>/opt/homebrew/bin</code>.</b> Install detection for runtime services switches on category, and the sharing category fell through to the default branch that returns nothing — so it could never report as present, whatever was on disk.</li>
+      <li><b>A real Apache warning was reported as all-clear.</b> Apache tags warnings by module — <code>[alias:warn]</code> — with the word "warning" never appearing, so a check matching only on that word missed a genuine warning on this machine.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v13">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">10 August 2026</span>
+      <h2>1.3</h2>
+      <p class="lede">One click puts a running site on a temporary public address, and the console finally keeps a history you can read after a restart.</p>
     </div>
 
     <h3 class="sub-h">Added</h3>
@@ -22,15 +114,14 @@
       <li><b>Three more MCP tools</b> for sharing, behind a fifth permission scope that defaults to <i>no access</i> — the only scope that does, because these tools put a site on the open internet.</li>
       <li><b><code>read_log</code> filters</b> by level, text and time, and can read the file on disk instead of the live buffer.</li>
       <li><b>A PHP profiler panel</b> driving Xdebug's profile mode: settings written for you, cachegrind output collected in one folder and listed. Only requests carrying <code>XDEBUG_TRIGGER</code> are measured unless you ask for all of them, because profiling everything fills the disk within minutes.</li>
-      <li><b>Services can be installed from the assistant too</b> — <code>install_service</code>, limited to BRAMPP's own catalogue so an arbitrary formula name is refused.</li>
       <li><b>cloudflared appears under Services</b> — as a runtime rather than a brew service, since it has no daemon and lives only while a share is open. Its row lists which sites are public right now.</li>
     </ul>
 
     <h3 class="sub-h">Changed</h3>
     <ul class="bullets">
-      <li><b>A shared site no longer pays for name resolution on every request.</b> The tunnel used to point at the domain, which on a <code>.local</code> name goes to Multicast DNS and times out after <b>five seconds</b> before falling back to the hosts file — measured on a real site: 5.01s with the name, 0.012s straight to the address. It now connects to <code>127.0.0.1</code> and carries the domain in both the <code>Host</code> header and the TLS server name, so the vhost and the certificate still match. Sending only the header returns 421.</li>
       <li><b>Examples now suggest <code>.test</code> instead of <code>.local</code>.</b> <code>.local</code> is reserved for Multicast DNS by <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> and can stall resolution on macOS. The local-HTTPS guide had said so for a while; the app was still handing out <code>.local</code>. Existing domains keep working — validation never depended on the suffix.</li>
       <li><b>Log windows stream instead of polling.</b> They used to re-run <code>tail</code> every five seconds, spawning a shell and re-reading the whole file for a few new lines. A file watcher now reads only what was appended, and survives the log being recreated when the supervisor restarts an app.</li>
+      <li><b>The domain row says for itself whether the site is on the internet</b> — a green antenna when it is public, a red struck-through one when it is not. The share sheet also gained a Close button: leaving the window used to mean killing the tunnel, while the common case is wanting the address to stay up.</li>
     </ul>
 
     <h3 class="sub-h">Fixed</h3>

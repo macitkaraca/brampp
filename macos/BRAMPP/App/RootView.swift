@@ -4,6 +4,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var loc: Localizer
     /// Yardım hem ana arayüzde hem KURULUM SİHİRBAZINDA çalışmalı — gözlemci bu yüzden
     /// ContentView'da değil burada (RootView her iki dalı da sarar).
     @State private var showHelp = false
@@ -27,6 +28,11 @@ struct RootView: View {
             BRAMPPAppDelegate.shared?.presentMainWindow()
             showHelp = true
         }
+        // NOT: Menüden gelen ELLE güncelleme denetimi (.showUpdateCheck) BURADA
+        // DİNLENMEZ. Gözlemci BRAMPPAppDelegate'te — bu görünüm WindowGroup penceresi
+        // yokken (hideWindowOnClose, menü çubuğundan yaşamak) hiç var olmaz ve menü
+        // öğesi sessizce işlevsiz kalıyordu. Gerekçenin tamamı:
+        // BRAMPPApp.swift → observeUpdateCheckRequests().
         .sheet(isPresented: $showHelp) { HelpView() }
     }
 }

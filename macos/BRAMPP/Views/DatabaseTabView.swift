@@ -1135,10 +1135,15 @@ struct DatabaseTabView: View {
                 # --single-transaction: döküm ORTASINDA bir SQL hatası olursa TÜM değişiklikler
                 # geri alınır. Onsuz, hata öncesi tablolar commit'lenmiş, sonrakiler eksik kalır
                 # ve kullanıcı yarım geri yüklenmiş bir veritabanıyla baş başa kalırdı.
-                if psql -h 127.0.0.1 -p \(pgPort) $U -v ON_ERROR_STOP=1 --single-transaction --dbname=\(dbArg) -f \(inFile) 2>&1; then
+                # Çıkış kodu KOŞULDAN DEĞİL, komutun kendisinden alınır. `if psql …; then exit 0; fi`
+                # yazıp sonra `rc=$?` demek sessizce 0 döndürür: koşulu başarısız olan ve else'i
+                # olmayan bir `if` POSIX'te 0 ile biter, yani başarısız geri yükleme "başarılı"
+                # raporlanır (ve CREATED=1 ise veritabanı az önce düşürülmüş olur).
+                psql -h 127.0.0.1 -p \(pgPort) $U -v ON_ERROR_STOP=1 --single-transaction --dbname=\(dbArg) -f \(inFile) 2>&1
+                rc=$?
+                if [ "$rc" -eq 0 ]; then
                     exit 0
                 fi
-                rc=$?
                 if [ "$CREATED" = "1" ]; then
                     dropdb -h 127.0.0.1 -p \(pgPort) $U -- \(dbArg) 2>/dev/null || true
                     echo "Geri yükleme başarısız — bu işlemde oluşturulan veritabanı kaldırıldı" >&2
@@ -1159,10 +1164,13 @@ struct DatabaseTabView: View {
                     mysql -u root -e \(shSingleQuote(createSQL)) || exit 1
                     CREATED=1
                 fi
-                if mysql -u root \(shSingleQuote(target)) < \(inFile); then
+                # Çıkış kodu KOŞULDAN DEĞİL, komutun kendisinden alınır — gerekçe için
+                # PostgreSQL dalındaki nota bakın.
+                mysql -u root \(shSingleQuote(target)) < \(inFile)
+                rc=$?
+                if [ "$rc" -eq 0 ]; then
                     exit 0
                 fi
-                rc=$?
                 if [ "$CREATED" = "1" ]; then
                     mysql -u root -e \(shSingleQuote(dropSQL)) 2>/dev/null || true
                     echo "Geri yükleme başarısız — bu işlemde oluşturulan veritabanı kaldırıldı" >&2

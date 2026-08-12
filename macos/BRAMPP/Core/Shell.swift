@@ -172,6 +172,109 @@ final class Shell {
         return Result(output: output, error: error, exitCode: task.terminationStatus)
     }
     
+    /// `run`, AMA SÜRESİ SINIRLI. Sözleşme `streamBash` ile birebir aynı: süre dolarsa
+    /// SIGTERM, üç saniye sonra SIGKILL ve `exitCode == -998` (`Result.isTimeout`).
+    ///
+    /// NEDEN AYRI BİR İŞLEV: düz `run` `waitUntilExit()` çağırır ve bekleyeni SÜRESİZ
+    /// tutar. Güncelleme doğrulamasında bu somut bir sorundu — `spctl --assess` Apple'a
+    /// bir tur atar ve captive portal arkasında dakikalarca asılı kalabilir; `Process`
+    /// görev iptalini dinlemediği için kullanıcının "durdur" düğmesi de çaresiz kalır.
+    /// Sınır, iptali gerçekten uygulanabilir kılan şeydir.
+    ///
+    /// Etiketli parametre sayesinde eski `run(_:arguments:environment:)` çağrıları
+    /// olduğu gibi kalır — hiçbir çağrı yeri sessizce davranış değiştirmez.
+    @discardableResult
+    static func run(_ executable: String, arguments: [String] = [], timeout: TimeInterval,
+                    environment: [String: String]? = nil) -> Result {
+        guard FileHelper.exists(executable) else {
+            return Result(output: "", error: "Dosya bulunamadı: \(executable)", exitCode: -1)
+        }
+        let task = Process()
+        let outPipe = Pipe()
+        let errPipe = Pipe()
+        task.executableURL = URL(fileURLWithPath: executable)
+        task.arguments = arguments
+        task.standardOutput = outPipe
+        task.standardError = errPipe
+        task.environment = environment ?? shellEnv
+
+        do {
+            try task.run()
+        } catch {
+            return Result(output: "", error: error.localizedDescription, exitCode: -1)
+        }
+
+        // Deadlock önlemi `run` ile aynı: pipe'lar süreç bitmeden boşaltılmalı.
+        //
+        // `timedOut` ve tamponlar YALNIZCA bu kilit altında okunur/yazılır. Kilit
+        // zamanlayıcıyı `waitUntilExit` dönüşüyle uzlaştırmanın yanı sıra AŞAĞIDAKİ
+        // sınırlı bekleyiş için de gerekli: bekleyiş süreye takılırsa okuyucular hâlâ
+        // yazıyor olabilir ve tamponları kilitsiz okumak veri yarışı olurdu.
+        let outHandle = outPipe.fileHandleForReading
+        let errHandle = errPipe.fileHandleForReading
+        let box = PipeDataBox()
+        let lock = NSLock()
+        var timedOut = false
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            let data = outHandle.readDataToEndOfFile()
+            lock.lock(); box.out = data; lock.unlock()
+            group.leave()
+        }
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            let data = errHandle.readDataToEndOfFile()
+            lock.lock(); box.err = data; lock.unlock()
+            group.leave()
+        }
+
+        let item = DispatchWorkItem {
+            lock.lock(); timedOut = true; lock.unlock()
+            if task.isRunning { task.terminate() }                       // SIGTERM
+            // Nazikçe ölmezse zorla — pipe'lar kapanır, okuyucular EOF alır.
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) {
+                if task.isRunning { kill(task.processIdentifier, SIGKILL) }
+            }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout, execute: item)
+
+        task.waitUntilExit()
+        item.cancel()
+
+        // **SINIR ÇOCUĞU DEĞİL, BEKLEYENİ BAĞLAR.** `timeout` yalnızca alt sürecin
+        // ömrünü sınırlar; okuma tarafını sınırlamazsa söz tutulmaz. Alt süreç, yazma
+        // ucunu MİRAS ALAN bir torun bırakırsa (ör. arka plana atılmış bir yardımcı)
+        // pipe kapanmaz, `readDataToEndOfFile` EOF beklemeye devam eder ve SINIRSIZ bir
+        // `group.wait()` çağıranı sonsuza kadar asardı — `runAsync(…timeout:)` hiç
+        // dönmez, onu bekleyen güncelleme boru hattı da `.verifying`de donardı.
+        // `streamBash` bunu zaten sınırlı bekliyor (bkz. aynı dosyadaki 5 sn'lik
+        // bekleyiş); sözleşmenin "birebir aynı" olduğunu söyleyen doküman yorumu
+        // ancak burada da sınırlıysa doğrudur.
+        let drained = group.wait(timeout: .now() + 5) != .timedOut
+
+        lock.lock()
+        let didTimeout = timedOut
+        let outData = box.out
+        let errData = box.err
+        lock.unlock()
+
+        let output = String(data: outData, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let error = String(data: errData, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // Boşaltılamayan pipe da ZAMAN AŞIMIDIR: elimizdeki çıktı eksik olabilir, yani
+        // "0 ile döndü, çıktısı buydu" demek YANLIŞ olur. Çağıran (ör. `spctl` kapısı)
+        // `isTimeout`u zaten "görmedik" sayıyor — kabul tarafına düşmesi tehlikeliydi.
+        if didTimeout || !drained {
+            return Result(output: output,
+                          error: (error + "\nKomut zaman aşımına uğradı")
+                              .trimmingCharacters(in: .whitespacesAndNewlines),
+                          exitCode: -998)                                 // Result.isTimeout
+        }
+        return Result(output: output, error: error, exitCode: task.terminationStatus)
+    }
+
     // MARK: - Bash
 
     @discardableResult
@@ -272,6 +375,14 @@ final class Shell {
 
     static func runAsync(_ exe: String, arguments: [String] = []) async -> Result {
         await withCheckedContinuation { (c: CheckedContinuation<Result, Never>) in DispatchQueue.global(qos: .userInitiated).async { c.resume(returning: run(exe, arguments: arguments)) } }
+    }
+    /// Süresi sınırlı `runAsync` — bkz. `run(_:arguments:timeout:environment:)`.
+    static func runAsync(_ exe: String, arguments: [String] = [], timeout: TimeInterval) async -> Result {
+        await withCheckedContinuation { (c: CheckedContinuation<Result, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                c.resume(returning: run(exe, arguments: arguments, timeout: timeout))
+            }
+        }
     }
     static func bashAsync(_ cmd: String) async -> Result {
         verboseLogCallback?(cmd)

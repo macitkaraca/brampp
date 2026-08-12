@@ -135,6 +135,10 @@ extension L10n {
         "log.svc.quitStopping":
             ["tr": "Çıkış: %@ servis durduruluyor...",
              "en": "Quitting: stopping %@ service(s)…"],
+        // %@ = çalışan domain (PHP/Node yerel süreç) sayısı — brew servisi DEĞİL
+        "log.svc.quitStoppingDomains":
+            ["tr": "Çıkış: %@ domain süreci durduruluyor...",
+             "en": "Quitting: stopping %@ domain process(es)…"],
 
         // ── Kurulum / kaldırma ──────────────────────────────────────────────
         // %@ = servis adı
@@ -236,6 +240,15 @@ extension L10n {
         "log.svc.apacheHttpsPortUpdated":
             ["tr": "HTTPS portu güncellendi: :%@",
              "en": "HTTPS port updated: :%@"],
+        // %@ = güncellenen vhost dosyası sayısı (yalnızca GERÇEKTEN yazılanlar sayılır)
+        "log.svc.apacheVhostPortsUpdated":
+            ["tr": "Apache vhost portları güncellendi (%@ dosya)",
+             "en": "Apache vhost ports updated (%@ file(s))"],
+        // Yamalanan config Apache'ye doğrulatılamadı: yarım yamalı bir yapılandırma
+        // Apache'yi hiç başlatmaz, bu yüzden DOKUNULAN HER dosya eski hâline döner.
+        "log.svc.apachePortsRolledBack":
+            ["tr": "Apache yapılandırması geçersiz — port değişikliği geri alındı, dosyalar eski hâline döndürüldü",
+             "en": "The Apache configuration did not validate — the port change was rolled back and every file was restored"],
         // %@1 = HTTP portu, %@2 = HTTPS portu, %@3 = güncellenen dosya sayısı
         "log.svc.nginxPortsUpdated":
             ["tr": "Nginx portları güncellendi — HTTP :%@, HTTPS :%@ (%@ dosya)",

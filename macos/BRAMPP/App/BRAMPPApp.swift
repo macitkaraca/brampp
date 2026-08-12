@@ -54,6 +54,15 @@ struct BRAMPPApp: App {
                 }
             }
 
+            // "Güncellemeleri Denetle…" — macOS'ta kullanıcıların aradığı yer
+            // Hakkında'nın hemen altıdır. ELLE denetim: atlanan sürüm ve erteleme
+            // dinlenmez, sonuç her hâlükârda gösterilir.
+            CommandGroup(after: .appInfo) {
+                Button(localizer.t("menu.checkUpdates")) {
+                    NotificationCenter.default.post(name: .showUpdateCheck, object: nil)
+                }
+            }
+
             CommandGroup(replacing: .appVisibility) {
                 Button {
                     NSApp.hide(nil)
@@ -196,6 +205,19 @@ class AppState: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// `bootstrapManagers()` bu süreçte BAŞARIYLA koştu mu?
+    ///
+    /// İki meşru giriş noktası var — açılış (`init`) ve sihirbazın bitişi
+    /// (`onSetupCompleted`) — ama ikisinin de yapması gereken iş TEK SEFERLİKTİR.
+    /// İkinci çağrı tünel temizliğini yeniden çalıştırıyor, MCP sunucusunu zaten
+    /// sahip olduğu porta yeniden bağlamaya kalkıp "Address already in use" hatası
+    /// veriyor ve tazeleme zamanlayıcısını üst üste kuruyordu. Bayrak "sihirbaz
+    /// yolunda mıyım" değil, "bu iş zaten yapıldı mı" sorusunu yanıtlar.
+    private var didBootstrap = false
+
+    /// Açılış güncelleme denetimi bu süreçte bir kez koştu mu?
+    private var didRunLaunchUpdateCheck = false
+
     var canManageServices: Bool { isSetupCompleted && Shell.isBrewInstalled }
 
     var runningServiceCount: Int {
@@ -263,6 +285,22 @@ class AppState: ObservableObject {
                     let apache = self.serviceManager.services.first { $0.id == "httpd" }?.status == .running
                     let nginx  = self.serviceManager.services.first { $0.id == "nginx"  }?.status == .running
                     self.domainManager.refreshStatus(apacheRunning: apache, nginxRunning: nginx)
+                    // Tünelleri de aynı turda gerçekle karşılaştır. AYRI BİR ZAMANLAYICI
+                    // KURULMAZ: bu döngü zaten kullanıcı ayarındaki aralıkta koşuyor ve
+                    // uygulama arka plana geçince duruyor. Maliyeti PID başına bir
+                    // kill(pid,0) artı tur başına tek bir ps.
+                    Task { await self.tunnelManager.reconcile() }
+                    // Açılışta ortak-ortam kapısı KAPALI bulunmuş olabilir — en sık nedeni
+                    // henüz tam ölmemiş bir önceki kopyanın `NSRunningApplication`'da canlı
+                    // görünmesi. O kısıtlama geçicidir; kalıcı olarak MCP'siz bir oturuma
+                    // mahkûm etmemek için kapı her turda yeniden sorulur ve açıldığında
+                    // dinleyici geç de olsa ayağa kalkar. (Test ana uygulaması/önizleme
+                    // kısıtlaması geçici DEĞİLDİR, orada bu koşul hiç sağlanmaz.)
+                    if !self.mcpServer.isRunning,
+                       AppSettings.load().mcpServerEnabled,
+                       ProcessRole.mayMutateSharedEnvironment {
+                        self.mcpServer.start(port: AppSettings.load().mcpServerPort)
+                    }
 
                 case .allWebServersStopped:
                     let backendDomains = self.domainManager.domains.filter {
@@ -297,6 +335,23 @@ class AppState: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // AÇILIŞ GÜNCELLEME DENETİMİ — `bootstrapManagers()` İÇİNDE DEĞİL, bilerek.
+        // Orası `Shell.isBrewInstalled` ve `firstSetupCompleted` kapılarının
+        // arkasında ve makinenin ORTAK durumuna yazan işler için. Güncelleme
+        // denetimi ağdan salt-okumadır: Homebrew'i olmayan ya da hâlâ sihirbazda
+        // olan bir kullanıcı da UYGULAMASININ eskidiğini öğrenmeyi hak eder.
+        // Bu yüzden AŞAĞIDAKİ `guard`'DAN ÖNCE çağrılır — Homebrew yokken init
+        // erken döndüğü için sona konsaydı, tam da o kullanıcılara hiç ulaşmazdı.
+        // Kendisi zaten ertelenmiş bir Task kurar; açılışı geciktirmez.
+        //
+        // Delegate'e AppState referansı BURADA bağlanır, `bootstrapManagers()` içinde
+        // DEĞİL: orası Homebrew ve "kurulum tamamlandı" kapılarının arkasında, oysa
+        // menüdeki "Güncellemeleri Denetle…" o kapılara bağlı değildir (aynı gerekçe,
+        // hemen yukarıdaki paragraf). `bootstrapManagers()` daha sonra aynı atamayı
+        // yeniden yapar — idempotenttir.
+        BRAMPPAppDelegate.shared?.appStateRef = self
+        runLaunchUpdateCheck()
+
         guard Shell.isBrewInstalled else {
             isSetupCompleted = false
             print("⚠️ Homebrew kurulu değil — Kurulum sihirbazı gösterilecek")
@@ -310,6 +365,113 @@ class AppState: ObservableObject {
         }
     }
 
+    // MARK: - Uygulama güncellemesi
+
+    /// Açılışta bir kez koşar; kendini kapatır, iki kez çağrılması zararsızdır.
+    func runLaunchUpdateCheck() {
+        guard !didRunLaunchUpdateCheck else { return }
+        didRunLaunchUpdateCheck = true
+        // Test ana uygulaması ve önizleme ekrana pencere koymaz (bkz. ProcessRole).
+        guard ProcessRole.mayPresentLaunchUI else { return }
+        guard AppSettings.load().updateAutoCheck else { return }
+
+        Task { [weak self] in
+            // Açılışla bant genişliği ve ana iş parçacığı için yarışmasın —
+            // önce arayüz otursun, sonra ağa çıkılsın.
+            try? await Task.sleep(for: .seconds(3))
+            guard let self else { return }
+            _ = await self.performUpdateCheck(force: false)
+        }
+    }
+
+    /// Denetimi çalıştırır, konsola yazar ve karara göre bildirimi gösterir.
+    /// - Parameter force: kullanıcı ELLE istedi mi? Öyleyse atlanan sürüm ve
+    ///   erteleme dinlenmez — insan sordu, yanıtı görmeli.
+    @discardableResult
+    func performUpdateCheck(force: Bool) async -> UpdateChecker.Result {
+        let channel = AppSettings.load().updateChannel
+        consoleStore.log(key: "log.app.updateCheckStarted", args: [channel], type: .info)
+        let result = await UpdateChecker.check(channel: channel)
+
+        switch result {
+        case .failed:
+            // Sessiz başarısızlık: konsolda görünür, kullanıcının önüne çıkmaz.
+            consoleStore.log(key: "log.app.updateCheckFailed", type: .warning)
+            return result
+
+        case .upToDate(let current):
+            consoleStore.log(key: "log.app.updateUpToDate", args: [current], type: .info)
+
+        // Daha yeni sürüm YOK ama kurulu sürüm manifestin `blockedVersions`
+        // listesinde. ATLAMA/ERTELEME SORULMAZ: `decide()` 0. kuralı zaten her şeyi
+        // deler, ama buraya `decide()`den geçirmemizin nedeni tek karar noktası
+        // bırakmak — kural sırası tek bir yerde okunur kalsın.
+        case .currentBlocked(let current, let release):
+            consoleStore.log(key: "log.app.updateCurrentBlocked", args: [current], type: .warning)
+            let decision = UpdateChecker.decide(
+                current: current, latest: release.version,
+                skippedVersion: "", snoozeUntil: .distantPast,
+                mandatory: false, blockedCurrent: true, now: Date())
+            if decision == .show {
+                UpdatePromptWindowController.shared.present(
+                    current: current, release: release, console: consoleStore)
+            }
+
+        case .updateAvailable(let current, let release):
+            consoleStore.log(key: "log.app.updateAvailable",
+                             args: [release.version, current], type: .info)
+            if !release.manifestBacked {
+                consoleStore.log(key: "log.app.updateManifestFallback",
+                                 args: [channel], type: .warning)
+            }
+            let s = AppSettings.load()
+            let decision = UpdateChecker.decide(
+                current: current,
+                latest: release.version,
+                skippedVersion: s.updateSkippedVersion,
+                snoozeUntil: Date(timeIntervalSince1970: s.updateSnoozeUntil),
+                mandatory: release.mandatory,
+                blockedCurrent: release.blockedCurrent,
+                now: Date())
+
+            switch decision {
+            case .show:
+                UpdatePromptWindowController.shared.present(
+                    current: current, release: release, console: consoleStore)
+            case .upToDate:
+                // Ulaşılamaz: bu dalda `check()` zaten daha yeni bir sürüm buldu.
+                // Yine de sessizce geçilir — bildirim göstermek yanlış olurdu.
+                break
+            case .skippedVersion:
+                if force {
+                    UpdatePromptWindowController.shared.present(
+                        current: current, release: release, console: consoleStore)
+                } else {
+                    consoleStore.log(key: "log.app.updateSkipped",
+                                     args: [release.version], type: .info)
+                }
+            case .snoozed:
+                if force {
+                    UpdatePromptWindowController.shared.present(
+                        current: current, release: release, console: consoleStore)
+                } else {
+                    consoleStore.log(
+                        key: "log.app.updateSnoozed",
+                        args: [UpdateChecker.displayDate(Date(timeIntervalSince1970: s.updateSnoozeUntil))],
+                        type: .info)
+                }
+            }
+        }
+
+        // "Son denetim" yalnızca BAŞARILI denetimde ilerler; `.failed` yukarıda
+        // erken döner. Ayar bu arada bildirim penceresinden yazılmış olabilir —
+        // bu yüzden yeniden okunup üzerine yazılır.
+        var fresh = AppSettings.load()
+        fresh.updateLastCheck = Date().timeIntervalSince1970
+        fresh.save()
+        return result
+    }
+
     func onSetupCompleted() {
         isSetupCompleted = true
         guard Shell.isBrewInstalled else {
@@ -321,23 +483,63 @@ class AppState: ObservableObject {
 
     /// Kurulum tamamlandığında / uygulama açılışında ortak başlangıç akışı.
     private func bootstrapManagers() {
+        guard !didBootstrap else { return }
+        didBootstrap = true
+
         // "Son çalışan servisler" listesi refreshStatus BAŞLAMADAN önce okunmalı:
         // açılışta tüm servisler kapalı olduğundan ilk tam kontrol listeye BOŞ yazar —
         // liste sonradan okunursa .lastRunning modu hiçbir zaman servis başlatamazdı.
 
+        // BU SÜREÇ makinenin ORTAK durumunu değiştirebilir mi? (bkz. Core/ProcessRole.swift)
+        //
+        // Tek kapı, tek kavram: XCTest ana uygulaması ya da aynı anda yaşayan ikinci bir
+        // kopya, tünel dizinine / Homebrew servislerine / 8765'teki MCP dinleyicisine /
+        // "son çalışan servisler" dosyasına DOKUNMAZ. Bunlar makineye ait, sürece değil.
+        // Yaşanan olay tam da buydu: `xcodebuild test` ile başlayan test ana uygulaması
+        // kurulu kopyanın canlı tünelini öldürüp 8765'te "Address already in use" üretti.
+        //
+        // Kısıtlı süreç yine tam olarak çalışır — okur, gösterir, testleri koşturur;
+        // yalnızca ortak duruma YAZMAZ.
+        let mayMutate = ProcessRole.mayMutateSharedEnvironment
+        if let restriction = ProcessRole.restriction {
+            consoleStore.log(key: restriction.logKey, type: .warning)
+        }
+
         // 7 günden eski konsol dosyalarını temizle (Core/ConsoleLogFile.swift)
         ConsoleLogFile.pruneOldFiles()
-        // Önceki oturumdan kalmış tünel süreci varsa öldür: uygulama çökerse
-        // cloudflared yaşamaya devam eder ve site açık kalırdı.
-        TunnelManager.killAllSynchronously()
+        // Önceki oturumdan kalan güncelleme disk kalıplarını temizle. TAMAMI silinir
+        // (`keeping: []`): açılış anında BU süreç için "hazır bekleyen" bir kurulum
+        // yoktur ve her kalıntı ~60 MB'tır. Kullanıcı gerçekten güncelleyecekse dosya,
+        // bildirim penceresinden bir kez daha ve TAZE olarak iner.
+        //
+        // AMA `mayMutate` KAPISINDAN geçer: `updates/` dizini kullanıcının HER kopyası
+        // tarafından paylaşılır. Kurulu uygulama 60 MB'lık indirmenin ortasındayken
+        // ⌘U'ya basmak ya da Debug derlemesini açmak, o dizini ikinci süreçte silerdi;
+        // birincisi buharlaşmış bir yol üzerinde hataya düşer ve kullanıcının sebep
+        // olmadığı kırmızı bir satır gösterirdi. Tünel toparlamasıyla aynı gerekçe,
+        // aynı kapı (bkz. Core/ProcessRole.swift).
+        if mayMutate {
+            UpdateInstaller.pruneOldStaging(keeping: [])
+        }
+        // Önceki oturumdan ARTAKALMIŞ tünel süreci varsa öldür: uygulama çökerse
+        // cloudflared yaşamaya devam eder ve site açık kalırdı. Sahipsiz olanları
+        // toplar; bu sürecin ya da aynı dizini paylaşan canlı bir başka kopyanın
+        // tünellerine dokunmaz (bkz. TunnelManager.reapOrphansAtLaunch).
+        //
+        // AYRI GÖREVDE: toparlama sinyal gönderip ölümü bekler (yarım saniyeye kadar)
+        // ve ana iş parçacığında koşarsa açılış o kadar süre donar.
+        if mayMutate {
+            Task.detached(priority: .utility) { TunnelManager.reapOrphansAtLaunch() }
+        }
 
         domainManager.loadDomains()
         // domains.json'a BRAMPP dışından yazılırsa (MCP aracı, CLI, elle düzenleme)
         // arayüz kendiliğinden tazelensin — dosya izleyicisi dış yazımı algılar.
         domainManager.startWatchingExternalChanges()
         // Varsayılan localhost vhost'u garanti et — Host eşleşmeyen isteklerin
-        // (localhost/phpmyadmin gibi) domain vhost'larına düşmesini önler
-        domainManager.ensureApacheDefaultVHost()
+        // (localhost/phpmyadmin gibi) domain vhost'larına düşmesini önler.
+        // ORTAK YAPILANDIRMAYA YAZAR: ikincil süreç Apache'nin vhost dizinine dokunmaz.
+        if mayMutate { domainManager.ensureApacheDefaultVHost() }
         serviceManager.refreshStatus()
         domainManager.refreshStatus()
         phpExtensionManager.loadExtensions()
@@ -358,8 +560,16 @@ class AppState: ObservableObject {
         }
 
         let settings = AppSettings.load()
-        let interval = TimeInterval(settings.autoRefreshInterval)
-        serviceManager.startAutoRefresh(interval: interval)
+        // Otomatik tazeleme KISITLI SÜREÇTE DE kurulur. Kendisi salt-okunurdur (nc probu);
+        // ortak duruma yazan tek adım `persistRunningServices()` ve kapı artık ORADA,
+        // her yazımda sorulacak şekilde duruyor (bkz. ServiceManager.persistRunningServices).
+        //
+        // Burada kapatmak pahalıya mal oluyordu: tünel canlılık denetimi `reconcile()` bu
+        // döngüye biniyor. Kapatılırsa, kapanmakta olan eski kopya yüzünden bir kez
+        // "ikinci kopya" sanılan NORMAL bir açılış, o oturum boyunca ne servis durumu
+        // tazeler ne de ölmüş bir paylaşımı fark ederdi — düzeltmek istediğimiz yalanın
+        // ta kendisi.
+        serviceManager.startAutoRefresh(interval: TimeInterval(settings.autoRefreshInterval))
 
         // MCP sunucusu: canlı manager'ları bağla; ayar açıksa yerel uç noktayı yayınla.
         // (Araçlar doğrudan bu manager'ları çağırdığından değişiklikler arayüze anında yansır.)
@@ -367,15 +577,19 @@ class AppState: ObservableObject {
                             domainManager:  domainManager,
                             consoleStore:   consoleStore,
                             tunnelManager:  tunnelManager)
-        if settings.mcpServerEnabled {
+        // Portu MAKİNEDE tek bir süreç tutabilir. İkincil sürecin bağlanmaya çalışması
+        // yalnızca "Address already in use" gürültüsü üretiyordu — konsol dosyasındaki
+        // o satırlar olayın ilk ipucuydu.
+        if settings.mcpServerEnabled, mayMutate {
             mcpServer.start(port: settings.mcpServerPort)
         }
 
-        if settings.notificationsEnabled {
+        if settings.notificationsEnabled, mayMutate {
             ServiceManager.requestNotificationPermission()
         }
 
-        if settings.autoStartServices, !settings.autoStartServiceIds.isEmpty {
+        // `brew services run` MAKİNE genelinde servis başlatır.
+        if settings.autoStartServices, !settings.autoStartServiceIds.isEmpty, mayMutate {
             Task { [serviceManager] in
                 // Sabit gecikme yerine ilk TAM durum kontrolünü bekle: aksi halde tüm
                 // servisler hâlâ .unknown iken startSelectedServices (yalnızca .stopped
@@ -392,6 +606,10 @@ class AppState: ObservableObject {
 extension Notification.Name {
     static let showAddDomainSheet = Notification.Name("showAddDomainSheet")
     static let showHelpSheet      = Notification.Name("showHelpSheet")
+    /// Menüden "Güncellemeleri Denetle…" seçildi (ELLE denetim: atlama/erteleme dinlenmez)
+    static let showUpdateCheck    = Notification.Name("showUpdateCheck")
+    /// Atlanan sürüm / erteleme değişti — AÇIK duran Ayarlar penceresi tazelensin
+    static let updateStateChanged = Notification.Name("updateStateChanged")
 }
 
 // MARK: - MenuBarLabelView
@@ -604,6 +822,46 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.systemIsPoweringOff = true }
             .store(in: &menuCancellables)
+
+        observeUpdateCheckRequests()
+    }
+
+    /// Menüden gelen ELLE güncelleme denetimi — gözlemci UYGULAMA DÜZEYİNDE.
+    ///
+    /// **NEDEN RootView'DA DEĞİL.** Gözlemci oradaydı ve RootView, WindowGroup
+    /// penceresi VARSA vardır. `hideWindowOnClose` ile kırmızı X'e basmak pencereyi
+    /// `orderOut` eder; menü çubuğundan yaşayan kullanıcı ana pencereyi hiç açmaz;
+    /// pencere büsbütün kapatılmış da olabilir. Bu hâllerin hepsinde
+    /// "Güncellemeleri Denetle…" SESSİZCE hiçbir şey yapmıyordu — menü öğesinin
+    /// bozuk olduğunu düşündüren tam olarak o sessizlikti.
+    ///
+    /// Sonuç penceresi zaten ayrı bir AppKit penceresi (gerekçe:
+    /// Views/UpdatePromptWindow.swift), yani ana pencereye ihtiyacı yok — gözlemcinin
+    /// bir görünüme bağlı olmasının hiçbir gerekçesi kalmamıştı.
+    private func observeUpdateCheckRequests() {
+        NotificationCenter.default.publisher(for: .showUpdateCheck)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                // Referans TETİKLENME ANINDA okunur: `applicationDidFinishLaunching`
+                // AppState'in yaratılmasından önce koşabilir.
+                guard let appState = BRAMPPAppDelegate.shared?.appStateRef else { return }
+                Task { @MainActor in
+                    let result = await appState.performUpdateCheck(force: true)
+                    // Elle denetimde SESSİZ KALINMAZ: yeni sürüm yoksa da bir yanıt
+                    // gerekir, yoksa menü öğesi bozukmuş gibi görünür.
+                    switch result {
+                    case .updateAvailable, .currentBlocked:
+                        break                       // pencere zaten açıldı
+                    case .upToDate:
+                        UpdatePromptWindowController.shared
+                            .showInfo(Localizer.shared.t("set.update.upToDate"))
+                    case .failed:
+                        UpdatePromptWindowController.shared
+                            .showInfo(Localizer.shared.t("set.update.failed"))
+                    }
+                }
+            }
+            .store(in: &menuCancellables)
     }
 
     /// macOS menü çubuğunu verilen dile ("tr"/"en") çevirir.
@@ -653,7 +911,8 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
         let appKeys = ["menu.about", "menu.hide", "menu.hideOthers", "menu.showAll",
                        "menu.quitApp", "menu.quitNoStop", "menu.services", "menu.startAll",
                        "menu.stopAll", "menu.restartApache", "common.refresh",
-                       "menu.refreshLight", "menu.domain", "menu.newDomain"]
+                       "menu.refreshLight", "menu.domain", "menu.newDomain",
+                       "menu.checkUpdates"]
         for key in appKeys {
             if let en = L10n.catalog[key]?["en"], let tr = L10n.catalog[key]?["tr"] {
                 pairs.append((en, tr))
@@ -747,7 +1006,11 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
         // İki bağımsız sinyal birlikte kullanılır: willPowerOff bildirimi ile quit
         // AppleEvent'inin sırası macOS sürümleri arasında garanti değildir.
         if systemIsPoweringOff || isSystemQuitEvent {
-            TunnelManager.killAllSynchronously()
+            // BEKLEMEDEN: bu yol oturum kapatma / yeniden başlatma yoludur ve burada
+            // saliseler bile geciktirmek yasaktır — macOS bekleyen uygulamayı
+            // "oturumu kapatmayı engelledi" diye işaretleyip tüm işlemi iptal eder.
+            // SIGKILL yutulamaz, dolayısıyla beklemeden de kesin sonuç verir.
+            TunnelManager.killAllSynchronously(waitForExit: false)
             return .terminateNow
         }
         guard realQuitRequested else {
@@ -757,11 +1020,14 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
             NSApp.setActivationPolicy(.accessory)
             return .terminateCancel
         }
-        // Açık her tünel yerel siteyi internete çıkarıyor. Uygulama kapanırken
-        // KOŞULSUZ kapatılır — `autoStopOnQuit` ayarına bağlanmaz, o ayar servisler
-        // içindir. Arkada unutulmuş herkese açık bir adres kabul edilebilir değil.
-        // Eşzamanlı sürüm kullanılır: burada başlatılan asenkron iş, süreç sonlanmadan
-        // bitmeyebilirdi.
+        // BU SÜRECİN açtığı her tünel yerel siteyi internete çıkarıyor; süreç ölürken
+        // hiçbiri arkada bırakılmaz — `autoStopOnQuit` ayarına bağlanmaz, o ayar
+        // servisler içindir. Eşzamanlı sürüm kullanılır: burada başlatılan asenkron iş
+        // süreç sonlanmadan bitmeyebilirdi.
+        //
+        // BAŞKASININ tünellerine dokunulmaz: aynı $HOME'u paylaşan canlı bir kopya
+        // (kurulu uygulama) varken Debug derlemesinde ⌘Q'ya basmak, eskiden onun
+        // yayınını kesiyordu. Hedef listesi `ownedPIDs`, yani sahiplik kaydı.
         TunnelManager.killAllSynchronously()
         return .terminateNow
     }

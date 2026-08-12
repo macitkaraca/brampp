@@ -70,6 +70,34 @@ struct AppSettings: Codable {
     /// varsayılamaz — kullanıcı bilerek açar.
     var mcpPermSharing:   String
 
+    // MARK: - Uygulama Güncellemeleri
+    //
+    // Bu yedi alan YALNIZCA settings.json'da tutulur — @AppStorage aynası YOK.
+    // Nedeni MCP alanlarındakiyle aynı (bkz. SettingsView.swift:38): UI dışında
+    // okuyan tek yer AppState'in açılış akışıdır. Üstelik `updateSkippedVersion`
+    // ve `updateSnoozeUntil` Ayarlar penceresinden DEĞİL, güncelleme bildiriminden
+    // yazılır; bir ayna, aynı durumun üçüncü bir yazarı olurdu.
+    //
+    // Tarihler `Date` değil `Double` (timeIntervalSince1970): bu yapıdaki her alan
+    // ilkel tip ve JSONEncoder zaten Date'i çıplak bir sayı olarak yazıyor —
+    // sayıyı açıkça tutmak, settings.json'u elle düzenleyene ne gördüğünü söyler.
+
+    /// Manifest kanalı ("stable" / "beta" / "nightly"). Yalnızca "stable" YAYINDA;
+    /// diğerleri spec/update-manifest.md'de tanımlı ama dosyası henüz yok.
+    var updateChannel: String
+    /// Her açılışta güncelleme denetlensin mi?
+    var updateAutoCheck: Bool
+    /// Yeni sürüm bulununca dosya arka planda indirilsin mi? (Kurulum ASLA otomatik değil.)
+    var updateAutoDownload: Bool
+    /// İndirme sonrası davranış: "notify" | "download" | "downloadAndOpen"
+    var updateMode: String
+    /// Kullanıcının "bu sürümü atla" dediği TAM sürüm. Daha yenisi çıkarsa yeniden sorulur.
+    var updateSkippedVersion: String
+    /// "Sonra hatırlat" bitiş anı (timeIntervalSince1970). 0 = erteleme yok.
+    var updateSnoozeUntil: Double
+    /// Son BAŞARILI denetim anı (timeIntervalSince1970) — Ayarlar'da gösterilir. 0 = hiç.
+    var updateLastCheck: Double
+
     // MARK: - Backward-compatible Decoder
 
     enum CodingKeys: String, CodingKey {
@@ -82,6 +110,8 @@ struct AppSettings: Codable {
         case verboseLogging, autoStartServiceIds, persistConsoleLog
         case mcpServerEnabled, mcpServerPort
         case mcpPermDomains, mcpPermServices, mcpPermDatabases, mcpPermLogs, mcpPermSharing
+        case updateChannel, updateAutoCheck, updateAutoDownload, updateMode
+        case updateSkippedVersion, updateSnoozeUntil, updateLastCheck
     }
 
     init(from decoder: Decoder) throws {
@@ -113,6 +143,15 @@ struct AppSettings: Codable {
         mcpPermDatabases           = (try? c.decode(String.self, forKey: .mcpPermDatabases)) ?? MCPPermission.write.rawValue
         mcpPermLogs                = (try? c.decode(String.self, forKey: .mcpPermLogs))      ?? MCPPermission.write.rawValue
         mcpPermSharing             = (try? c.decode(String.self, forKey: .mcpPermSharing))   ?? MCPPermission.none.rawValue
+        // Güncelleme alanları: bu sürümden ÖNCE yazılmış bir settings.json'da hiçbiri
+        // yoktur — `try?` + varsayılan sayesinde dosya yine sorunsuz çözülür.
+        updateChannel              = (try? c.decode(String.self, forKey: .updateChannel))    ?? UpdateChannel.stable.rawValue
+        updateAutoCheck            = (try? c.decode(Bool.self,   forKey: .updateAutoCheck))  ?? true
+        updateAutoDownload         = (try? c.decode(Bool.self,   forKey: .updateAutoDownload)) ?? false
+        updateMode                 = (try? c.decode(String.self, forKey: .updateMode))       ?? UpdateMode.download.rawValue
+        updateSkippedVersion       = (try? c.decode(String.self, forKey: .updateSkippedVersion)) ?? ""
+        updateSnoozeUntil          = (try? c.decode(Double.self, forKey: .updateSnoozeUntil)) ?? 0
+        updateLastCheck            = (try? c.decode(Double.self, forKey: .updateLastCheck))   ?? 0
     }
 
     init() {
@@ -143,6 +182,26 @@ struct AppSettings: Codable {
         self.mcpPermDatabases           = MCPPermission.write.rawValue
         self.mcpPermLogs                = MCPPermission.write.rawValue
         self.mcpPermSharing             = MCPPermission.none.rawValue
+        self.updateChannel              = UpdateChannel.stable.rawValue
+        self.updateAutoCheck            = true
+        // İKİ AYAR, İKİ AYRI SORU — ve varsayılanları bilerek FARKLI yönde:
+        //
+        //   • `updateMode` = "bildirim penceresinin ana düğmesi NE YAPSIN". `.notify`
+        //     iken düğme yalnızca sürüm sayfasını açar (UpdatePromptView.primaryAction),
+        //     yani kutudan çıktığı hâliyle indirme/doğrulama boru hattına — sha256,
+        //     codesign, Team ID, noter onayı — ULAŞILAMAZDI. Doğrulanmış indirmeyi
+        //     yalnızca ayarları kurcalayan kullanıcıya sunmak, güvenli yolu gizli
+        //     yol yapmaktı; `.download` bu yüzden varsayılan.
+        //   • `updateAutoDownload` = "SORMADAN indirsin mi". Bu `false` KALIR: 60 MB,
+        //     kullanıcının bilgisi dışında ve onun ağından inmez.
+        //
+        // Birlikte: pencere açılır, hiçbir şey inmez, düğme "İndir ve doğrula" der ve
+        // indirme ancak kullanıcı tıklayınca başlar.
+        self.updateAutoDownload         = false
+        self.updateMode                 = UpdateMode.download.rawValue
+        self.updateSkippedVersion       = ""
+        self.updateSnoozeUntil          = 0
+        self.updateLastCheck            = 0
     }
 
     // MARK: - Bellek İçi Önbellek (thread-safe)

@@ -93,6 +93,28 @@ enum Diagnostics {
                              + "dosyasını gözden geçirin.")
     }
 
+    /// `configtest` çıktısının tek satırlık ÖZETİ. `nil` → yapılandırma geçerli.
+    ///
+    /// Apache hatayı İKİ satıra böler ve sebep İKİNCİ satırdadır:
+    ///
+    ///     AH00526: Syntax error on line 144 of …/extra/httpd-ssl.conf:
+    ///     SSLCertificateFile: file '…/server.crt' does not exist or is empty
+    ///
+    /// Yalnızca "error" geçen ilk satırı göstermek kullanıcıyı NEDEN'siz bırakır —
+    /// hangi dosyanın eksik olduğu ikinci satırda yazar. Bu yüzden ikisi birlikte döner.
+    static func configTestFailure(output: String, exitOK: Bool) -> String? {
+        guard configVerdict(server: "Apache", output: output, exitOK: exitOK).level == .fail else {
+            return nil
+        }
+        let lines = output.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        // Çıktısı olmayan bir başarısızlık da başarısızlıktır — nil dönmek "geçerli" demek olurdu.
+        guard !lines.isEmpty else { return "apachectl configtest başarısız (çıktı yok)" }
+        let start = lines.firstIndex { $0.lowercased().contains("error") } ?? 0
+        return lines[start..<min(start + 2, lines.count)].joined(separator: " ")
+    }
+
     /// Çıktıdaki ilk eşleşen satır — kullanıcıya tüm dökümü değil, ilgili satırı göster.
     static func firstLine(matching needle: String, in output: String) -> String? {
         output.components(separatedBy: .newlines)

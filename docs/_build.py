@@ -349,7 +349,13 @@ def patch_home_nav():
         p = os.path.join(ROOT, f)
         t = open(p, encoding="utf-8").read()
         new = nav_html(lang, up)  # ana sayfalar kendi dil kökünde: base == ""
-        t2, n = re.subn(r'<div class="navlinks">.*?</div>', new, t, count=1, flags=re.S)
+        # Öznitelikleri kabul et: nav_html `id="sitenav"` de basar. Desen bunu
+        # hesaba katmadığı için yamalayıcı HİÇBİR ZAMAN eşleşmiyordu — menüye
+        # Changelog eklendiği hâlde iki ana sayfada görünmemesinin sebebi buydu.
+        # Yerine koyma metni lambda ile veriliyor: `new` HTML'i re'nin kaçış
+        # dizisi (\1, \g<…>) sanabileceği karakterler taşıyabilir.
+        t2, n = re.subn(r'<div class="navlinks"[^>]*>.*?</div>',
+                        lambda _: new, t, count=1, flags=re.S)
         if n == 0:
             print(f"  ! {f}: menü bulunamadı")
             continue

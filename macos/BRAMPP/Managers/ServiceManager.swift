@@ -16,6 +16,94 @@ enum ServiceManagerEvent {
     case webServerStarted(serviceId: String)
 }
 
+// MARK: - Kaldırma planı
+
+/// Kaldırmada silinecek bir yolun TÜRÜ.
+///
+/// Ayrım kozmetik değil: `configuration` yeniden kurulumda yeniden üretilir,
+/// `data` kullanıcının kendi ürettiği ve GERİ GETİRİLEMEZ içeriktir — veritabanı
+/// kümeleri, pip ile kurulmuş paketler. Onay diyaloğu ikisini ayrı başlıklar altında
+/// gösterir; veri varsa yazarak onay ister.
+enum UninstallPathKind {
+    case configuration
+    case data
+}
+
+/// Kaldırmada `rm -rf` edilecek tek bir yol ve türü.
+struct UninstallPath: Equatable {
+    let path: String
+    let kind: UninstallPathKind
+
+    static func config(_ p: String) -> UninstallPath { UninstallPath(path: p, kind: .configuration) }
+    static func data(_ p: String)   -> UninstallPath { UninstallPath(path: p, kind: .data) }
+}
+
+/// Bir kaldırmanın neyi sileceği — betiğin ve onay diyaloğunun ORTAK kaynağı.
+/// Üretimi: `ServiceManager.uninstallPlan(forServiceID:brewPrefix:)`.
+struct UninstallPlan {
+    let serviceID: String
+    /// Silinecek yollar, betiğe verilen SIRAYLA.
+    let paths: [UninstallPath]
+    /// SİLİNMEYEN ama DÜZENLENEN dosyalar — betik bunlardan satır çıkarır (`sed -i ''`).
+    ///
+    /// httpd.conf böyle bir dosyadır: silinemez (bütün Apache yapılandırması orada),
+    /// ama MariaDB kaldırılırken phpMyAdmin include satırı çıkarılır. Eskiden bu düzenleme
+    /// planın DIŞINDAYDI; diyalog Apache yapılandırmasının değişeceğini hiç söylemiyordu.
+    let editedPaths: [String]
+    /// KASITLI olarak dokunulmayan kullanıcı verisi (vhost'lar) — diyalogda da söylenir.
+    let preservedPaths: [String]
+
+    var allPaths: [String]           { paths.map(\.path) }
+    var configurationPaths: [String] { paths.filter { $0.kind == .configuration }.map(\.path) }
+    var dataPaths: [String]          { paths.filter { $0.kind == .data }.map(\.path) }
+
+    /// Kullanıcı verisi siliniyor mu? Diyalog buna göre yazarak onay ister.
+    var destroysData: Bool { !dataPaths.isEmpty }
+
+    /// Kaybedilecek şeyin SOMUT cümlesinin katalog anahtarı — "dosyalar silinecek" değil,
+    /// "bütün veritabanlarınız silinecek". Veri silinmiyorsa nil.
+    var dataWarningKey: String? {
+        guard destroysData else { return nil }
+        if serviceID == "mariadb" || serviceID.hasPrefix("postgresql@") {
+            return "svc.uninstall.dataWarn.databases"
+        }
+        if serviceID.hasPrefix("python@") { return "svc.uninstall.dataWarn.packages" }
+        return "svc.uninstall.dataWarn.generic"
+    }
+
+    /// Onay diyaloğunun gövdesi: önce VERİ, sonra yapılandırma, sonra korunanlar.
+    /// Çeviri bir kapanışla verilir — metin kurgusu saf kalır ve testlerden çağrılabilir.
+    func confirmationMessage(_ t: (String) -> String) -> String {
+        func block(_ header: String, _ items: [String]) -> String {
+            ([t(header)] + items.map { "• \($0)" }).joined(separator: "\n")
+        }
+        var parts: [String] = []
+        if destroysData {
+            var data = block("svc.uninstall.dataHeader", dataPaths)
+            if let key = dataWarningKey { data += "\n" + t(key) }
+            parts.append(data)
+        }
+        if !configurationPaths.isEmpty {
+            parts.append(block("svc.uninstall.configHeader", configurationPaths))
+        }
+        if !editedPaths.isEmpty {
+            parts.append(block("svc.uninstall.editedHeader", editedPaths))
+        }
+        if !preservedPaths.isEmpty {
+            parts.append(block("svc.uninstall.preserved", preservedPaths))
+        }
+        parts.append(t("svc.uninstall.confirm"))
+        return parts.joined(separator: "\n\n")
+    }
+
+    /// Yazılan metin onayı karşılıyor mu? Servis ADI beklenir (büyük/küçük harf ve
+    /// baştaki/sondaki boşluk önemsiz — amaç zorluk çıkarmak değil, kasıt aramak).
+    func typedConfirmationMatches(_ typed: String, serviceName: String) -> Bool {
+        typed.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            == serviceName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+}
+
 /// Servis yönetimi — BaseManager'dan türetilir.
 ///
 /// Durum kontrolleri iki katmanda çalışır:
@@ -46,6 +134,12 @@ class ServiceManager: BaseManager {
 
     private var refreshTimer: Timer?
     private var backgroundObservers: [NSObjectProtocol] = []
+
+    /// Uyku/uyanma gözlemcileri AYRI tutulur: `NSWorkspace.shared.notificationCenter`
+    /// `NotificationCenter.default`'tan farklı bir merkezdir ve kaydı oradan silmek
+    /// hiçbir şey yapmaz — gözlemci sessizce yaşamaya devam eder, her `startAutoRefresh`
+    /// bir yenisini ekler ve uyanışta N kez tazeleme tetiklenirdi.
+    private var workspaceObservers: [NSObjectProtocol] = []
     /// Önceki durum — çöküş tespiti için
     private var previousStatuses: [String: ServiceStatus] = [:]
     /// \r-tabanlı progress satırının log'daki güncel içeriği — streamInstallLog tarafından yönetilir
@@ -204,6 +298,11 @@ class ServiceManager: BaseManager {
     /// Açılışta "son çalışanları başlat" modu bu listeyi kullanır.
     private func persistRunningServices() {
         guard hasRunFullCheck, !isQuitting else { return }
+        // Dosya MAKİNEYE ait (bkz. Core/ProcessRole.swift): test ana uygulaması ya da ikinci
+        // bir kopya buraya yazarsa, bir sonraki GERÇEK açılışta "son çalışanları başlat"
+        // yanlış listeyi geri getirir. Kapı bootstrap'ta bir kez değil, HER YAZIMDA
+        // sorulur — kısıtlama geçiciyse (kapanmakta olan eski kopya) kendiliğinden geçer.
+        guard ProcessRole.mayMutateSharedEnvironment else { return }
         let running = services.filter { $0.canToggle && $0.status == .running }.map(\.id)
         if let data = try? JSONEncoder().encode(running) {
             FileHelper.write(data, to: PathConfig.lastRunningJson)
@@ -1513,116 +1612,10 @@ class ServiceManager: BaseManager {
         guard let i = services.firstIndex(where: { $0.id == service.id }) else { return }
 
         let brewName = service.brewName ?? service.id
-        let cleanupPaths = uninstallCleanupPaths(for: service)
-
-        let pathEchos = cleanupPaths.isEmpty
-            ? "  echo \"  (temizlenecek config yok)\""
-            : cleanupPaths.map { "  echo \"  \($0)\"" }.joined(separator: "\n")
-
-        let rmCommands = cleanupPaths.isEmpty
-            ? "echo \"  (temizlenecek config yok)\""
-            : cleanupPaths.map { "rm -rf \"\($0)\" && echo \"  ✅ Silindi: \($0)\"" }.joined(separator: "\n")
-
-        // Korunan kullanıcı verisi (vhost'lar) — silinmediği AÇIKÇA bildirilir
-        let preservedPaths = uninstallPreservedPaths(for: service)
-        let preservedNote = preservedPaths.isEmpty ? "" : """
-
-        echo "🛡  Yapılandırmalarınız korundu (silinmedi):"
-        \(preservedPaths.map { "echo \"  \($0)\"" }.joined(separator: "\n"))
-        echo "   Paketi tekrar kurduğunuzda alan adlarınız yerinde olacak."
-        echo ""
-        """
-
-        // ── Durdurma ve kaldırma komutları ────────────────────────────────
-        // Tüm servisler Homebrew — launchctl remove ile durdur, brew uninstall ile kaldır
-        let stopCmd        = "brew services stop \(brewName) 2>/dev/null || true"
-        let uninstallCmd   = "brew uninstall --force \(brewName)"
-        let packageLabel   = "Paket   : \(brewName)"
-        let autoremoveBlock = """
-
-        echo "🧹 Kullanılmayan bağımlılıklar temizleniyor..."
-        brew autoremove
-        echo ""
-        """
-        // ─────────────────────────────────────────────────────────────────
-
-        // MariaDB kaldırılıyorsa phpMyAdmin da kaldır
-        let phpmyadminExtra: String
-        if service.id == "mariadb" {
-            let httpdConf = PathConfig.httpdConf
-            let pmaDir    = PathConfig.phpmyadminDir
-            phpmyadminExtra = """
-
-        if brew list phpmyadmin >/dev/null 2>&1; then
-            echo "🗑️  phpMyAdmin da kaldırılıyor (MariaDB bağımlılığı)..."
-            brew services stop phpmyadmin 2>/dev/null || true
-            brew uninstall --force phpmyadmin
-            echo "  ✅ phpMyAdmin kaldırıldı"
-            rm -rf "\(pmaDir)" && echo "  ✅ Silindi: \(pmaDir)" || true
-        fi
-
-        echo "🧹 httpd.conf'tan phpMyAdmin include satırı kaldırılıyor..."
-        sed -i '' '/IncludeOptional.*phpmyadmin\\.conf/d' "\(httpdConf)" 2>/dev/null && echo "  ✅ Include satırı kaldırıldı" || true
-        """
-        } else {
-            phpmyadminExtra = ""
-        }
-
-        // Node.js: npm global cache; Python: pip cache
-        let runtimeExtra: String
-        if service.id.hasPrefix("node@") {
-            runtimeExtra = """
-
-        echo "🧹 npm cache temizleniyor..."
-        npm cache clean --force 2>/dev/null || true
-        echo ""
-        """
-        } else if service.id.hasPrefix("python@") {
-            let ver = service.id.replacingOccurrences(of: "python@", with: "")
-            runtimeExtra = """
-
-        echo "🧹 pip cache temizleniyor..."
-        python\(ver) -m pip cache purge 2>/dev/null || true
-        echo ""
-        """
-        } else {
-            runtimeExtra = ""
-        }
-
-        let script = """
-        #!/bin/bash
-        export PATH="\(Shell.brewPrefix)/bin:\(Shell.brewPrefix)/sbin:$PATH"
-        export HOMEBREW_NO_AUTO_UPDATE=1
-
-        echo "══════════════════════════════════════════════════"
-        echo "  🗑️  \(service.name) Kaldırılıyor"
-        echo "══════════════════════════════════════════════════"
-        echo ""
-        echo "  \(packageLabel)"
-        \(pathEchos)
-        echo ""
-
-        echo "🛑 Servis durduruluyor..."
-        \(stopCmd)
-        echo ""
-        \(runtimeExtra)
-        echo "🗑️  Paket kaldırılıyor..."
-        if ! \(uninstallCmd); then
-            echo ""
-            echo "❌ brew uninstall başarısız — config ve veri dosyalarına DOKUNULMADI."
-            echo "   Sorunu giderdikten sonra tekrar deneyin."
-            exit 1
-        fi
-        echo ""
-
-        echo "🗑️  Config & kütüphane dosyaları temizleniyor..."
-        \(rmCommands)
-        echo ""
-        \(preservedNote)
-        \(phpmyadminExtra)
-        \(autoremoveBlock)
-        echo "✅ \(service.name) başarıyla kaldırıldı!"
-        """
+        let script = Self.uninstallScript(serviceID: service.id,
+                                          serviceName: service.name,
+                                          brewName: brewName,
+                                          brewPrefix: Shell.brewPrefix)
 
         // Script'i geçici dosyaya yaz, PTY ile çalıştır → InstallationProgressSheet'te göster
         let tmpPath = NSTemporaryDirectory() + "brampp_uninstall_\(UUID().uuidString).sh"
@@ -1657,82 +1650,234 @@ class ServiceManager: BaseManager {
         }
     }
 
-    private func uninstallCleanupPaths(for service: Service) -> [String] {
-        let base = Shell.brewPrefix
-        switch service.id {
+    /// Kaldırma betiği — SAF metin üretimi (dosya sistemine dokunmaz, testlerden çağrılır).
+    ///
+    /// Betiğin `rm -rf` ettiği HER yol `uninstallPlan(...).allPaths` içinden, `sed -i ''`
+    /// ile düzenlediği her dosya `editedPaths` içinden gelir. Kaynak tek olduğu için
+    /// betikle onay diyaloğu AYRIŞAMAZ; testler de bunu betiğin metni üzerinde doğrular
+    /// (planı planla karşılaştıran eski test hiçbir sapmayı göremezdi).
+    static func uninstallScript(serviceID: String, serviceName: String,
+                                brewName: String, brewPrefix base: String) -> String {
+        let plan = uninstallPlan(forServiceID: serviceID, brewPrefix: base)
+        let cleanupPaths = uninstallCleanupPaths(forServiceID: serviceID, brewPrefix: base)
+
+        let pathEchos = cleanupPaths.isEmpty
+            ? "  echo \"  (temizlenecek config yok)\""
+            : cleanupPaths.map { "  echo \"  \($0)\"" }.joined(separator: "\n")
+
+        let rmCommands = cleanupPaths.isEmpty
+            ? "echo \"  (temizlenecek config yok)\""
+            : cleanupPaths.map { "rm -rf \"\($0)\" && echo \"  ✅ Silindi: \($0)\"" }.joined(separator: "\n")
+
+        // Korunan kullanıcı verisi (vhost'lar) — silinmediği AÇIKÇA bildirilir
+        let preservedPaths = plan.preservedPaths
+        let preservedNote = preservedPaths.isEmpty ? "" : """
+
+        echo "🛡  Yapılandırmalarınız korundu (silinmedi):"
+        \(preservedPaths.map { "echo \"  \($0)\"" }.joined(separator: "\n"))
+        echo "   Paketi tekrar kurduğunuzda alan adlarınız yerinde olacak."
+        echo ""
+        """
+
+        // ── Durdurma ve kaldırma komutları ────────────────────────────────
+        // Tüm servisler Homebrew — launchctl remove ile durdur, brew uninstall ile kaldır
+        let stopCmd        = "brew services stop \(brewName) 2>/dev/null || true"
+        let uninstallCmd   = "brew uninstall --force \(brewName)"
+        let packageLabel   = "Paket   : \(brewName)"
+        let autoremoveBlock = """
+
+        echo "🧹 Kullanılmayan bağımlılıklar temizleniyor..."
+        brew autoremove
+        echo ""
+        """
+        // ─────────────────────────────────────────────────────────────────
+
+        // MariaDB kaldırılıyorsa phpMyAdmin da kaldır. Web kökünün (`share/phpmyadmin`)
+        // `rm -rf`i artık burada DEĞİL, planın ortak temizlik listesinde — diyalog da
+        // ancak orada olan yolları gösterebiliyor.
+        let phpmyadminExtra: String
+        if serviceID == "mariadb" {
+            // Düzenlenen dosya plandan gelir; betiğe gömülü ikinci bir yol kalmasın.
+            let httpdConf = plan.editedPaths.first ?? PathConfig.Brew.httpdConf(base)
+            phpmyadminExtra = """
+
+        if brew list phpmyadmin >/dev/null 2>&1; then
+            echo "🗑️  phpMyAdmin da kaldırılıyor (MariaDB bağımlılığı)..."
+            brew services stop phpmyadmin 2>/dev/null || true
+            brew uninstall --force phpmyadmin
+            echo "  ✅ phpMyAdmin kaldırıldı"
+        fi
+
+        echo "🧹 httpd.conf'tan phpMyAdmin include satırı kaldırılıyor..."
+        sed -i '' '/IncludeOptional.*phpmyadmin\\.conf/d' "\(httpdConf)" 2>/dev/null && echo "  ✅ Include satırı kaldırıldı" || true
+        """
+        } else {
+            phpmyadminExtra = ""
+        }
+
+        // Node.js: npm global cache; Python: pip cache
+        let runtimeExtra: String
+        if serviceID.hasPrefix("node@") {
+            runtimeExtra = """
+
+        echo "🧹 npm cache temizleniyor..."
+        npm cache clean --force 2>/dev/null || true
+        echo ""
+        """
+        } else if serviceID.hasPrefix("python@") {
+            let ver = serviceID.replacingOccurrences(of: "python@", with: "")
+            runtimeExtra = """
+
+        echo "🧹 pip cache temizleniyor..."
+        python\(ver) -m pip cache purge 2>/dev/null || true
+        echo ""
+        """
+        } else {
+            runtimeExtra = ""
+        }
+
+        return """
+        #!/bin/bash
+        export PATH="\(base)/bin:\(base)/sbin:$PATH"
+        export HOMEBREW_NO_AUTO_UPDATE=1
+
+        echo "══════════════════════════════════════════════════"
+        echo "  🗑️  \(serviceName) Kaldırılıyor"
+        echo "══════════════════════════════════════════════════"
+        echo ""
+        echo "  \(packageLabel)"
+        \(pathEchos)
+        echo ""
+
+        echo "🛑 Servis durduruluyor..."
+        \(stopCmd)
+        echo ""
+        \(runtimeExtra)
+        echo "🗑️  Paket kaldırılıyor..."
+        if ! \(uninstallCmd); then
+            echo ""
+            echo "❌ brew uninstall başarısız — config ve veri dosyalarına DOKUNULMADI."
+            echo "   Sorunu giderdikten sonra tekrar deneyin."
+            exit 1
+        fi
+        echo ""
+
+        echo "🗑️  Config & kütüphane dosyaları temizleniyor..."
+        \(rmCommands)
+        echo ""
+        \(preservedNote)
+        \(phpmyadminExtra)
+        \(autoremoveBlock)
+        echo "✅ \(serviceName) başarıyla kaldırıldı!"
+        """
+    }
+
+    /// Betiğin `rm -rf` edeceği yollar — SIRA korunur (çıktıdaki liste bu sırayla basılır).
+    /// Sınıflandırma `UninstallPlan`da; burada yalnızca düzleştirilir.
+    ///
+    /// `private` DEĞİL: "betik yalnızca planın yollarını siler" değişmezini testin
+    /// gerçekten ölçebilmesi için görünür olmalı (eski test planı planla karşılaştırıyordu).
+    static func uninstallCleanupPaths(forServiceID id: String, brewPrefix base: String) -> [String] {
+        uninstallPlan(forServiceID: id, brewPrefix: base).allPaths
+    }
+
+    /// Bir servisi kaldırmanın neye mal olacağı — **TEK KAYNAK**.
+    ///
+    /// Onay diyaloğu (`ServicesTabView`) ve kaldırma betiği AYNI listeden üretilir.
+    /// Ayrı iki liste tutulduğu sürece diyalog "paket ve yapılandırma dosyaları silinecek"
+    /// derken betik `var/mysql` altındaki bütün veritabanlarını siliyordu; kullanıcı ne
+    /// kaybettiğini ancak silindikten sonra, log akışında görüyordu.
+    ///
+    /// Saf: yalnızca servis kimliğine ve verilen Homebrew önekine bakar; dosya sistemine
+    /// DOKUNMAZ ve `Shell.brewPrefix` okumaz. Yol formülleri `PathConfig.Brew` altındadır
+    /// (tek tanım orada; `PathConfig` sabitleri de aynı formülleri kullanır) — böylece
+    /// birim testler hayalî bir önekle çalışır, `brew --prefix` çağırmaz.
+    /// Üretimdeki çağrı — Homebrew önekiyle. (Varsayılan parametre DEĞİL: varsayılan
+    /// ifade yalıtımsız bağlamda çözülür ve `Shell.brewPrefix` erişimi uyarı üretir.)
+    static func uninstallPlan(forServiceID id: String) -> UninstallPlan {
+        uninstallPlan(forServiceID: id, brewPrefix: Shell.brewPrefix)
+    }
+
+    static func uninstallPlan(forServiceID id: String, brewPrefix base: String) -> UninstallPlan {
+        func plan(_ paths: [UninstallPath], edited: [String] = [], preserved: [String] = []) -> UninstallPlan {
+            UninstallPlan(serviceID: id, paths: paths, editedPaths: edited, preservedPaths: preserved)
+        }
+
+        switch id {
         case "httpd":
             // DİKKAT: `etc/httpd` dizininin TAMAMI silinemez — `VirtualHosts/` altında
             // kullanıcının TÜM alan adı yapılandırmaları durur. Yalnızca paketin/BRAMPP'ın
             // ürettiği dosyalar temizlenir; vhost'lar olduğu gibi kalır.
-            return [
-                PathConfig.httpdConf,          // etc/httpd/httpd.conf
-                PathConfig.httpdSSLConf,       // etc/httpd/extra/httpd-ssl.conf
-                PathConfig.phpmyadminConf,     // etc/httpd/extra/phpmyadmin.conf
-                PathConfig.adminerConf,        // etc/httpd/extra/adminer.conf
-                PathConfig.pgadmin4Conf        // etc/httpd/extra/pgadmin4.conf
-            ]
+            return plan([
+                .config(PathConfig.Brew.httpdConf(base)),      // etc/httpd/httpd.conf
+                .config(PathConfig.Brew.httpdSSLConf(base)),   // etc/httpd/extra/httpd-ssl.conf
+                .config(PathConfig.Brew.phpmyadminConf(base)), // etc/httpd/extra/phpmyadmin.conf
+                .config(PathConfig.Brew.adminerConf(base)),    // etc/httpd/extra/adminer.conf
+                .config(PathConfig.Brew.pgadmin4Conf(base))    // etc/httpd/extra/pgadmin4.conf
+            ], preserved: [PathConfig.Brew.vhostsDir(base)])
         case "nginx":
             // Aynı gerekçe: `sites-available/` kullanıcının domain bloklarını barındırır.
-            return [PathConfig.nginxConf]      // etc/nginx/nginx.conf
+            return plan([.config(PathConfig.Brew.nginxConf(base))],   // etc/nginx/nginx.conf
+                        preserved: [PathConfig.Brew.nginxSitesAvailableDir(base)])
         case "mariadb":
-            // phpMyAdmin config dosyaları da temizle (brew package ayrı kaldırılır)
-            return [
-                "\(base)/etc/my.cnf",
-                "\(base)/var/mysql",
-                PathConfig.phpmyadminConf,
-                PathConfig.phpmyadminAppConfig
-            ]
+            // phpMyAdmin config dosyaları da temizle (brew package ayrı kaldırılır).
+            // `share/phpmyadmin` ve httpd.conf düzenlemesi eskiden PLANIN DIŞINDA,
+            // doğrudan betiğe gömülüydü — diyalog ikisini de hiç anmıyordu.
+            return plan([
+                .config("\(base)/etc/my.cnf"),
+                // VERİ: kullanıcının TÜM veritabanları burada. Kaldırma bunu siler.
+                .data("\(base)/var/mysql"),
+                .config(PathConfig.Brew.phpmyadminConf(base)),
+                .config(PathConfig.Brew.phpmyadminAppConfig(base)),
+                // phpMyAdmin web kökü — paket MariaDB ile birlikte kaldırılır
+                .config(PathConfig.Brew.phpmyadminDir(base))
+            ], edited: [PathConfig.Brew.httpdConf(base)])   // phpMyAdmin include satırı çıkarılır
         case "redis":
-            return ["\(base)/etc/redis.conf"]
+            // Yalnızca config: `var/db/redis` altındaki dump.rdb'ye DOKUNULMAZ.
+            return plan([.config("\(base)/etc/redis.conf")])
         case "memcached":
-            return []
+            return plan([])
         default:
-            if service.id.hasPrefix("php@") {
-                let ver = service.id.replacingOccurrences(of: "php@", with: "")
-                return ["\(base)/etc/php/\(ver)"]
+            if id.hasPrefix("php@") {
+                let ver = id.replacingOccurrences(of: "php@", with: "")
+                return plan([.config("\(base)/etc/php/\(ver)")])
             }
-            if service.id.hasPrefix("postgresql@") {
-                let ver = service.id.replacingOccurrences(of: "postgresql@", with: "")
-                return [
-                    "\(base)/etc/postgresql@\(ver)",
-                    "\(base)/var/postgresql@\(ver)"
-                ]
+            if id.hasPrefix("postgresql@") {
+                let ver = id.replacingOccurrences(of: "postgresql@", with: "")
+                return plan([
+                    .config("\(base)/etc/postgresql@\(ver)"),
+                    // VERİ: kümenin TAMAMI (initdb ile üretilen data directory).
+                    .data("\(base)/var/postgresql@\(ver)")
+                ])
             }
-            if service.id.hasPrefix("node@") {
-                let ver = service.id.replacingOccurrences(of: "node@", with: "")
+            if id.hasPrefix("node@") {
+                let ver = id.replacingOccurrences(of: "node@", with: "")
                 // DİKKAT: lib/node_modules ve include/node PAYLAŞILANDIR — ana `node` formülünün
                 // npm'i ve kullanıcının tüm global paketleri (yarn, pm2 vb.) orada durur.
                 // Yalnızca sürüme özgü opt dizini temizlenir.
-                return [
-                    "\(base)/opt/node@\(ver)",          // brew opt dizini (sürüme özgü)
-                ]
+                return plan([
+                    .config("\(base)/opt/node@\(ver)"),          // brew opt dizini (sürüme özgü)
+                ])
             }
-            if service.id.hasPrefix("python@") {
-                let ver = service.id.replacingOccurrences(of: "python@", with: "")
+            if id.hasPrefix("python@") {
+                let ver = id.replacingOccurrences(of: "python@", with: "")
                 let major = ver.components(separatedBy: ".").prefix(2).joined(separator: ".")
-                return [
-                    "\(base)/opt/python@\(ver)",                              // brew opt dizini
-                    "\(base)/lib/python\(major)",                             // site-packages
-                    "\(base)/Frameworks/Python.framework/Versions/\(major)",  // macOS Framework
-                ]
+                return plan([
+                    .config("\(base)/opt/python@\(ver)"),                      // brew opt dizini
+                    // VERİ: site-packages — kullanıcının pip ile kurduğu HER ŞEY.
+                    // `lib/pythonX.Y` Framework içindeki dizine bağdır; ikisi de aynı içeriği
+                    // gösterir, ikisi de siliniyor.
+                    .data("\(base)/lib/python\(major)"),                       // site-packages
+                    .data("\(base)/Frameworks/Python.framework/Versions/\(major)"),
+                ])
             }
-            if service.id.hasPrefix("dotnet@") {
-                return [
-                    "\(base)/opt/\(service.id)",          // brew opt: opt/dotnet@7
-                    "\(base)/share/dotnet/\(service.id)", // SDK paylaşımlı kaynaklar
-                ]
+            if id.hasPrefix("dotnet@") {
+                return plan([
+                    .config("\(base)/opt/\(id)"),          // brew opt: opt/dotnet@7
+                    .config("\(base)/share/dotnet/\(id)"), // SDK paylaşımlı kaynaklar
+                ])
             }
-            return []
-        }
-    }
-
-    /// Kaldırma sırasında KASITLI olarak dokunulmayan kullanıcı verisi dizinleri.
-    /// Kaldırma çıktısında listelenir — kullanıcı vhost'larının silinmediğini görsün.
-    private func uninstallPreservedPaths(for service: Service) -> [String] {
-        switch service.id {
-        case "httpd": return [PathConfig.vhostsDir]
-        case "nginx": return [PathConfig.nginxSitesAvailableDir]
-        default:      return []
+            return plan([])
         }
     }
 
@@ -2187,6 +2332,9 @@ class ServiceManager: BaseManager {
         // Önceki observer'ları temizle
         backgroundObservers.forEach { NotificationCenter.default.removeObserver($0) }
         backgroundObservers.removeAll()
+        // Her biri KENDİ merkezinden silinir — bkz. `workspaceObservers` notu.
+        workspaceObservers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
+        workspaceObservers.removeAll()
 
         // Uygulama arka plana geçince timer'ı durdur — pil tasarrufu
         let resign = NotificationCenter.default.addObserver(
@@ -2219,7 +2367,38 @@ class ServiceManager: BaseManager {
             }
         }
 
+        // Mac UYKUDAN UYANINCA — odak değişmeden.
+        //
+        // NEDEN AYRI BİR GÖZLEMCİ: yukarıdaki ikisi UYGULAMA odağına bakar, uykuya
+        // değil. Mac uyurken `Timer` ateşlenmez ve uyanınca kendi takviminde devam
+        // eder; üstelik uygulama o sırada arka plandaysa timer zaten iptal edilmiştir.
+        // Sonuç: uyanan makinede durum, kullanıcı BRAMPP'e TIKLAYANA kadar bayat kalır.
+        //
+        // Bu en çok paylaşımlarda acıtır: uyku ağı düşürür, cloudflared ölür, tünel
+        // adresi çöker — yani tünelin ölmesi en muhtemel an, kimsenin bakmadığı andır.
+        // `NSWorkspace.didWakeNotification` uygulama arka planda olsa da gelir.
+        let wake = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.hasRunFullCheck else { return }
+                // Ağ arayüzleri uyanmayla ANINDA hazır olmuyor; hemen sorulan `nc`
+                // probu yanlışlıkla "kapalı" der. Kısa bir soluk payı bırakılır.
+                try? await Task.sleep(for: .seconds(2))
+                await self.refreshStatusLight()
+                // Uygulama arka plandaysa `didBecomeActive` gelmeyecek, yani timer'ı
+                // burada geri kurmazsak bir daha hiç dönmez.
+                if self.refreshTimer == nil {
+                    self.refreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                        Task { @MainActor [weak self] in await self?.refreshStatusLight() }
+                    }
+                }
+            }
+        }
+
         backgroundObservers = [resign, activate]
+        workspaceObservers = [wake]
     }
 
     // MARK: - Bildirimler

@@ -64,10 +64,9 @@ struct SettingsView: View {
     // Girişte başlat — tek doğruluk kaynağı sistem (SMAppService durumu)
     @State private var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled
 
-    // Güncelleme denetimi — yalnızca kullanıcı isteyince çalışır. Açılışta otomatik
-    // sorgu YAPILMAZ: uygulama her açılışta GitHub'a bağlanmamalı.
-    @State private var updateState: UpdateChecker.Result?
-    @State private var updateChecking = false
+    // UYGULAMA güncellemesi artık kendi sekmesinde (Views/UpdatesSettingsView.swift):
+    // durum, kanal, otomatik denetim ve indirme kipi orada tutulur. Burada
+    // yalnızca Homebrew PAKET güncellemeleri kaldı (aşağıdaki outdatedPackages).
     @State private var customSitesPath: String = AppSettings.load().sitesPath
 
     @State private var showResetAlert = false
@@ -87,10 +86,15 @@ struct SettingsView: View {
                 .tabItem { Label(loc.t("set.tab.ssl"), systemImage: "lock.shield") }
             mcpTab
                 .tabItem { Label(loc.t("set.tab.mcp"), systemImage: "sparkles") }
+            UpdatesSettingsView()
+                .tabItem { Label(loc.t("set.tab.updates"), systemImage: "arrow.down.circle") }
             gelismisTab
                 .tabItem { Label(loc.t("set.tab.advanced"), systemImage: "wrench.and.screwdriver") }
         }
-        .frame(width: 560, height: 540)
+        // 560 → 620: yedi sekme etiketi 560pt'ye sığmıyor ve macOS taşanları bir
+        // chevron'un arkasına katlıyor — yeni sekme kimsenin tıklamadığı bir
+        // menünün içinde kaybolurdu.
+        .frame(width: 620, height: 540)
         .onAppear {
             pendingRefreshInterval = autoRefreshInterval
             // Sıfırlama sonrası ya da pencere yeniden açılınca bayat kalmasın
@@ -706,7 +710,6 @@ struct SettingsView: View {
                     Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1")
                         .font(.caption).foregroundColor(.secondary)
                 }
-                updateRow
                 LabeledContent(loc.t("set.about.domains")) {
                     Text(String(format: loc.t("set.about.domainsCount"), appState.domainManager.domains.count))
                         .font(.caption).foregroundColor(.secondary)
@@ -748,7 +751,10 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Label(loc.t("set.updates"), systemImage: "arrow.triangle.2.circlepath")
+                // Başlık eskiden "Güncellemeler" idi ve yeni Güncelleme SEKMESİYLE
+                // birebir aynı sözcüktü. İki ayrı kavram — uygulamanın sürümü ve
+                // Homebrew paketleri — aynı adla anılmamalı.
+                Label(loc.t("set.brewUpdates.header"), systemImage: "arrow.triangle.2.circlepath")
             }
 
             // Sıfırlama
@@ -1285,49 +1291,6 @@ struct SSLSettingsView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(buttonColor)
                     .controlSize(.small)
-            }
-        }
-    }
-}
-
-// MARK: - Güncelleme satırı
-
-extension SettingsView {
-    /// "Güncellemeleri denetle" satırı. Sonuç aynı satırda gösterilir; yeni sürüm
-    /// varsa sürüm sayfasına götüren bir düğme belirir. İndirme uygulamada YAPILMAZ —
-    /// kendi kendini güncelleyen bir mekanizma imzalı/noter onaylı dağıtım zincirini
-    /// atlatma riski taşır, indirme kullanıcının tarayıcısında kalır.
-    @ViewBuilder
-    var updateRow: some View {
-        LabeledContent(loc.t("set.update.check")) {
-            HStack(spacing: 8) {
-                switch updateState {
-                case .upToDate:
-                    Label(loc.t("set.update.upToDate"), systemImage: "checkmark.circle.fill")
-                        .font(.caption).foregroundColor(.green).labelStyle(.titleAndIcon)
-                case .updateAvailable(_, let latest, let url):
-                    Label(String(format: loc.t("set.update.available"), latest),
-                          systemImage: "arrow.down.circle.fill")
-                        .font(.caption).foregroundColor(.orange).labelStyle(.titleAndIcon)
-                    Button(loc.t("set.update.open")) { NSWorkspace.shared.open(url) }
-                        .buttonStyle(.link).font(.caption)
-                case .failed:
-                    Text(loc.t("set.update.failed"))
-                        .font(.caption).foregroundColor(.secondary)
-                case nil:
-                    EmptyView()
-                }
-
-                Button(updateChecking ? loc.t("set.update.checking") : loc.t("set.update.check")) {
-                    updateChecking = true
-                    Task {
-                        let r = await UpdateChecker.check()
-                        updateState = r
-                        updateChecking = false
-                    }
-                }
-                .buttonStyle(.bordered).controlSize(.small)
-                .disabled(updateChecking)
             }
         }
     }

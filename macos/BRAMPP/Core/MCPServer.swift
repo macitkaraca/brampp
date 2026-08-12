@@ -1454,7 +1454,14 @@ final class MCPServer: ObservableObject {
 
     private func toolListShares() async -> ToolOutcome {
         guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
-        let live = manager.tunnels.values.sorted { $0.domainName < $1.domainName }
+        // Bellekteki tablo, süreç dışarıdan öldüğünde kendiliğinden güncellenmez.
+        // Sormadan önce gerçekle eşitle: bu araç ölü bir adresi ASLA açık paylaşım
+        // diye bildirmemeli — karşı taraf Cloudflare'in 1033 hatasını görür.
+        await manager.reconcile()
+        // Ölü/başarısız kayıtlar listelenmez; adresi henüz gelmemiş olanlar öyle etiketlenir.
+        let live = manager.tunnels.values
+            .filter { $0.isLive || $0.state == .starting }
+            .sorted { $0.domainName < $1.domainName }
         guard !live.isEmpty else { return .text("Açık paylaşım yok") }
         return .text(live.map { t in
             let url = t.publicURL ?? "(adres bekleniyor)"

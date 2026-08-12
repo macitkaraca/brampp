@@ -44,10 +44,17 @@ enum ConsoleLogFile {
     /// Metin ÇÖZÜLMÜŞ yazılır (anahtar değil): dosya kendi başına, uygulama olmadan da
     /// okunabilir olmalı. Çok satırlı çıktılarda (brew, shell stderr) her fiziksel satır
     /// kendi zaman damgasını alır — aksi halde tarihe göre süzme bozulurdu.
-    static func format(date: Date, level: String, text: String) -> String {
+    ///
+    /// SATIR YAZAN SÜRECİ SÖYLER (`(app 1689)`): dosya adı yalnızca TARİHE bağlı olduğu
+    /// için kurulu uygulama, Xcode derlemesi, XCTest ana uygulaması ve önizlemeler aynı
+    /// dosyaya karışık yazar. Kimin yazdığı belli olmadığında dosya, çakışan iki kopyayı
+    /// teşhis etmek için işe yaramaz hâle geliyordu — yaşanan tünel olayında tam olarak
+    /// bu oldu. Etiket `ProcessRole.signature`'tan gelir ve süreç ömrü boyunca sabittir.
+    static func format(date: Date, level: String, text: String,
+                       process: String = ProcessRole.signature) -> String {
         let stamp = stampFormatter.string(from: date)
         let lines = text.components(separatedBy: .newlines)
-        return lines.map { "\(stamp) [\(level)] \($0)" }.joined(separator: "\n") + "\n"
+        return lines.map { "\(stamp) [\(level)] (\(process)) \($0)" }.joined(separator: "\n") + "\n"
     }
 
     /// `.progress` YAZILMAZ — brew'un `####### %42` çubuğu saniyede onlarca satır üretir,

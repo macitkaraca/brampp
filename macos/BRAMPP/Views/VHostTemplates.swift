@@ -839,8 +839,13 @@ struct VHostTemplates {
         # Erişim: https://localhost/adminer  (MySQL/MariaDB + PostgreSQL)
         # ═══════════════════════════════════════════════════════════════════
 
-        Alias /adminer \(PathConfig.adminerDir)
+        # SIRA ÖNEMLİ: Apache Alias'ları YAZILDIKLARI sırada dener ve ilk eşleşeni kullanır.
+        # Eğik çizgisiz olan (`/adminer`) eğik çizgilinin ÖNEKİ olduğundan, önce yazılırsa
+        # ikincisi hiçbir zaman eşleşmez ve `apachectl configtest` şu uyarıyı üretir:
+        # "AH00671: The Alias directive … will probably never match because it overlaps an
+        # earlier Alias." Özel olan (eğik çizgili) önce gelir.
         Alias /adminer/ \(PathConfig.adminerDir)/
+        Alias /adminer \(PathConfig.adminerDir)
 
         <Directory \(PathConfig.adminerDir)/>
             Options FollowSymLinks
@@ -870,8 +875,11 @@ struct VHostTemplates {
         # Erişim: https://localhost/phpmyadmin
         # ═══════════════════════════════════════════════════════════════════
 
-        Alias /phpmyadmin \(PathConfig.phpmyadminDir)
+        # SIRA ÖNEMLİ — gerekçe için adminerApacheConfig'teki nota bakın: eğik çizgisiz
+        # Alias, eğik çizgilinin öneki olduğu için özel olan ÖNCE yazılır, yoksa Apache
+        # AH00671 uyarısı verir.
         Alias /phpmyadmin/ \(PathConfig.phpmyadminDir)/
+        Alias /phpmyadmin \(PathConfig.phpmyadminDir)
 
         <Directory \(PathConfig.phpmyadminDir)/>
             Options Indexes FollowSymLinks MultiViews

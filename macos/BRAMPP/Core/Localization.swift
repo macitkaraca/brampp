@@ -139,6 +139,7 @@ enum L10n {
         "svc.cf.activeOne":   ["tr": "1 yayın açık: %@", "en": "1 share open: %@"],
         "svc.cf.activeMany":  ["tr": "%d yayın açık: %@", "en": "%d shares open: %@"],
         "svc.cf.idle":        ["tr": "Açık yayın yok", "en": "No shares open"],
+        "svc.cf.stopAllHelp": ["tr": "Açık tüm paylaşımları kapatır. Herkese açık adresler ölür; yeniden paylaşırsanız yeni adres alırsınız.", "en": "Closes every open share. The public addresses die; sharing again gives you new ones."],
         "dom.share.needsInstall": ["tr": "cloudflared kurulu değil — Servisler sekmesinden kurun", "en": "cloudflared is not installed — install it from the Services tab"],
         "share.port.title":    ["tr": "Yerel bir portu paylaş", "en": "Share a local port"],
         "share.port.hint":     ["tr": "BRAMPP'ta alan adı olmayan bir geliştirme sunucusunu paylaşın — örneğin npm run dev ile 5173'te çalışan uygulamanızı.", "en": "Share a dev server that has no BRAMPP domain — for example the app npm run dev is serving on 5173."],
@@ -531,6 +532,142 @@ enum L10n {
         "set.update.failed":    ["tr": "Denetlenemedi — bağlantıyı kontrol edin",
                                  "en": "Couldn't check — verify your connection"],
         "set.update.open":      ["tr": "Sürüm sayfasını aç",     "en": "Open release page"],
+        // ── Güncelleme bildirimi (Views/UpdatePromptView.swift) ──
+        "upd.title":            ["tr": "Yeni sürüm hazır", "en": "A new version is ready"],
+        // %@1 = kurulu sürüm, %@2 = yeni sürüm
+        "upd.subtitle":         ["tr": "%@ sürümündesiniz — %@ yayınlandı",
+                                 "en": "You're on %@ — %@ has been released"],
+        "upd.notes.header":     ["tr": "Bu sürümde neler var", "en": "What's in this release"],
+        "upd.notes.none":       ["tr": "Bu sürüm için not yayınlanmadı.",
+                                 "en": "No release notes were published for this version."],
+        "upd.notes.truncated":  ["tr": "Notlar kısaltıldı — tamamı sürüm sayfasında.",
+                                 "en": "The notes were shortened — the full text is on the release page."],
+        "upd.action.install":   ["tr": "İndir ve doğrula", "en": "Download and verify"],
+        "upd.action.openPage":  ["tr": "Sürüm sayfasını aç", "en": "Open the release page"],
+        "upd.action.skip":      ["tr": "Bu sürümü atla", "en": "Skip this version"],
+        "upd.action.later":     ["tr": "Sonra hatırlat", "en": "Remind me later"],
+        "upd.later.1day":       ["tr": "Yarın", "en": "Tomorrow"],
+        "upd.later.3days":      ["tr": "3 gün sonra", "en": "In 3 days"],
+        "upd.later.1week":      ["tr": "1 hafta sonra", "en": "In a week"],
+        "upd.mandatory":        ["tr": "Bu güncelleme zorunlu olarak işaretlendi.",
+                                 "en": "This update is marked mandatory."],
+        "upd.blocked":          ["tr": "Kullandığınız sürüm sorunlu olarak işaretlendi — güncellemeniz önerilir.",
+                                 "en": "The version you are running was flagged as faulty — updating is strongly recommended."],
+        // %@ = manifestteki minimumOS. Sürüm GERÇEKTEN var; eksik olan bu makinenin
+        // macOS'u — bu yüzden "güncelsiniz" denmez, indirme de sunulmaz.
+        "upd.needsNewerOS":     ["tr": "Bu sürüm macOS %@ ya da üstünü gerektiriyor — önce macOS'unuzu yükseltin.",
+                                 "en": "This release requires macOS %@ or newer — update macOS first."],
+        // %@ = kanal adı
+        "upd.channelBadge":     ["tr": "%@ kanalı", "en": "%@ channel"],
+        // %@ = yayın tarihi
+        "upd.published":        ["tr": "Yayın tarihi: %@", "en": "Published: %@"],
+
+        // ── Güncelleme: indirme ve doğrulama ──
+        // %@ = yüzde
+        "upd.dl.downloading":   ["tr": "İndiriliyor… %@", "en": "Downloading… %@"],
+        "upd.dl.verifying":     ["tr": "İmza ve noter onayı denetleniyor…",
+                                 "en": "Checking the signature and notarization…"],
+        "upd.dl.ready":         ["tr": "Doğrulandı. Kurmak için açılan pencerede BRAMPP'i Uygulamalar klasörüne sürükleyin.",
+                                 "en": "Verified. To install, drag BRAMPP into your Applications folder in the window that opens."],
+        "upd.dl.reveal":        ["tr": "Doğrulanmış disk kalıbını aç", "en": "Open the verified disk image"],
+        "upd.dl.cancel":        ["tr": "İndirmeyi durdur", "en": "Stop the download"],
+        "upd.dl.discard":       ["tr": "İndirileni sil", "en": "Delete the download"],
+        "upd.dl.noHash":        ["tr": "Bu denetim doğrulanabilir bir sağlama içermiyor — indirme uygulama içinde yapılmaz. Sürüm sayfasından indirin.",
+                                 "en": "This check carried no verifiable checksum — BRAMPP will not download it for you. Get it from the release page."],
+        // %@ = upd.fail.* neden parçası
+        "upd.dl.failed":        ["tr": "Doğrulama başarısız: %@ — indirilen dosya silindi.",
+                                 "en": "Verification failed: %@ — the download was deleted."],
+
+        // ── Güncelleme: doğrulama başarısızlık NEDENLERİ ──
+        // Tek başına cümle DEĞİL: `upd.dl.failed` kalıbının içine yerleşirler.
+        "upd.fail.url":         ["tr": "indirme adresi beklenen yayın adresi değil",
+                                 "en": "the download address is not the expected release address"],
+        "upd.fail.http":        ["tr": "indirme tamamlanamadı", "en": "the download did not complete"],
+        "upd.fail.sha":         ["tr": "dosya sağlaması yayınlanan değerle eşleşmiyor",
+                                 "en": "the file's checksum does not match the published one"],
+        "upd.fail.mount":       ["tr": "disk kalıbı açılamadı", "en": "the disk image could not be opened"],
+        "upd.fail.noApp":       ["tr": "disk kalıbında BRAMPP.app bulunamadı",
+                                 "en": "BRAMPP.app was not found in the disk image"],
+        "upd.fail.codesign":    ["tr": "imza doğrulanamadı (codesign)",
+                                 "en": "the signature did not verify (codesign)"],
+        "upd.fail.team":        ["tr": "geliştirici kimliği bu uygulamanınkiyle aynı değil",
+                                 "en": "the developer Team ID does not match this app's"],
+        "upd.fail.gatekeeper":  ["tr": "Apple noter onayı doğrulanamadı (Gatekeeper)",
+                                 "en": "Apple notarization did not verify (Gatekeeper)"],
+        "upd.fail.selfUnsigned":["tr": "bu kopya Developer ID ile imzalanmamış (geliştirme derlemesi) — karşılaştırılacak kimlik yok",
+                                 "en": "this copy is not Developer ID signed (a development build) — there is no identity to compare against"],
+        // EŞLEŞMEYEN değil, OLMAYAN sağlama. Ayrı bir neden: `upd.fail.sha` kalıbı
+        // "indirilen dosya silindi" der ve burada indirilmiş bir dosya yoktur.
+        "upd.fail.noHash":      ["tr": "bu sürüm için yayınlanmış bir sağlama yok — doğrulanamayacak dosya indirilmez",
+                                 "en": "no checksum was published for this release — a file that cannot be verified is not downloaded"],
+
+        // ── Ayarlar: Güncelleme sekmesi (Views/UpdatesSettingsView.swift) ──
+        "set.tab.updates":          ["tr": "Güncelleme", "en": "Updates"],
+        "set.upd.version.header":   ["tr": "Bu sürüm", "en": "This version"],
+        "set.upd.installed":        ["tr": "Kurulu sürüm", "en": "Installed version"],
+        // %@ = tarih
+        "set.upd.lastCheck":        ["tr": "Son denetim: %@", "en": "Last checked: %@"],
+        "set.upd.lastCheckNever":   ["tr": "Henüz denetlenmedi", "en": "Not checked yet"],
+        "set.upd.checkNow":         ["tr": "Şimdi denetle", "en": "Check now"],
+        // Daha yeni sürüm YOK ama kurulu sürüm sorunlu işaretli — "en güncel
+        // sürümdesiniz" yeşil onayının yerine geçer.
+        "set.upd.blockedCurrent":   ["tr": "Kullandığınız sürüm sorunlu olarak işaretlendi",
+                                     "en": "The version you are running was flagged as faulty"],
+        "set.upd.details":          ["tr": "Ayrıntıları göster", "en": "Show the details"],
+        "set.upd.channel.header":   ["tr": "Kanal", "en": "Channel"],
+        "set.upd.channel.label":    ["tr": "Güncelleme kanalı", "en": "Update channel"],
+        "set.upd.channel.stable":   ["tr": "Kararlı", "en": "Stable"],
+        "set.upd.channel.beta":     ["tr": "Beta", "en": "Beta"],
+        "set.upd.channel.nightly":  ["tr": "Gecelik", "en": "Nightly"],
+        // %@ = kanal adı
+        "set.upd.channel.reserved": ["tr": "%@ kanalında henüz yayın yok — denetim kararlı kanala düşer.",
+                                     "en": "Nothing is published on the %@ channel yet — checks fall back to stable."],
+        "set.upd.channel.note":     ["tr": "Kanal, sürüm bilgisinin okunduğu adresi seçer. Yayınlanan dosyalar GitHub Releases'te kalır.",
+                                     "en": "The channel picks which address the version information is read from. The released files stay on GitHub Releases."],
+        "set.upd.auto.header":      ["tr": "Otomatik denetim", "en": "Automatic checking"],
+        "set.upd.auto.toggle":      ["tr": "Her açılışta denetle", "en": "Check on every launch"],
+        "set.upd.auto.note":        ["tr": "Denetim küçük bir JSON dosyasını ve sürüm notlarını okur. Makineniz hakkında sürüm numarasından başka bir şey gönderilmez.",
+                                     "en": "A check reads a small JSON file and the release notes. Nothing about your machine is sent beyond the version number."],
+        "set.upd.dl.header":        ["tr": "İndirme", "en": "Downloading"],
+        "set.upd.dl.auto":          ["tr": "Yeni sürüm bulununca arka planda indir",
+                                     "en": "Download in the background when one is found"],
+        // "İndirdikten sonra" DEĞİL: bu ayar indirmenin ARDINDAN ne olacağını değil,
+        // bildirim penceresinin ana düğmesinin NE SUNACAĞINI seçer — `notify` iken
+        // düğme yalnızca sürüm sayfasını açar, indirme hiç önerilmez.
+        "set.upd.dl.mode":          ["tr": "Yeni sürüm bulununca", "en": "When a new version is found"],
+        "set.upd.dl.mode.notify":   ["tr": "Yalnızca haber ver", "en": "Only tell me"],
+        "set.upd.dl.mode.download": ["tr": "İndir ve doğrula, kurulumu bana bırak",
+                                     "en": "Download and verify, leave the install to me"],
+        "set.upd.dl.mode.open":     ["tr": "İndir, doğrula ve kurulum penceresini aç",
+                                     "en": "Download, verify and open the install window"],
+        "set.upd.dl.note":          ["tr": "Yukarıdaki kutu işaretli DEĞİLSE hiçbir şey kendiliğinden inmez; indirme ancak bildirim penceresindeki düğmeye basınca başlar. BRAMPP kendini KENDİLİĞİNDEN değiştirmez: doğrulanan disk kalıbı açılır, uygulamayı Uygulamalar klasörüne siz sürüklersiniz.",
+                                     "en": "Unless the box above is ticked, nothing is downloaded on its own — a download starts only when you press the button in the update window. And BRAMPP never replaces itself: the verified disk image is opened and you drag the app into Applications yourself."],
+        "set.upd.state.header":     ["tr": "Atlanan ve ertelenen", "en": "Skipped and snoozed"],
+        // %@ = sürüm
+        "set.upd.state.skipped":    ["tr": "%@ sürümü atlandı", "en": "Version %@ is skipped"],
+        // %@ = tarih
+        "set.upd.state.snoozed":    ["tr": "%@ tarihine kadar ertelendi", "en": "Snoozed until %@"],
+        "set.upd.state.none":       ["tr": "Atlanan sürüm ya da erteleme yok.", "en": "Nothing is skipped or snoozed."],
+        "set.upd.state.clear":      ["tr": "Temizle", "en": "Clear"],
+        "set.upd.safety.header":    ["tr": "Kurulmadan önce denetlenenler", "en": "Checked before anything is installed"],
+        "set.upd.safety.https":     ["tr": "İndirme, beklenen yayın adresinden ve https ile yapılır",
+                                     "en": "The download comes over https from the expected release address"],
+        "set.upd.safety.sha":       ["tr": "Dosya sağlaması yayınlanan sha256 ile karşılaştırılır",
+                                     "en": "The file's checksum is compared against the published sha256"],
+        "set.upd.safety.codesign":  ["tr": "İmza bütünlüğü denetlenir (codesign --verify --deep --strict)",
+                                     "en": "Signature integrity is checked (codesign --verify --deep --strict)"],
+        "set.upd.safety.gatekeeper":["tr": "Apple noter onayı denetlenir (spctl --assess --type execute)",
+                                     "en": "Apple notarization is checked (spctl --assess --type execute)"],
+        "set.upd.safety.team":      ["tr": "Geliştirici kimliği çalışan uygulamanınkiyle karşılaştırılır",
+                                     "en": "The developer Team ID is compared against the running app's"],
+        "set.upd.safety.fail":      ["tr": "Denetimlerden biri geçmezse indirilen dosya silinir ve hiçbir şey kurulmaz.",
+                                     "en": "If any check fails the download is deleted and nothing is installed."],
+        // Gelişmiş sekmesindeki `brew outdated` bölümünün başlığı. Eskiden
+        // `set.updates` ("Güncellemeler") idi ve yeni sekmenin adıyla birebir
+        // aynıydı — iki AYRI kavram (uygulama sürümü / Homebrew paketleri)
+        // aynı sözcükle anılmamalı.
+        "set.brewUpdates.header":   ["tr": "Homebrew paketleri", "en": "Homebrew packages"],
+
         "set.about.domains":       ["tr": "Kayıtlı alan adları:", "en": "Registered domains:"],
         "set.about.domainsCount":  ["tr": "%d adet", "en": "%d total"],
         "set.updates.header":      ["tr": "Güncellemeler", "en": "Updates"],
@@ -557,6 +694,7 @@ enum L10n {
         "menu.services":     ["tr": "Servisler", "en": "Services"],
         "menu.restartApache": ["tr": "Apache Yeniden Başlat", "en": "Restart Apache"],
         "menu.refreshLight": ["tr": "Hafif Yenile", "en": "Light Refresh"],
+        "menu.checkUpdates": ["tr": "Güncellemeleri Denetle…", "en": "Check for Updates…"],
         "menu.domain":       ["tr": "Alan Adı", "en": "Domain"],
         "menu.newDomain":    ["tr": "Yeni Alan Adı Ekle…", "en": "Add New Domain…"],
         "menu.dockStopQuit": ["tr": "Servisleri Durdur ve Kapat", "en": "Stop Services and Quit"],
@@ -639,6 +777,35 @@ enum L10n {
         "svc.other":       ["tr": "Diğer", "en": "Other"],
         "svc.uninstall.confirm": ["tr": "Bu işlem geri alınamaz. Paket ve yapılandırma dosyaları silinecek.",
                                   "en": "This cannot be undone. The package and its config files will be removed."],
+        // Kaldırma onayı, servise göre kurulur (ServiceManager.uninstallPlan): silinecek
+        // yollar TÜRLERİYLE listelenir. Veri silinen servislerde onay YAZARAK alınır —
+        // tek tıkla veritabanı kümesi gitmesin.
+        "svc.uninstall.dataHeader":  ["tr": "⚠️ SİLİNECEK VERİ — geri getirilemez:",
+                                      "en": "⚠️ DATA THAT WILL BE DESTROYED — unrecoverable:"],
+        "svc.uninstall.configHeader":["tr": "Silinecek yapılandırma ve paket dosyaları:",
+                                      "en": "Configuration and package files to be removed:"],
+        // Silinmeyen ama DÜZENLENEN dosyalar (httpd.conf'tan include satırı çıkarılır)
+        "svc.uninstall.editedHeader":["tr": "Düzenlenecek dosyalar (ilgili satırlar çıkarılır, dosya silinmez):",
+                                     "en": "Files to be edited (matching lines removed, file kept):"],
+        "svc.uninstall.preserved":   ["tr": "Korunacak (silinmez):", "en": "Kept (not removed):"],
+        "svc.uninstall.dataWarn.databases": ["tr": "Bu dizindeki TÜM veritabanlarınız silinir. Silmeden önce Veritabanı sekmesinden dışa aktarın.",
+                                             "en": "ALL of your databases in that directory are deleted. Export them from the Databases tab first."],
+        "svc.uninstall.dataWarn.packages":  ["tr": "Bu dizinlerdeki TÜM kurulu paketler (site-packages) silinir.",
+                                             "en": "ALL installed packages (site-packages) in those directories are deleted."],
+        "svc.uninstall.dataWarn.generic":   ["tr": "Bu dizinlerdeki verileriniz silinir.",
+                                             "en": "Your data in those directories is deleted."],
+        // %@ = servis adı (kullanıcı bunu yazacak)
+        "svc.uninstall.typeToConfirm": ["tr": "Onaylamak için servis adını yazın: %@",
+                                        "en": "Type the service name to confirm: %@"],
+        // %@ = servis adı
+        "svc.uninstall.dataTitle": ["tr": "%@ ve VERİLERİ silinsin mi?", "en": "Delete %@ and its data?"],
+        // Yazarak onay penceresi (sheet). Yıkıcı düğme kapalıyken NEDEN kapalı olduğu
+        // görünür olmalı — sessizce hiçbir şey yapmayan bir tıklama olmasın. %@ = servis adı
+        "svc.uninstall.mismatch":  ["tr": "Silmeyi başlatmak için tam olarak “%@” yazın.",
+                                    "en": "Type exactly “%@” to enable deletion."],
+        "svc.uninstall.matched":   ["tr": "Ad eşleşti — silme düğmesi etkin.",
+                                    "en": "Name matched — the delete button is enabled."],
+        "svc.uninstall.fieldLabel":["tr": "Servis adı", "en": "Service name"],
         "svc.apachePorts": ["tr": "Apache Port Ayarları", "en": "Apache Port Settings"],
         "svc.nginxPorts":  ["tr": "Nginx Port Ayarları", "en": "Nginx Port Settings"],
         "svc.httpPort":    ["tr": "HTTP Port", "en": "HTTP Port"],

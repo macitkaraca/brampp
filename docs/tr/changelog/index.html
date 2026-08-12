@@ -613,12 +613,104 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
-<section id="next">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
-      <span class="eyebrow">Geliştiriliyor</span>
-      <h2>Sıradaki sürüm</h2>
-      <p class="lede"><code>main</code> dalında, henüz yayınlanmadı. Erken denemek isterseniz kaynaktan derleyebilirsiniz.</p>
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.6</h2>
+      <p class="lede">Uygulama artık kendi güncellemesini buluyor ve açmadan önce doğruluyor. Ama yükseltmenin asıl nedeni paylaşımlar: ikinci bir BRAMPP kopyası ya da bir test koşusu canlı tünelleri öldürebiliyordu, ölmüş bir tünel ise arayüzde canlı görünmeye devam ediyordu. 1.5'in içeriği de bu pakette.</p>
+    </div>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Birim testleri çalıştırmak — ya da yalnızca ikinci bir BRAMPP kopyasının açık olması — canlı Cloudflare tünellerini öldürüyordu.</b> Tünellerin pid ve log dosyaları siliniyor, MCP portu çalışan kopyanın üstüne bağlanmaya çalışılıyor, Homebrew servisleri başlatılıyor ve "son çalışan servisler" listesi üzerine yazılıyordu. BRAMPP'ın tuttuğu makine düzeyindeki durum makineye aittir, bir sürece değil: ona artık yalnızca birincil kopya dokunuyor (<code>Core/ProcessRole.swift</code>). Konsol satırları da hangi sürecin yazdığını taşıyor — kurulu uygulama, Xcode derlemesi, test ana uygulaması ve önizlemeler aynı dosyaya eklediği için bunu görmek bu kadar zordu.</li>
+      <li><b>cloudflared'i ölmüş bir paylaşım canlı bildirilmeye devam ediyordu.</b> Servisler satırı yeşil kalıyor, MCP <code>list_shares</code> aracı adresi vermeyi sürdürüyor, Cloudflare ise Error 1033 döndürüyordu. Tüneller artık zaten dönen tazeleme döngüsünde gerçekle karşılaştırılıyor.</li>
+      <li><b>İkinci bir BRAMPP kopyasını kapatmak, birincinin canlı tünellerini öldürüyordu.</b> Kapanan süreç artık yalnızca kendi başlattığı tünelleri durduruyor.</li>
+      <li><b>"Paylaşımı durdur", site herkese açık kalırken başarı bildiriyordu.</b> SIGKILL'e yükseltme yoktu ve bekleme, cloudflared'in 30 saniyelik kapanma payına karşı 0,4 saniyeydi.</li>
+      <li><b>Veritabanı geri yükleme, başarısız olduğunda başarılı raporluyordu.</b> Betik <code>if psql …; then exit 0; fi</code> yazıp ardından <code>rc=$?</code> okuyordu — POSIX'te koşulu başarısız olan ve <code>else</code>'i bulunmayan bir <code>if</code> 0 ile biter, yani hata kodu hiçbir zaman görülmüyordu. Hem PostgreSQL hem MariaDB tarafında.</li>
+      <li><b>MariaDB, PostgreSQL ya da Python'u kaldırmak yalnızca "paket ve yapılandırma dosyaları silinecek" diyordu</b> — betik ise veri dizinini siliyordu: her veritabanınızı, ya da site-packages ağacının tamamını. Onay artık somut yolları adıyla sayıyor, yapılandırmayı veriden ayırıyor, neyin gittiğini söylüyor ve servis adının yazılmasını istiyor.</li>
+      <li><b>Üretilen phpMyAdmin ve Adminer Apache yapılandırmaları <code>apachectl configtest</code>'te AH00671 uyarısı veriyordu</b>: iki <code>Alias</code> yönergesi ters sıradaydı, bu yüzden ikincisi hiçbir zaman eşleşemiyordu.</li>
+      <li><b>Üç konsol satırı metin yerine ham çeviri anahtarını yazıyordu.</b></li>
+    </ul>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Açılışta güncelleme bildirimi</b> — kurulu sürüm, yeni sürüm, sürüm notları kaydırılabilir bir liste olarak, ve o sürümü atlama ya da sonra hatırlatma seçeneği.</li>
+      <li><b>Ayarlar'da kendine ait bir Güncellemeler sekmesi</b>: kanal, şimdi denetle, otomatik denetim, otomatik indirme ve bir güncelleme bulunduğunda ne yapılacağı.</li>
+      <li><b>İndirilen dosya, hiçbir şey açılmadan önce doğrulanıyor</b>: güncelleme manifestinde yayınlanan sağlama, dosyanın gerçekten beklenen yayın varlığından geldiği (yönlendirmelerin ardından yeniden denetlenerek), kod imzası, Team Identifier'ın çalışan uygulamanınkiyle aynı olduğu ve Gatekeeper'ın noter onayı kararı. Herhangi biri geçmezse indirilen dosya siliniyor. BRAMPP kendini asla değiştirmiyor — doğrulanan disk kalıbı size veriliyor.</li>
+      <li><b>Manifestteki <code>blockedVersions</code> ve <code>minimumOS</code> alanları dikkate alınıyor</b>, böylece sorunlu çıkan bir sürüm onu zaten çalıştıran kişileri uyarabiliyor.</li>
+      <li><b>Servisler'deki cloudflared satırında, açık bütün paylaşımları tek seferde durduran bir düğme</b> — bunu zaten yapan menü çubuğu komutunun yanına.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Güncelleme denetimi sürümü ve sağlamayı yayınlanan manifestten, sürüm notlarını ise yalnızca GitHub'dan okuyor</b> — dosyayı sunan makine, ona kefil olan makine değil. Manifest geride kaldığında denetim GitHub'a düşüyor ve doğrulanamayacak bir indirme yerine sürüm sayfasını öneriyor.</li>
+      <li><b>Yayın betiği o manifesti kendisi yayınlıyor</b>, gerçek sağlamayla ve yalnızca noter onayından gerçekten geçmiş bir yapı için.</li>
+      <li><b>Kullanılmayan proje çatısı algılayıcısı kaldırıldı.</b></li>
+    </ul>
+  </div>
+</section>
+
+<section id="v15">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.5</h2>
+      <p class="lede">Etiketlendi ama paketlenmedi: bu numara için DMG yayınlanmadı, içeriği 1.6 ile geldi. Etiketin yine de bir anlamı var — <code>v1.4</code> etiketi bir 1.4 üretmiyor.</p>
+    </div>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Release derlemeleri <code>-O</code> yerine <code>-Osize</code> ile yapılıyor.</b> Uçtan uca bir Release derlemesi 35 dakikadan 46 saniyeye indi. Aynı modülde ölçüldü: <code>-O</code> 1615 saniye, <code>-Osize</code> 54 saniye — üstelik nesne daha küçük, 13,3 MB'a karşı 12,5.</li>
+      <li><b>Ayarlar, bir izin değişikliğinin istemcinin yeniden bağlanmasını gerektirdiğini söylüyor.</b> MCP bölümü etkin araçları canlı sayıyor; paylaşım iznini yazmaya çıkarınca hemen "23 araç etkin" yazıyor, bağlı istemci ise bağlanırken aldığı 20 araçla çalışmayı sürdürüyordu. Sunucu durumsuz HTTP; <code>listChanged</code> bildirimini taşıyacak bir kanal yok ve <code>initialize</code> de sahip olmadığı bu yeteneği iddia etmiyor.</li>
+      <li><b><code>brampp.yml</code> proje bildirimi kaldırıldı.</b> Alan adının ayarlarının depoyla birlikte seyahat etmesi için yazılmıştı; istenmedi. Kullanılmadan bırakmak yerine sökülmesinin nedeni aynı kural: kimsenin okumadığı bir dosyayı yazan menü öğesi, hiç olmayandan kötüdür.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b><code>v1.4</code> etiketinden derlemek, kendine 1.3 diyen bir uygulama üretiyordu.</b> <code>MARKETING_VERSION</code> orada 1.3'te kalmıştı ve yayınlanan ikili kendi numarasını commit'lenmemiş bir komut satırı geçersiz kılmasından almıştı. Numara artık proje dosyasında, bir derlemenin bulabileceği yerde duruyor.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v14">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">10 Ağustos 2026</span>
+      <h2>1.4</h2>
+      <p class="lede">Paylaşmanın iki gerçek sorunu — adresin siz açarken henüz çözülmemiş olması ve her istekte ödenen ad çözümlemesi — ve proje klasöründe zaten yaptığınız işler için satır içi kısayollar.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Servisler asistandan da kurulabiliyor</b> — <code>install_service</code>, yalnızca BRAMPP'ın kendi kataloğuyla sınırlı; katalog dışı formül adı reddediliyor.</li>
+      <li><b>Alan adı satırında proje eylemleri</b>: klasörü kurulu bir düzenleyicide açma, orada terminal açma, <code>composer</code> ya da <code>npm</code> çalıştırma. Hiçbiri geçerli değilse görünmüyor — <code>composer.json</code> yoksa composer girdisi de yok, npm betikleri <code>package.json</code>'dan okunuyor. Tıklandığında hata veren bir menü öğesi, hiç olmayandan kötüdür. Düzenleyiciler komutlarıyla değil <code>.app</code> paketleriyle aranıyor; gayet normal bir kurulum CLI'ı <code>PATH</code>'in dışında bırakabiliyor.</li>
+      <li><b>Mailpit</b>, cloudflared'in aksine gerçek bir daemon olduğu için düzgün bir brew servisi olarak katıldı. <code>127.0.0.1:1025</code>'e gönderilen posta makineden çıkmıyor; çalışırken kutuyu açan bir düğme var.</li>
+      <li><b>Ortam tanılama paneli.</b> Port sahipliği, yapılandırma sözdizimi ve mkcert güven deposu denetimleri artık bir şey bozulduktan sonra log satırı olarak değil, Servisler sekmesinden istendiğinde birlikte çalışıyor. Portla ilgili bulgu, "kullanımda" demek yerine portu tutan süreci adı ve PID'iyle söylüyor — hangisi olduğu ne yapacağınıza karar veriyor.</li>
+      <li><b><code>brampp.yml</code></b> — bir alan adının ayarlarını proje klasöründe taşıyan taşınabilir dosya; depoyu başka bir Mac'e klonlamak ortamı aynı biçimde kuruyordu. Yanında, projede ne bulduğunu adıyla söyleyen çatı algılama. (İkisi de 1.5 ve 1.6'da kaldırıldı.)</li>
+      <li><b>Üç platform için statik güncelleme manifestleri</b> yayınlandı. Yayını olmayanlar <code>null</code> sürüm taşıyor, böylece bir istemci "hiç yayın yok" ile "denetleyemedim"i birbirinden ayırt edebiliyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Paylaşılan site artık her istekte ad çözümlemesi ödemiyor.</b> Tünel alan adını hedefliyordu; <code>.local</code> uzantısında bu Multicast DNS'e gidiyor ve hosts dosyasına düşmeden önce <b>beş saniye</b> zaman aşımına uğruyor — gerçek bir sitede ölçüldü: adla 5,01 sn, doğrudan adresle 0,012 sn. Artık <code>127.0.0.1</code>'e bağlanıyor, alan adını hem <code>Host</code> başlığında hem TLS sunucu adında taşıyor; böylece vhost ve sertifika yine eşleşiyor. Yalnızca başlık gönderilirse sunucu 421 döner.</li>
+      <li><b>Adres, çözülene kadar size verilmiyor.</b> cloudflared'in logunda göründüğü an bildiriliyordu, oysa DNS kaydı henüz makineye görünür değildi; o anda açmak ERR_NAME_NOT_RESOLVED veriyordu. Artık tarayıcının izlediği yolla, <code>getaddrinfo</code> ile çözülene kadar bekleniyor. <code>dig</code> yanlış denetimdi: doğrudan <code>resolv.conf</code>'taki sunucuya sorar ve sistem çözümleyicisi hâlâ başarısızken başarılı olabilir. Taze bir tünel adında ölçüldü: Google DNS altı denemenin birini yanıtladı, Cloudflare'in kendi çözümleyicisi altısını da. Süre dolarsa adres yine veriliyor, konsola nedeni yazılarak.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>cloudflared, <code>/opt/homebrew/bin</code>'de dururken "kurulu değil" görünüyordu.</b> Çalışma zamanı servislerinde kurulum algılaması kategoriye göre dallanıyor ve cloudflared'le birlikte eklenen paylaşım kategorisi <code>nil</code> döndüren varsayılan dala düşüyordu — diskte ne olursa olsun kurulu bildirilemezdi.</li>
+      <li><b>Apache'nin gerçek bir uyarısı "sorun yok" diye raporlanıyordu.</b> Apache uyarıları modüle göre etiketliyor — <code>[alias:warn]</code> — ve "warning" sözcüğü hiç geçmiyor; yalnızca o sözcüğe bakan denetim bu makinedeki gerçek bir uyarıyı göremedi.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v13">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">10 Ağustos 2026</span>
+      <h2>1.3</h2>
+      <p class="lede">Çalışan bir siteyi tek tıkla, geçici ve herkese açık bir adresle paylaşma; ve "on dakika önce ne oldu" sorusunu yanıtlayabilen bir konsol.</p>
     </div>
 
     <h3 class="sub-h">Eklendi</h3>
@@ -630,15 +722,14 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <li><b>Paylaşım için üç MCP aracı</b>, varsayılanı <i>erişim yok</i> olan beşinci bir izin alanının arkasında — böyle olan tek alan, çünkü bu araçlar siteyi açık internete koyuyor.</li>
       <li><b><code>read_log</code> süzgeçleri</b>: düzey, metin ve zamana göre; ayrıca canlı tampon yerine diskteki dosyayı okuyabiliyor.</li>
       <li><b>PHP profilleyici paneli</b>, Xdebug'ın profil kipini yönetiyor: ayarlar sizin yerinize yazılıyor, cachegrind çıktıları tek klasörde toplanıp listeleniyor. Siz istemedikçe yalnızca <code>XDEBUG_TRIGGER</code> taşıyan istekler ölçülüyor, çünkü her şeyi profillemek dakikalar içinde diski dolduruyor.</li>
-      <li><b>Servisler asistandan da kurulabiliyor</b> — <code>install_service</code>, yalnızca BRAMPP'ın kendi kataloğuyla sınırlı; katalog dışı formül adı reddediliyor.</li>
       <li><b>cloudflared Servisler'de görünüyor</b> — brew servisi olarak değil çalışma zamanı olarak, çünkü daemon'u yok ve yalnızca bir paylaşım açıkken yaşıyor. Satırı, şu anda hangi sitelerin herkese açık olduğunu listeliyor.</li>
     </ul>
 
     <h3 class="sub-h">Değişti</h3>
     <ul class="bullets">
-      <li><b>Paylaşılan site artık her istekte ad çözümlemesi ödemiyor.</b> Tünel alan adını hedefliyordu; <code>.local</code> uzantısında bu Multicast DNS'e gidiyor ve hosts dosyasına düşmeden önce <b>beş saniye</b> zaman aşımına uğruyor — gerçek bir sitede ölçüldü: adla 5,01 sn, doğrudan adresle 0,012 sn. Artık <code>127.0.0.1</code>'e bağlanıyor, alan adını hem <code>Host</code> başlığında hem TLS sunucu adında taşıyor; böylece vhost ve sertifika yine eşleşiyor. Yalnızca başlık gönderilirse sunucu 421 döner.</li>
       <li><b>Örnekler artık <code>.local</code> yerine <code>.test</code> öneriyor.</b> <code>.local</code>, <a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a> ile Multicast DNS'e ayrılmış ve macOS'ta çözümlemeyi geciktirebiliyor. Yerel HTTPS rehberimiz bunu bir süredir söylüyordu ama uygulama hâlâ <code>.local</code> dağıtıyordu. Mevcut alan adları çalışmaya devam ediyor — doğrulama zaten uzantıya bakmıyordu.</li>
       <li><b>Log pencereleri artık akıtıyor, yoklamıyor.</b> Eskiden beş saniyede bir <code>tail</code> çalıştırıyor, kabuk süreci doğuruyor ve birkaç yeni satır için dosyayı baştan okuyordu. Dosya izleyici yalnızca eklenen kısmı okuyor ve gözetmen uygulamayı yeniden başlattığında logun yeniden yaratılmasına dayanıyor.</li>
+      <li><b>Alan adı satırı, sitenin internete açık olup olmadığını kendisi söylüyor</b> — yayındayken yeşil anten, değilken üzeri çizili kırmızısı. Paylaşım penceresi ayrıca Kapat düğmesi kazandı: eskiden pencereden çıkmanın tek yolu tüneli öldürmekti, oysa yaygın durum adresin ayakta kalmasını istemek.</li>
     </ul>
 
     <h3 class="sub-h">Düzeltildi</h3>

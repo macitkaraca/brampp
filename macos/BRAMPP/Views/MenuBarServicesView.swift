@@ -205,12 +205,13 @@ struct MenuBarServicesView: View {
 
             // Etkin tünel varsa menüde GÖRÜNÜR olmalı: kullanıcı ana pencereyi
             // açmadan da sitesinin internete açık olduğunu görebilmeli ve tek
-            // tıkla kapatabilmeli.
-            if tunnelManager.activeCount > 0 {
+            // tıkla kapatabilmeli. Adres beklenen (.starting) paylaşımlar da sayılır —
+            // o tünel de ayaktadır ve iptal edilebilmelidir (bkz. stoppableCount).
+            if tunnelManager.stoppableCount > 0 {
                 Divider()
                 footerRow(icon: "antenna.radiowaves.left.and.right",
                           label: loc.t("menu.stopAllShares"),
-                          shortcut: "\(tunnelManager.activeCount)",
+                          shortcut: "\(tunnelManager.stoppableCount)",
                           tint: .orange,
                           action: { Task { await tunnelManager.stopAll() } })
             }

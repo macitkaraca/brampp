@@ -162,6 +162,14 @@ struct ServiceGroupView: View {
 
 // MARK: - Service Row
 
+/// Kaldırma onayı hangi pencerede alınır?
+enum UninstallConfirmationStyle {
+    /// Veri silmeyen kaldırma: iki düğmeli basit uyarı.
+    case simpleAlert
+    /// Veri silen kaldırma: servis adı YAZILARAK onaylanır (sheet — canlı binding şart).
+    case typedConfirmationSheet
+}
+
 struct ServiceRowView: View {
     @EnvironmentObject var loc: Localizer
     @EnvironmentObject var serviceManager: ServiceManager
@@ -170,7 +178,10 @@ struct ServiceRowView: View {
 
     @State private var showApacheConfig    = false
     @State private var showNginxConfig     = false
+    /// Veri SİLMEYEN servisler için iki düğmeli basit uyarı.
     @State private var showUninstallAlert  = false
+    /// Veri SİLEN servisler için yazarak onay penceresi (sheet — bkz. uninstallConfirmSheet).
+    @State private var showUninstallSheet  = false
 
     /// cloudflared satırının alt yazısı — açık yayınları adlarıyla listeler.
     @ViewBuilder
@@ -225,6 +236,23 @@ struct ServiceRowView: View {
             }
             Spacer()
             actionButtons
+            // cloudflared satırında "tüm paylaşımları durdur". Ölçüt `activeCount`
+            // DEĞİL `stoppableCount`: adres beklenirken (.starting) tünel çoktan
+            // ayaktadır ve bu bekleme 45 saniyeye kadar sürebilir — tam da vazgeçmek
+            // isteyeceğiniz an düğme yoktu. Onay penceresi YOK: bu kod tabanında
+            // durdurma eylemlerinin hiçbiri onay sormaz (menü çubuğundaki aynı komut
+            // da sormuyor); uyarı pencereleri geri alınamaz işlemlere ayrılmıştır.
+            if service.id == "cloudflared", tunnelManager.stoppableCount > 0 {
+                Button(action: { Task { await tunnelManager.stopAll() } }) {
+                    Label(loc.t("menu.stopAllShares"),
+                          systemImage: "antenna.radiowaves.left.and.right.slash")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .tint(.orange)
+                .help(loc.t("svc.cf.stopAllHelp"))
+            }
             // MariaDB satırında phpMyAdmin + Adminer butonları
             if service.id == "mariadb" {
                 phpMyAdminButton
@@ -282,12 +310,59 @@ struct ServiceRowView: View {
             NginxPortConfigView(isPresented: $showNginxConfig)
                 .environmentObject(serviceManager)
         }
-        .alert(String(format: loc.t("svc.uninstall.title"), service.name), isPresented: $showUninstallAlert) {
+        // Veri SİLMEYEN kaldırmalar: basit iki düğmeli uyarı (değişmedi).
+        .alert(uninstallAlertTitle, isPresented: $showUninstallAlert) {
             Button(loc.t("svc.uninstall"), role: .destructive) { serviceManager.uninstallService(service) }
             Button(loc.t("common.cancel"), role: .cancel) { }
         } message: {
-            Text(loc.t("svc.uninstall.confirm"))
+            Text(uninstallPlan.confirmationMessage { loc.t($0) })
         }
+        // Veri SİLEN kaldırmalar: yazarak onay — `.alert` DEĞİL, sheet.
+        //
+        // SwiftUI, `.alert`in `actions` ViewBuilder'ının sunumdan SONRA yeniden
+        // değerlendirileceğini garanti etmez. İçine konan bir TextField'in metnine bağlı
+        // `.disabled(...)` iki türlü de bozuktu: ya sunum anında (kutu boşken) donup
+        // yıkıcı düğmeyi SONSUZA DEK kapalı bırakıyordu — MariaDB bir daha kaldırılamaz —
+        // ya da yok sayılıp tıklamayı SESSİZ bir hiçliğe çeviriyordu (pencere kapanır,
+        // log'a tek satır düşmez, kullanıcı silme başladı sanır). Sheet'te binding
+        // canlıdır; davranış olası değil, GARANTİLİDİR.
+        .sheet(isPresented: $showUninstallSheet) {
+            UninstallConfirmSheet(
+                service: service,
+                plan: uninstallPlan,
+                isPresented: $showUninstallSheet,
+                onConfirm: { serviceManager.uninstallService(service) }
+            )
+        }
+    }
+
+    // MARK: - Kaldırma onayı
+
+    /// Bu servisi kaldırmanın neyi sileceği — betikle ORTAK kaynak (ServiceManager).
+    private var uninstallPlan: UninstallPlan {
+        ServiceManager.uninstallPlan(forServiceID: service.id)
+    }
+
+    /// Veri silmeyen kaldırmanın uyarı başlığı.
+    private var uninstallAlertTitle: String {
+        String(format: loc.t("svc.uninstall.title"), service.name)
+    }
+
+    /// Kaldır düğmesi: veri siliniyorsa yazarak onay penceresi, silinmiyorsa basit uyarı.
+    private func requestUninstall() {
+        switch ServiceRowView.confirmationStyle(for: uninstallPlan) {
+        case .typedConfirmationSheet: showUninstallSheet = true
+        case .simpleAlert:            showUninstallAlert = true
+        }
+    }
+
+    /// Kaldırma onayının HANGİ pencerede alınacağı — saf karar (birim testlerden çağrılır).
+    ///
+    /// Veri silen bir kaldırma ASLA `.alert`e düşmemeli: yazarak onay ancak canlı bir
+    /// binding'le çalışır, `.alert`in actions builder'ı ise sunumdan sonra yeniden
+    /// değerlendirilmeyebilir. Veri silmeyen kaldırma ise ek sürtünme görmemeli.
+    static func confirmationStyle(for plan: UninstallPlan) -> UninstallConfirmationStyle {
+        plan.destroysData ? .typedConfirmationSheet : .simpleAlert
     }
 
     private var portDisplayText: String? {
@@ -431,7 +506,7 @@ struct ServiceRowView: View {
                 .buttonStyle(.bordered).controlSize(.small).disabled(!Shell.isBrewInstalled)
         case .installed:
             // Runtime servis (Node.js / Python): çalışmıyor ama kurulu — mavi Kaldır butonu
-            Button(action: { showUninstallAlert = true }) {
+            Button(action: { requestUninstall() }) {
                 Label(loc.t("svc.uninstall"), systemImage: "trash")
             }
             .buttonStyle(.bordered)
@@ -451,12 +526,111 @@ struct ServiceRowView: View {
                 HStack(spacing: 4) {
                     Button(action: { serviceManager.startService(service) }) { Image(systemName: "play.fill") }
                         .tint(.green)
-                    Button(action: { showUninstallAlert = true }) { Image(systemName: "trash") }
+                    Button(action: { requestUninstall() }) { Image(systemName: "trash") }
                         .tint(.red)
                 }.buttonStyle(.bordered).controlSize(.small)
             }
         case .unknown: EmptyView()
         }
+    }
+}
+
+// MARK: - Uninstall Confirmation Sheet (veri silen servisler)
+
+/// Kullanıcının veritabanlarını / site-packages'ını silmeden ÖNCEKİ son kapı.
+///
+/// Neden sheet: bkz. `ServiceRowView.body` — `.alert` içindeki TextField'e bağlı
+/// `.disabled(...)` SwiftUI'da garantili değildir. Burada `@State` → `TextField`
+/// bağlaması normal bir view hiyerarşisindedir; her tuş vuruşunda gövde yeniden
+/// değerlendirilir, düğmenin etkinliği yazılan metni GERÇEKTEN takip eder.
+///
+/// Üç kural:
+/// 1. Yıkıcı düğme ad eşleşene kadar kapalıdır (görünür biçimde),
+/// 2. eşleşmiyorken NEDEN kapalı olduğu yazar — sessiz bir tıklama olamaz,
+/// 3. Return tuşu da yalnızca eşleşiyorken silmeyi başlatır.
+struct UninstallConfirmSheet: View {
+    @EnvironmentObject var loc: Localizer
+    let service: Service
+    let plan: UninstallPlan
+    @Binding var isPresented: Bool
+    let onConfirm: () -> Void
+
+    /// Her açılışta boş başlar (yeni bir View örneği kurulur) — önceki denemenin
+    /// metni kalsaydı ikinci kaldırma tek tıkla onaylanmış olurdu.
+    @State private var typedName: String = ""
+    @FocusState private var fieldFocused: Bool
+
+    private var matches: Bool {
+        plan.typedConfirmationMatches(typedName, serviceName: service.name)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+                    .font(.title2)
+                Text(String(format: loc.t("svc.uninstall.dataTitle"), service.name))
+                    .font(.headline)
+            }
+
+            Divider()
+
+            // Silinecek/düzenlenecek/korunacak yolların TAMAMI — betikle aynı kaynaktan
+            // (UninstallPlan.confirmationMessage). Uzun listelerde pencere büyümesin.
+            ScrollView {
+                Text(plan.confirmationMessage { loc.t($0) })
+                    .font(.callout)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxHeight: 260)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(String(format: loc.t("svc.uninstall.typeToConfirm"), service.name))
+                    .font(.callout.weight(.semibold))
+                TextField(loc.t("svc.uninstall.fieldLabel"), text: $typedName)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($fieldFocused)
+                    .onSubmit { if matches { confirm() } }
+                // Düğmenin neden kapalı olduğu HER ZAMAN yazılı: kapalı bir düğmeye
+                // basıp hiçbir şey olmaması tek başına açıklama değildir.
+                Text(matches
+                     ? loc.t("svc.uninstall.matched")
+                     : String(format: loc.t("svc.uninstall.mismatch"), service.name))
+                    .font(.caption)
+                    .foregroundColor(matches ? .green : .orange)
+            }
+
+            HStack {
+                Spacer()
+                Button(loc.t("common.cancel")) { isPresented = false }
+                    .keyboardShortcut(.cancelAction)
+                Button(loc.t("svc.uninstall")) { confirm() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .disabled(!matches)
+            }
+        }
+        .padding(24)
+        .frame(width: 560)
+        .onAppear {
+            // Her açılış boş kutuyla başlamalı — önceki denemenin metni kalsaydı
+            // ikinci kaldırma tek tıkla onaylanmış olurdu.
+            typedName = ""
+            fieldFocused = true
+        }
+    }
+
+    private func confirm() {
+        // Düğme zaten kapalı; yine de son bir kez sor — ama artık SESSİZ bir yol yok:
+        // eşleşmiyorsa pencere de kapanmaz, kullanıcı uyarıyı okumaya devam eder.
+        guard matches else { return }
+        isPresented = false
+        onConfirm()
     }
 }
 
