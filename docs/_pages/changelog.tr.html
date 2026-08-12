@@ -5,6 +5,36 @@
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
+<section class="band" id="v110">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.10</h2>
+      <p class="lede">On dokuz düzeltme daha. Bu turun ağırlığı kaldırma ve kurulum akışlarında: uygulama sildiğini sandığınız şeyi silmemiş, kurduğunu sandığınız şeyi kurmamış olabiliyordu.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Homebrew paketleri kendi sekmesinde, tek tek seçilip güncellenebiliyor.</b> <code>brew outdated</code> makinedeki her formülü sayar; burada elli paket ediyor ve <code>httpd</code> ile <code>php</code>, <code>cocoapods</code> ile <code>jadx</code> arasında kayboluyordu. Üçe ayrılıyor: BRAMPP'ın yönettikleri, onların bağımlılıkları, dokunmadığı geri kalanı. Çalışan bir servis yükseltilirse yeniden başlatılıyor — yükseltme ikiliyi değiştirir ama çalışan süreç eskisini tutmaya devam eder.</li>
+      <li><b>Elle güncelleme denetimi anında yanıt veriyor.</b> Pencere tıklamayla birlikte açılıyor ve sonucu aynı pencerede gösteriyor. Açılıştaki denetim sessiz kalmaya devam ediyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Kaldırma, silemediği dosyaları sildim diye bildiriyordu.</b> Başarısız silme sessizce geçiliyor, betik yine "başarıyla kaldırıldı" diyordu — MariaDB'de bu, veri dizini diskte dururken silindiğini sanmanız demekti.</li>
+      <li><b>Veri dizini, sunucunun durduğu doğrulanmadan siliniyordu.</b> Çalışan bir sunucunun altından dosya çekmek geriye tutarsız bir dizin bırakır. Artık port on saniye yoklanıyor ve hâlâ dinleniyorsa hiçbir şey silinmiyor.</li>
+      <li><b>Kurulum ekranı, olmayan başarıyı bildiriyordu.</b> Sonuç, log gövdesindeki herhangi bir onay işaretinden çıkarılıyordu: açıkça iptal edilmiş bir PostgreSQL yapılandırması yeşil onay alıyordu.</li>
+      <li><b>İki kurulum aynı anda başlayabiliyordu</b> ve ikincisi birincinin üstüne yazıp onu yanıtlanamayan bir isteme mahkûm ediyordu.</li>
+      <li><b>Profilleyiciyi kapatmak işe yaramıyordu</b> — PHP-FPM yeniden başlatılmadığı için çalışan havuz profil kipinde kalıyor, cachegrind dosyaları birikmeye devam ediyordu.</li>
+      <li><b>Tek "Kaydet" tıklaması, değişen ayar sayısı kadar eşzamanlı servis yeniden başlatması tetikliyordu</b>; kilidi kaçıran biri PHP-FPM'i durmuş bırakabiliyordu.</li>
+      <li><b>Sertifika süresi hiç denetlenmiyordu.</b> Süresi dolmuş bir sertifika diskte durduğu için yenilenmiyor, tarayıcı hata verirken uygulama sertifikayı "var" sayıyordu.</li>
+      <li><b>Teşhis panelinin sertifika güven denetimi her koşulda "geçti" diyordu</b> — sistemdeki tüm sertifikaları sayıyor, aradığı kökü hiç aramıyordu.</li>
+      <li><b>php.ini panelinde tanımsız direktif için varsayılan değer, dosyadaki değermiş gibi gösteriliyordu</b>; PHP sürümü değişince de öncekinin değerleri kalıyordu.</li>
+      <li><b>php.ini'de kayıtlı bir uzantı "devre dışı" görünüyor</b>, açılınca ikinci kez kaydediliyor ve PHP onu iki kez yüklüyordu.</li>
+    </ul>
+  </div>
+</section>
+
 <section id="v19">
   <div class="wrap">
     <div class="shead">

@@ -5,6 +5,36 @@
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section class="band" id="v110">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.10</h2>
+      <p class="lede">Nineteen more fixes, weighted towards the install and uninstall flows: the app could report having removed something it had not, or installed something it had not.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Homebrew packages have their own tab and can be selected and upgraded individually.</b> <code>brew outdated</code> counts every formula on the machine — fifty here, with <code>httpd</code> and <code>php</code> lost between <code>cocoapods</code> and <code>jadx</code>. They are split three ways: what BRAMPP manages, what those depend on, and everything else it does not touch. A running service that gets upgraded is restarted, because an upgrade replaces the binary while the running process keeps the old one.</li>
+      <li><b>A manual update check answers immediately.</b> The window opens with the click and turns into the result in place. The check at launch stays silent.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Uninstall claimed to have deleted files it had not.</b> A failed removal passed silently and the script still finished with success — with MariaDB that means believing your data directory is gone while it sits on disk.</li>
+      <li><b>The data directory was deleted without confirming the server had stopped.</b> Pulling files out from under a running server leaves it inconsistent. The port is now polled for ten seconds and nothing is deleted while it is still listening.</li>
+      <li><b>The install screen reported success it did not have.</b> The outcome was inferred from any tick in the log body, so a PostgreSQL configuration that aborted still showed a green check.</li>
+      <li><b>Two installs could start at once</b>, the second overwriting the first and leaving it with a prompt nobody could answer.</li>
+      <li><b>Turning the profiler off did nothing</b> — PHP-FPM was not restarted, so the running pool stayed in profile mode and kept writing cachegrind files.</li>
+      <li><b>One Save fired as many concurrent service restarts as there were changed settings</b>, and one that lost the lock could leave PHP-FPM stopped.</li>
+      <li><b>Certificate expiry was never checked.</b> An expired certificate sat on disk unrenewed, so the browser refused the site while the app considered the certificate present.</li>
+      <li><b>The diagnostics trust check passed unconditionally</b> — it counted every certificate on the system and never looked for the one it was checking.</li>
+      <li><b>An undefined directive in the php.ini panel showed its default as though it came from the file</b>, and switching PHP version carried the previous version's values across.</li>
+      <li><b>An extension registered in php.ini read as disabled</b>; enabling it added a second registration and PHP loaded it twice.</li>
+    </ul>
+  </div>
+</section>
+
 <section id="v19">
   <div class="wrap">
     <div class="shead">
