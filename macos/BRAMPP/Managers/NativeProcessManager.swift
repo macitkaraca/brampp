@@ -297,10 +297,19 @@ enum NativeProcessManager {
         return r.output.isEmpty ? "Log dosyası boş." : r.output
     }
 
-    /// Log dosyasını siler (temizle butonu için).
+    /// Log dosyasını BOŞALTIR (temizle butonu için).
+    ///
+    /// Dosya SİLİNMEZ, boyutu sıfırlanır. Sarmalayıcının `>> app.log` yönlendirmesi süreç
+    /// başlarken BİR KEZ kurulur; unlink edilirse fd yetim inode'u göstermeye devam eder,
+    /// `app.log` ADIYLA yeni dosya bir daha oluşmaz ve o koşunun tüm çıktısı erişilemez olur.
+    /// Log penceresi kalıcı olarak boş kalır, izleyici de yeniden bağlanamaz (silinen yolu
+    /// açamaz) — tek çıkış uygulamayı yeniden başlatmaktır. Truncate aynı inode'u koruduğu
+    /// için yazım kaldığı yerden sürer.
     static func clearLogs(for domain: Domain) {
         let log = logFile(for: domain)
-        FileHelper.remove(log)
+        guard let handle = FileHandle(forWritingAtPath: log) else { return }
+        defer { try? handle.close() }
+        try? handle.truncate(atOffset: 0)
     }
 
     // MARK: - Script Builder (internal — DomainManager.writeConfigFiles de kullanır)

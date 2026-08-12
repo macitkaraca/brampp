@@ -3032,4 +3032,34 @@ final class BRAMPPTests: XCTestCase {
     func testConfigTest_EmptyOutputFailureIsStillAFailure() {
         XCTAssertNotNil(Diagnostics.configTestFailure(output: "", exitOK: false))
     }
+
+    // MARK: - 1.7 düzeltmeleri
+
+    /// Devre dışı bırakılan uzantı `php -m`'den düşer. `.ini.disabled` dosyası onun
+    /// hâlâ DİSKTE olduğunun kanıtıdır; bu ayrım kaybolursa satır "kurulu değil"e
+    /// döner, onay kutusu yerine "Kur" gelir ve pecl "already installed" ile patlar —
+    /// uzantıyı arayüzden geri açmanın yolu kalmaz.
+    func testDisabledNames_TreatsDisabledFileAsProofOfInstall() {
+        let names = PHPExtensionManager.disabledNames(inConfD: [
+            "ext-redis.ini.disabled", "ext-xdebug.ini.disabled",
+        ])
+        XCTAssertEqual(names, ["redis", "xdebug"])
+    }
+
+    /// ETKİN uzantı devre dışı sayılmamalı: `.ini` ile `.ini.disabled` karışırsa
+    /// isInstalled ile isEnabled birbiriyle çelişir.
+    func testDisabledNames_IgnoresEnabledAndUnrelatedFiles() {
+        let names = PHPExtensionManager.disabledNames(inConfD: [
+            "ext-redis.ini",            // etkin
+            "ext-soap.ini.disabled",    // devre dışı
+            "php.ini", "ext-.ini.disabled", "50-extension.ini", "README",
+        ])
+        XCTAssertEqual(names, ["soap"], "yalnızca gerçek .ini.disabled sayılmalı")
+    }
+
+    /// Ad çıkarımı yalnızca UÇLARI kırpmalı: içinde "ext-" geçen bir ad bozulmamalı.
+    func testDisabledNames_StripsOnlyTheAffixes() {
+        XCTAssertEqual(PHPExtensionManager.disabledNames(inConfD: ["ext-my-ext-thing.ini.disabled"]),
+                       ["my-ext-thing"])
+    }
 }

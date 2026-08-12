@@ -2121,8 +2121,14 @@ final class MCPServer: ObservableObject {
             case .failure(let outcome): return outcome
             case .success(let p):       port = p
             }
+            // ON_ERROR_STOP=1 ŞART: onsuz psql, dökümdeki HER ifade hata verse bile 0 ile
+            // biter ve araç tamamen başarısız bir geri yüklemeyi "aktarıldı" diye raporlar.
+            // --single-transaction ise psqlFallback'in `||` yedeğini güvenli kılar: ilk
+            // deneme yarıda kalırsa tamamen geri alınır, ikinci deneme yarım uygulanmış
+            // bir veritabanının üstüne yazmaz. Arayüzdeki aynı iş de böyle yapılıyor.
             result = await Shell.brewBashAsync(Self.psqlFallback(
-                "psql -h 127.0.0.1 -p \(port) {U} -d \(Shell.quote(name)) -f \(src)"))
+                "psql -h 127.0.0.1 -p \(port) {U} -v ON_ERROR_STOP=1 --single-transaction "
+                + "-d \(Shell.quote(name)) -f \(src)"))
         }
 
         guard result.isSuccess else {

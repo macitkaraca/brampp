@@ -22,6 +22,17 @@ class DomainManager: BaseManager {
 
     private var usedPorts: Set<Int> = []
     private let mkcertManager = MkcertManager()
+
+    /// AppState kurar (iki yönlü sahiplik olmasın diye `weak`).
+    ///
+    /// Alan adının vhost'u kaybolduğunda AÇIK KALMIŞ bir tünel tehlikeye dönüşür: tünel
+    /// `127.0.0.1`'e bağlanıp `Host` başlığını taşıdığı için, vhost gidince istek artık
+    /// hiçbir server bloğuyla eşleşmez ve VARSAYILAN vhost'a düşer. Sonuç, rastgele bir
+    /// `*.trycloudflare.com` adresinin kullanıcının localhost kökünü — /phpmyadmin ve
+    /// /adminer dahil — internete açması olur; istek loopback'ten geldiği için Apache'nin
+    /// `Require local` kısıtı da devreye girmez. Bu yüzden vhost'a dokunan her yol önce
+    /// paylaşımı kapatır.
+    weak var tunnelManager: TunnelManager?
     /// Her updateDomain çağrısında domain başına artar — arka plandaki doğrulama Task'ı,
     /// kendi neslinden daha yeni bir çağrı başladıysa (kullanıcı tekrar düzenlediyse)
     /// bayat anlık görüntüsünü uygulamadan görevi bırakır.
@@ -456,9 +467,23 @@ class DomainManager: BaseManager {
         return true
     }
 
+    /// Alan adının açık paylaşımı varsa kapatır. Vhost DEĞİŞMEDEN ÖNCE çağrılmalı —
+    /// aradaki her an, adresin varsayılan siteyi yayınladığı bir penceredir.
+    ///
+    /// Yeniden adlandırmada ESKİ adla çağrılır: tünel kaydı eski adla saklandığı için
+    /// yeni adla arayan (arayüz rozeti dahil) onu bir daha bulamaz ve kullanıcı çalışan
+    /// tüneli durduramaz hâle gelir.
+    private func stopShareBeforeVHostChange(_ name: String) async {
+        guard let tunnelManager, tunnelManager.tunnel(for: name) != nil else { return }
+        await tunnelManager.stop(domainName: name)
+        log(key: "log.dom.shareStoppedWithDomain", args: [name], type: .warning)
+    }
+
     func removeDomain(_ domain: Domain) async {
         isLoading = true
         log(key: "log.dom.deleting", args: [domain.name], type: .command)
+
+        await stopShareBeforeVHostChange(domain.name)
 
         // Çalışan uygulama sürecini durdur (hayalet process kalmasın)
         if [Platform.python, .nodejs, .dotnet].contains(domain.platform) {
@@ -659,6 +684,8 @@ class DomainManager: BaseManager {
             log(key: "log.dom.enabled", args: [domain.name], type: .success)
         } else {
             log(key: "log.dom.disabling", args: [domain.name], type: .command)
+            // Devre dışı bırakmak da vhost'u siliyor — silmeyle aynı tehlike.
+            await stopShareBeforeVHostChange(domain.name)
             // Çalışan backend'i durdur (arka planda ghost süreç kalmasın)
             if [Platform.nodejs, .python, .dotnet].contains(domain.platform) {
                 await NativeProcessManager.stop(domain: domain)
@@ -718,6 +745,10 @@ class DomainManager: BaseManager {
         guard domains.contains(where: { $0.id == domain.id }) else {
             return .failure("Domain bulunamadı.")
         }
+
+        // Doğrulamalar geçtikten SONRA, dosyalara dokunmadan ÖNCE: buradan sonrası
+        // artık geri dönülmeyecek bir yeniden adlandırma.
+        await stopShareBeforeVHostChange(oldName)
 
         // CASE-ONLY rename (Api.local → api.local): macOS varsayılan dosya sistemi
         // büyük/küçük harfe DUYARSIZ olduğundan tüm yollar AYNI dosyaya çözülür.

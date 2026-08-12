@@ -23,9 +23,19 @@ class PHPExtensionManager: BaseManager {
         var exts = PHPExtension.popularExtensions
         let installed = getInstalledExtensions()
         let enabled = getEnabledExtensions()
-        
+        let disabled = getDisabledExtensions()
+
         for i in 0..<exts.count {
-            exts[i].isInstalled = installed.contains(exts[i].name) || exts[i].isBuiltIn
+            // DEVRE DIŞI BIRAKILAN DA KURULUDUR. `php -m` yalnızca YÜKLÜ uzantıları
+            // listeler; devre dışı bırakma ext-<ad>.ini'yi .disabled yapıp php.ini
+            // satırını da sildiği için uzantı o listeden düşer. Yalnızca `php -m`'e
+            // bakılırsa satır "kurulu değil"e döner: onay kutusu kaybolur, yerine "Kur"
+            // gelir, ona basınca PEAR kaydı hâlâ durduğundan `pecl install` "already
+            // installed" ile patlar — uzantıyı arayüzden geri açmanın YOLU KALMAZ.
+            // .disabled dosyasının varlığı, uzantının diskte durduğunun kanıtıdır.
+            exts[i].isInstalled = installed.contains(exts[i].name)
+                || disabled.contains(exts[i].name)
+                || exts[i].isBuiltIn
             exts[i].isEnabled = enabled.contains(exts[i].name) || exts[i].isBuiltIn
         }
         
@@ -45,6 +55,23 @@ class PHPExtensionManager: BaseManager {
             .filter { !$0.isEmpty && !$0.starts(with: "[") })
     }
     
+    /// `ext-<ad>.ini.disabled` bırakılmış uzantılar — kurulu ama kapalı.
+    private func getDisabledExtensions() -> Set<String> {
+        let confD = PathConfig.phpConfD(version: selectedPHPVersion.rawValue)
+        return Self.disabledNames(inConfD: FileHelper.contentsOfDirectory(confD))
+    }
+
+    /// conf.d dosya adlarından devre dışı uzantı adlarını çıkarır — SAF, diskten bağımsız.
+    ///
+    /// `.ini` ile `.ini.disabled` ayrımı burada kritik: sonek denetimi gevşetilirse etkin
+    /// uzantılar da "devre dışı" sayılır ve `isEnabled` ile çelişir.
+    static func disabledNames(inConfD fileNames: [String]) -> Set<String> {
+        Set(fileNames
+            .filter { $0.hasPrefix("ext-") && $0.hasSuffix(".ini.disabled") }
+            .map { String($0.dropFirst("ext-".count).dropLast(".ini.disabled".count)) }
+            .filter { !$0.isEmpty })
+    }
+
     private func getEnabledExtensions() -> Set<String> {
         let confD = PathConfig.phpConfD(version: selectedPHPVersion.rawValue)
         return Set(FileHelper.contentsOfDirectory(confD)

@@ -248,6 +248,9 @@ class AppState: ObservableObject {
         self.phpExtensionManager = PHPExtensionManager(consoleStore: store)
         self.backupRestoreManager = BackupRestoreManager(consoleStore: store)
         self.tunnelManager = TunnelManager(consoleStore: store)
+        // Alan adı silinir/yeniden adlandırılır/devre dışı bırakılırsa açık paylaşım
+        // kapatılmalı; yoksa herkese açık adres varsayılan vhost'u yayınlamaya başlar.
+        self.domainManager.tunnelManager = self.tunnelManager
         self.diagnosticsManager = DiagnosticsManager(consoleStore: store)
 
         serviceManager.objectWillChange

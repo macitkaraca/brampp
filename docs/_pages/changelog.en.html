@@ -5,6 +5,24 @@
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section id="v17">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.7</h2>
+      <p class="lede">Four fixes, all of one kind: the app told you something had happened when it had not. The worst was in sharing — deleting a site did not kill its public address, it repointed it at a different site.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Deleting, renaming or disabling a shared domain left the tunnel running — and the address began serving a different site.</b> The tunnel connects to <code>127.0.0.1</code> and carries the domain in the <code>Host</code> header, so once the vhost was gone the request matched no server block and fell through to the <b>default</b> one. A random <code>trycloudflare.com</code> address then published <code>~/Sites/localhost</code> — <code>/phpmyadmin</code> and <code>/adminer</code> included — while you believed you had shut it down. Apache's <code>Require local</code> did not help either, because the request arrives from loopback. Renaming was worse still: the tunnel record kept the old name, so the badge read "off" and there was no way left to stop a running tunnel. All three paths that touch a vhost now close the share first and say in the console why.</li>
+      <li><b>Restoring a database through the assistant reported a completely failed job as imported.</b> The PostgreSQL path passed no <code>ON_ERROR_STOP</code>, so psql exited zero even when every statement in the dump failed, and the error text was swallowed on the way. The same work has been done correctly in the interface for a long time — the MCP path had fallen behind. It now runs with <code>--single-transaction</code> as well: a restore that breaks midway rolls back entirely, and the retry no longer writes over a half-applied database.</li>
+      <li><b>Clearing the application log lost that run's log entirely.</b> The file was deleted, but the wrapper's redirection is set up once when the process starts: no new file took its place and the app kept writing into one nothing could open. The log window stayed empty until you restarted the app. The file is now emptied rather than removed.</li>
+      <li><b>A disabled PHP extension looked "not installed" and could not be switched back on.</b> Installed state was read only from <code>php -m</code>, and disabling drops the extension from that list — so the row fell back to an Install button. Pressing it failed with "already installed", because the PEAR registration was still there. Short of renaming the file by hand in Finder, there was no way back.</li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v16">
   <div class="wrap">
     <div class="shead">

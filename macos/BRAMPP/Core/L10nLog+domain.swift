@@ -15,6 +15,9 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.dom.shareStoppedWithDomain":
+            ["tr": "⚠️ %@ paylaşımı kapatıldı — alan adı değiştiği için herkese açık adres artık bu siteye gitmiyordu",
+             "en": "⚠️ Sharing for %@ was stopped — with the domain gone, the public address no longer pointed at this site"],
         "log.diag.clean":
             ["tr": "Teşhis tamamlandı — sorun bulunamadı",
              "en": "Diagnostics finished — nothing wrong found"],
