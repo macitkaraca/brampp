@@ -613,6 +613,82 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
+<section id="v19">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.9</h2>
+      <p class="lede">On sekiz düzeltme. Çoğu aynı sınıftan: uygulama bir şeyin olduğunu bildiriyor, oysa olmamış — ya da olan bir şeyi hiç söylemiyor.</p>
+    </div>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Menü çubuğu simgesi kapalıyken pencereyi kapatmak uygulamayı erişilemez bırakıyordu.</b> Pencere yok, Dock ikonu yok, menü çubuğu öğesi yok, ⌘Tab listesinde de yok — geri dönmenin tek yolu uygulamayı yeniden başlatmaktı.</li>
+      <li><b>Dock menüsündeki "Servisleri Durdur ve Kapat" Node/Python/.NET uygulamalarını arkada bırakıyordu.</b> Bu süreçler <code>nohup</code> ile başlatıldığından BRAMPP kapansa da yaşıyor ve bir sonraki açılışta "port kullanımda" olarak geri geliyorlardı.</li>
+      <li><b>Silinen alan adının vhost'u geri yazılabiliyordu.</b> Silme yolunda dört bekleme noktası var ve biri yönetici parolası isteyebiliyor; o süre boyunca uçuştaki bir düzenleme görevi vhost'u geri yazıyordu.</li>
+      <li><b>Paylaşımı durdurma, durduramadığında da "adres artık ölü" diyordu.</b> Süreç sinyalleri atlattığında site internete açık kalmaya devam ediyor, asistan ise kullanıcıya kapandığını söylüyordu.</li>
+      <li><b>Uygulama logunda 5 MB sonrası kayboluyordu.</b> Log döndürme dosyaya yeni bir kimlik veriyor, uygulama ise eskisine yazmaya devam ediyordu: pencere o koşu boyunca bir daha satır göstermiyordu.</li>
+      <li><b>Tek bir bozuk bayt tüm log geçmişini gizliyordu</b> — pencere güncellenmiyor, log susmuş gibi görünüyordu.</li>
+      <li><b>Aynı log satırları iki kez görünüyordu.</b></li>
+      <li><b>Devre dışı bırakılmış alan adı, web sunucusu ayaktayken yeşil "çalışıyor" noktası gösteriyordu</b> — oysa vhost'u silinmiş, site sunulmuyordu.</li>
+      <li><b>Veritabanı geri yükleme MySQL'de satırları ikiye katlayabiliyordu.</b> Kullanıcı denemesi başarısız olunca döküm baştan bir kez daha uygulanıyor, ilk denemedeki eklemeler geri alınmadığı için tekrar işleniyordu.</li>
+      <li><b>Diskteki log geçmişinin yalnızca iki günü aranıyordu</b>, yedi gün saklandığı hâlde: "dört gün önce ne oldu" sorusu sessizce boş dönüyordu.</li>
+      <li><b><code>/etc/hosts</code> newline ile bitmiyorsa yeni alan adı son satıra yapışıyordu</b> — hem yeni ad çözülmüyor hem de yapıştığı satır bozuluyordu.</li>
+      <li><b>Apache yapılandırması zaten bozukken, yeni yazılan companion dosyaları da siliniyordu</b> — silmek sorunu çözmüyor, yalnızca çalışan tek şeyi de götürüyordu.</li>
+      <li><b>MCP portu başka bir süreçteyken konsola her tazelemede "MCP sunucusu durduruldu" satırı düşüyordu.</b></li>
+      <li><b>İki BRAMPP kopyası aynı log dosyasına yazınca satırlar birbirini eziyordu.</b></li>
+      <li><b>Yürütücü yolunda boşluk varsa süreç bilgisinde sütunlar kayıyordu</b> — komut adının parçası CPU değeri olarak görünüyordu.</li>
+      <li><b>⌘N pencere gizliyken görünmeyen bir pencere kuyruğa alıyordu.</b></li>
+      <li><b>Paylaşımı durdurma, alan adını küçük harfe indirmiyordu</b>; büyük harfle açılan bir paylaşım küçük harfle kapatılamıyordu.</li>
+      <li><b>Yardım metni iki aracı yanlış izin alanında gösteriyordu.</b></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v18">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.8</h2>
+      <p class="lede">Güncelleme artık uygulamanın içinde bitiyor: bir düğme, uygulama kapanıyor, yeni sürümle açılıyor. Kalıbı açıp sürüklemek gerekmiyor — ve yönetici parolası hiçbir koşulda istenmiyor.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>"Güncelle ve yeniden başlat".</b> Yeni sürüm, uygulama <b>çalışırken</b> hedefin yanına kopyalanıyor; çıkıştan sonra geriye aynı birimdeki iki yeniden adlandırma kalıyor, yani uygulamanın var olmadığı pencere saniyeler değil milisaniyeler sürüyor. Eski paket silinmiyor, <b>yana alınıyor</b>: yeni sürüm açılıp <b>ayakta kaldığında</b> siliniyor, açılmazsa geri konuyor. Homebrew servisleriniz durdurulmuyor — uygulamayı güncelliyorsunuz, geliştirme ortamınızı kapatmıyorsunuz. Hedef klasöre yazılamıyorsa düğme <b>hiç gösterilmiyor</b> ve eski yol birincil eylem olarak kalıyor; "BRAMPP kendini güncellemek için parolanı istiyor" alışkanlığı, bir saldırganın isteyeceği tam o alışkanlıktır.</li>
+      <li><b>Teşhis panelinde "Yapılandırmayı onar"</b> — yalnızca onarılacak bir şey varken görünüyor. phpMyAdmin/Adminer yapılandırmasındaki eski <code>Alias</code> sırasını düzeltiyor: dosyayı <code>.brampp.bak</code> olarak yedekliyor, <code>configtest</code> çalıştırıyor ve geçmezse yedekten geri alıyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Paylaşım adresi daha erken geliyor.</b> Bekleme, sistem çözümleyicisini 45 saniye boyunca yokluyordu. Canlı bir tünelde ölçüldü: <code>dig @1.1.1.1</code> adı <b>0,02 saniyede</b> çözdü, aynı anda sistem çözümleyicisi aynı adı <b>hiç çözemedi</b>. Yalnızca <code>dig</code>'e bakmak yanlış olurdu — tarayıcı <code>getaddrinfo</code> kullanır ve kenar cevabına "hazır" demek, açılamayacak bir bağlantı vermek olur. İkisi birlikte çalışıyor: <code>dig</code> yalnızca adın kenarda var olduğunu saptıyor, saptadığı anda sistem çözümleyicisine 45 değil <b>6 saniye</b> tanınıyor ve adres, zaten var olan uyarısıyla veriliyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Güncelleme penceresi ana pencerenin arkasında açılıyordu</b> — uygulama etkinleştirilirken AppKit kendi ana penceresini öne getiriyor, az önce öne alınmış bildirim onun altında kalıyordu. Yani pencere açılıyor ama kullanıcı görmüyordu.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v17">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.7</h2>
+      <p class="lede">Dört düzeltme, dördü de aynı sınıftan: uygulama size bir şeyin olduğunu söylüyor, oysa olmamış. En ciddisi paylaşımda — sildiğiniz sitenin herkese açık adresi ölmüyor, başka bir siteyi yayınlamaya başlıyordu.</p>
+    </div>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Paylaşımdaki bir alan adını silmek, yeniden adlandırmak ya da devre dışı bırakmak tüneli açık bırakıyordu — ve adres başka bir siteyi yayınlamaya başlıyordu.</b> Tünel <code>127.0.0.1</code>'e bağlanıp alan adını <code>Host</code> başlığında taşıdığı için, vhost silinince istek hiçbir sunucu bloğuyla eşleşmiyor ve <b>varsayılan</b> vhost'a düşüyordu. Sonuç: rastgele bir <code>trycloudflare.com</code> adresi, kapattığınızı sandığınız hâlde <code>~/Sites/localhost</code> kökünüzü — <code>/phpmyadmin</code> ve <code>/adminer</code> dahil — internete açıyordu. İstek loopback'ten geldiği için Apache'nin <code>Require local</code> kısıtı da devreye girmiyordu. Yeniden adlandırmada daha da kötüydü: tünel kaydı eski adla saklandığından arayüzdeki rozet "kapalı" görünüyor, çalışan tüneli durdurmanın hiçbir yolu kalmıyordu. Artık vhost'a dokunan üç yolun üçü de önce paylaşımı kapatıyor ve konsola neden kapatıldığını yazıyor.</li>
+      <li><b>Asistan üzerinden veritabanı geri yükleme, tamamen başarısız bir işi "aktarıldı" diye bildiriyordu.</b> PostgreSQL yolunda <code>ON_ERROR_STOP</code> verilmediği için psql, dökümdeki her ifade hata verse bile sıfırla bitiyordu; hata metni de yutuluyordu. Aynı iş arayüzde yıllardır doğru yapılıyordu — <code>MCP</code> yolu geride kalmıştı. Artık <code>--single-transaction</code> ile birlikte: yarıda kalan bir geri yükleme tamamen geri alınıyor, yeniden deneme yarım veritabanının üstüne yazmıyor.</li>
+      <li><b>Uygulama logunu "Temizle" ile boşaltmak, o koşu boyunca logu tamamen kaybettiriyordu.</b> Dosya siliniyordu, oysa sarmalayıcının yönlendirmesi süreç başlarken bir kez kurulur: silinen dosyanın yerine yenisi doğmuyor, uygulama görünmez bir dosyaya yazmaya devam ediyordu. Log penceresi kalıcı olarak boş kalıyor, tek çare uygulamayı yeniden başlatmaktı. Artık dosya silinmiyor, içi boşaltılıyor.</li>
+      <li><b>Devre dışı bırakılan bir PHP uzantısı "kurulu değil" görünüyor ve arayüzden geri açılamıyordu.</b> Kurulu olup olmadığı yalnızca <code>php -m</code> çıktısından çıkarılıyordu; devre dışı bırakma uzantıyı o listeden düşürdüğü için satır kurulmamış sayılıyor, onay kutusunun yerine "Kur" düğmesi geliyordu. Ona basınca da PEAR kaydı hâlâ durduğu için kurulum "zaten kurulu" hatasıyla düşüyordu — uzantıyı Finder'da elle yeniden adlandırmadan geri açmak mümkün değildi.</li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v16">
   <div class="wrap">
     <div class="shead">

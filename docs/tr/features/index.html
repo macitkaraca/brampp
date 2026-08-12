@@ -690,7 +690,23 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="tooling">
+<section id="whats-new">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">Son eklenenler</span>
+      <h2>Terminale dönmeniz gereken birkaç iş daha azaldı</h2>
+      <p class="lede">Bir geliştirme ortamı yöneticisinin işi, sizi terminale göndermemektir. Aşağıdakiler, BRAMPP'ın daha düne kadar yarısını yapıp gerisini size bıraktığı işlerdi.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="ico" aria-hidden="true">🌍</span><h3>Çalışan siteyi geçici bir adresle paylaşın</h3><p>Tek tıkla <code>https://…trycloudflare.com</code> adresi alırsınız — müşteriye göstermek ya da siteyi telefondan açmak için. Cloudflare hesabı gerekmez. Arkasında bir şey çalışmıyorsa <b>paylaşım reddedilir</b>: ziyaretçiye 502 gönderen bir bağlantı, hiç bağlantı vermemekten kötüdür. Alan adını silerseniz paylaşım da onunla birlikte kapanır.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">⤵️</span><h3>Güncelle ve yeniden başlat</h3><p>Kalıbı açıp sürüklemek yok. Yeni sürüm uygulama <i>çalışırken</i> yanına kopyalanır; çıkıştan sonra geriye iki yeniden adlandırma kalır, yani uygulamanın var olmadığı an milisaniyelerle ölçülür. Eski sürüm silinmez, <b>yana alınır</b> — yenisi açılıp ayakta kaldığında gider, açılmazsa geri konur. Homebrew servisleriniz çalışmaya devam eder ve <b>yönetici parolası hiçbir koşulda istenmez</b>.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">📦</span><h3>Homebrew paketleri, gürültüsü ayrılmış</h3><p><code>brew outdated</code> makinedeki her formülü sayar; tipik bir geliştiricide bu elli paket eder ve <code>httpd</code> ile <code>php</code>, <code>cocoapods</code> ile <code>jadx</code> arasında kaybolur. Kendi sekmesinde üçe ayrılır: BRAMPP'ın yönettikleri, onların bağımlılıkları, ve dokunmadığı geri kalanı. İstediğinizi seçip güncellersiniz; çalışan bir servis yükseltildiyse yeniden başlatılır, çünkü yükseltme ikiliyi değiştirir ama çalışan süreç eskisini tutmaya devam eder.</p></div>
+      <div class="card"><span class="ico" aria-hidden="true">🩺</span><h3>Ortam teşhisi — ve onarımı</h3><p>Portlar, yapılandırma geçerliliği, sertifika güveni ve <code>/etc/hosts</code> tek ekranda. Bir portu beklenmedik bir süreç tutuyorsa adını ve PID'ini söyler. Tanıdığı bir bozukluk varsa <b>onarmayı önerir</b>: dosyayı yedekler, <code>configtest</code> çalıştırır, geçmezse yedekten geri alır — paylaşılan yapılandırmaya dokunan bir iş bu üç adım olmadan yapılmamalı.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="tooling">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">Araçlar</span>

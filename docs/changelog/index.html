@@ -613,6 +613,82 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section id="v19">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.9</h2>
+      <p class="lede">Eighteen fixes, most of one kind: the app reported that something had happened when it had not — or never mentioned something that did.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Closing the window with the menu bar icon turned off made the app unreachable.</b> No window, no Dock icon, no menu bar item, nothing in Cmd-Tab — the only way back was to relaunch.</li>
+      <li><b>Stop services and quit, from the Dock menu, left Node, Python and .NET apps running.</b> They are started with <code>nohup</code>, so they outlive BRAMPP and return as a port already in use.</li>
+      <li><b>A deleted domain's vhost could be written back.</b> The delete path has four waiting points and one of them can ask for an administrator password; an in-flight edit would restore the vhost during that window.</li>
+      <li><b>Stopping a share said the address was dead even when it was not.</b> When the process survives the signals the site stays on the internet, while the assistant reported it closed.</li>
+      <li><b>Application logs vanished past 5 MB.</b> Rotation gave the file a new identity while the app kept writing to the old one, so the window showed nothing more for that run.</li>
+      <li><b>A single malformed byte hid the whole log</b> — the window stopped updating and the log looked like it had gone quiet.</li>
+      <li><b>The same log lines appeared twice.</b></li>
+      <li><b>A disabled domain showed a green running dot whenever the web server was up</b>, though its vhost had been removed and the site was not being served.</li>
+      <li><b>Restoring a database could double rows on MySQL.</b> When the first attempt failed the dump was applied again from the start, replaying inserts that the failed attempt had already committed.</li>
+      <li><b>Only two days of the on-disk log history were searched</b> though seven are kept: "what happened four days ago" came back empty.</li>
+      <li><b>A new domain welded itself onto the last line of <code>/etc/hosts</code></b> when the file did not end in a newline — losing the new name and corrupting the line it landed on.</li>
+      <li><b>When the Apache configuration was already broken, freshly written companion files were deleted too</b> — which fixed nothing and lost them as well.</li>
+      <li><b>A console line claiming the MCP server had stopped appeared on every refresh</b> while the port was held by another process.</li>
+      <li><b>Two copies of BRAMPP writing the same log file overwrote each other's lines.</b></li>
+      <li><b>A space in the executable path shifted the columns in process information</b>, showing part of the command name as the CPU figure.</li>
+      <li><b>Cmd-N with the window hidden queued a window nobody could see.</b></li>
+      <li><b>Stopping a share did not lowercase the domain</b>, so a share opened with capitals could not be closed with lowercase.</li>
+      <li><b>The help text listed two tools under the wrong permission area.</b></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v18">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.8</h2>
+      <p class="lede">Updating now finishes inside the app: one button, the app quits and reopens on the new version. No opening the image and dragging — and no administrator password, ever.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Update and restart.</b> The new version is copied next to the target <b>while the app is still running</b>, so after quitting only two same-volume renames remain — the window in which no application exists lasts milliseconds rather than seconds. The old bundle is not deleted but <b>moved aside</b>: it is removed once the new version has launched <b>and stayed alive</b>, and put back if it has not. Your Homebrew services keep running — you are updating the app, not shutting down your environment. If the target folder is not writable the button is <b>not offered at all</b> and dragging stays the primary action; teaching people that BRAMPP asks for their password to update itself is teaching them exactly what an attacker wants.</li>
+      <li><b>Repair configuration, in Diagnostics</b> — shown only when there is something to repair. It fixes the old <code>Alias</code> order in the phpMyAdmin/Adminer configuration: the file is backed up as <code>.brampp.bak</code>, <code>configtest</code> is run, and the backup is restored if it fails.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>The shared address arrives sooner.</b> The wait polled the system resolver for a full 45 seconds. Measured on a live tunnel: <code>dig @1.1.1.1</code> resolved the name in <b>0.02s</b> while the system resolver could not resolve it <b>at all</b>. Going by <code>dig</code> alone would be wrong — browsers use <code>getaddrinfo</code>, and calling it ready on the edge's answer hands over a link that will not open. Both run together: <code>dig</code> only establishes that the name exists at the edge, and the moment it does, the system resolver gets <b>six seconds</b> instead of forty-five before the address is handed over with the warning it already carried.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>The update window opened behind the main window.</b> Activating the app brings its own main window forward, leaving the notice that had just been ordered front underneath it — so the window opened and the user never saw it.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="v17">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.7</h2>
+      <p class="lede">Four fixes, all of one kind: the app told you something had happened when it had not. The worst was in sharing — deleting a site did not kill its public address, it repointed it at a different site.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Deleting, renaming or disabling a shared domain left the tunnel running — and the address began serving a different site.</b> The tunnel connects to <code>127.0.0.1</code> and carries the domain in the <code>Host</code> header, so once the vhost was gone the request matched no server block and fell through to the <b>default</b> one. A random <code>trycloudflare.com</code> address then published <code>~/Sites/localhost</code> — <code>/phpmyadmin</code> and <code>/adminer</code> included — while you believed you had shut it down. Apache's <code>Require local</code> did not help either, because the request arrives from loopback. Renaming was worse still: the tunnel record kept the old name, so the badge read "off" and there was no way left to stop a running tunnel. All three paths that touch a vhost now close the share first and say in the console why.</li>
+      <li><b>Restoring a database through the assistant reported a completely failed job as imported.</b> The PostgreSQL path passed no <code>ON_ERROR_STOP</code>, so psql exited zero even when every statement in the dump failed, and the error text was swallowed on the way. The same work has been done correctly in the interface for a long time — the MCP path had fallen behind. It now runs with <code>--single-transaction</code> as well: a restore that breaks midway rolls back entirely, and the retry no longer writes over a half-applied database.</li>
+      <li><b>Clearing the application log lost that run's log entirely.</b> The file was deleted, but the wrapper's redirection is set up once when the process starts: no new file took its place and the app kept writing into one nothing could open. The log window stayed empty until you restarted the app. The file is now emptied rather than removed.</li>
+      <li><b>A disabled PHP extension looked "not installed" and could not be switched back on.</b> Installed state was read only from <code>php -m</code>, and disabling drops the extension from that list — so the row fell back to an Install button. Pressing it failed with "already installed", because the PEAR registration was still there. Short of renaming the file by hand in Finder, there was no way back.</li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
