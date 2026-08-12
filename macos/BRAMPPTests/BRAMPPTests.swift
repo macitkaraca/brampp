@@ -3404,4 +3404,41 @@ final class BRAMPPTests: XCTestCase {
         """
         XCTAssertTrue(PHPProfiler.isAlwaysOn(in: ini))
     }
+
+    // MARK: - Kaldırma betiği güvenliği
+
+    /// Silme başarısızlığı YUTULMAMALI. Eski `rm -rf "yol" && echo "Silindi"` kalıbında
+    /// `&&` yüzünden başarısız silme sessizce geçiliyor, betik yine "başarıyla
+    /// kaldırıldı" diyordu — MariaDB'de bu, veri dizini DURURKEN kullanıcının
+    /// silindiğini sanması demekti.
+    func testUninstallScript_ReportsDeletionFailures() {
+        let s = ServiceManager.uninstallScript(serviceID: "mariadb", serviceName: "MariaDB",
+                                               brewName: "mariadb", brewPrefix: "/opt/homebrew",
+                                               port: 3306)
+        XCTAssertTrue(s.contains("CLEANUP_FAILED=1"), "başarısız silme bayraklanmalı")
+        XCTAssertTrue(s.contains("SİLİNEMEDİ"), "başarısızlık kullanıcıya söylenmeli")
+        XCTAssertFalse(s.contains("rm -rf \"/opt/homebrew/var/mysql\" && echo"),
+                       "eski yutan kalıp kalmamalı")
+    }
+
+    /// Veri dizini, sunucunun durduğu DOĞRULANMADAN silinmemeli: çalışan bir sunucunun
+    /// altından dosya çekmek geriye tutarsız bir veri dizini bırakır.
+    func testUninstallScript_VerifiesTheServerStoppedBeforeDeleting() {
+        let s = ServiceManager.uninstallScript(serviceID: "mariadb", serviceName: "MariaDB",
+                                               brewName: "mariadb", brewPrefix: "/opt/homebrew",
+                                               port: 3306)
+        XCTAssertTrue(s.contains("nc -z 127.0.0.1 3306"), "port gerçekten yoklanmalı")
+        let stopIdx = s.range(of: "nc -z 127.0.0.1 3306")?.lowerBound
+        let rmIdx   = s.range(of: "CLEANUP_FAILED=0")?.lowerBound
+        XCTAssertNotNil(stopIdx); XCTAssertNotNil(rmIdx)
+        XCTAssertTrue(stopIdx! < rmIdx!, "doğrulama silmeden ÖNCE gelmeli")
+    }
+
+    /// Portu olmayan servis için doğrulama bloğu eklenmemeli — sonsuza dek bekleyen
+    /// bir döngü, kaldırmayı hiç bitirmezdi.
+    func testUninstallScript_SkipsThePortGuardWhenThereIsNoPort() {
+        let s = ServiceManager.uninstallScript(serviceID: "mkcert", serviceName: "mkcert",
+                                               brewName: "mkcert", brewPrefix: "/opt/homebrew")
+        XCTAssertFalse(s.contains("nc -z 127.0.0.1"))
+    }
 }

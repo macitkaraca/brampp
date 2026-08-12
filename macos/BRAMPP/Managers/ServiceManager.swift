@@ -1615,7 +1615,8 @@ class ServiceManager: BaseManager {
         let script = Self.uninstallScript(serviceID: service.id,
                                           serviceName: service.name,
                                           brewName: brewName,
-                                          brewPrefix: Shell.brewPrefix)
+                                          brewPrefix: Shell.brewPrefix,
+                                          port: service.port)
 
         // Script'i geçici dosyaya yaz, PTY ile çalıştır → InstallationProgressSheet'te göster
         let tmpPath = NSTemporaryDirectory() + "brampp_uninstall_\(UUID().uuidString).sh"
@@ -1657,7 +1658,8 @@ class ServiceManager: BaseManager {
     /// betikle onay diyaloğu AYRIŞAMAZ; testler de bunu betiğin metni üzerinde doğrular
     /// (planı planla karşılaştıran eski test hiçbir sapmayı göremezdi).
     static func uninstallScript(serviceID: String, serviceName: String,
-                                brewName: String, brewPrefix base: String) -> String {
+                                brewName: String, brewPrefix base: String,
+                                port: Int? = nil) -> String {
         let plan = uninstallPlan(forServiceID: serviceID, brewPrefix: base)
         let cleanupPaths = uninstallCleanupPaths(forServiceID: serviceID, brewPrefix: base)
 
@@ -1665,9 +1667,23 @@ class ServiceManager: BaseManager {
             ? "  echo \"  (temizlenecek config yok)\""
             : cleanupPaths.map { "  echo \"  \($0)\"" }.joined(separator: "\n")
 
+        // Sonuç yola göre AYRI raporlanır ve başarısızlık bayraklanır.
+        // Eskiden `rm -rf "yol" && echo "Silindi"` yazıyordu: `&&` yüzünden başarısız
+        // silme sessizce geçiliyor, betik sonunda yine "başarıyla kaldırıldı" diyordu.
+        // MariaDB'de bu, veri dizini DURUYORKEN kullanıcının silindiğini sanması demek.
+        // `[ -e ]` denetimi de şart: onsuz var olmayan bir yol için "Silindi" yazılırdı.
         let rmCommands = cleanupPaths.isEmpty
             ? "echo \"  (temizlenecek config yok)\""
-            : cleanupPaths.map { "rm -rf \"\($0)\" && echo \"  ✅ Silindi: \($0)\"" }.joined(separator: "\n")
+            : cleanupPaths.map { p in
+                """
+                if [ -e "\(p)" ]; then
+                  if rm -rf "\(p)"; then echo "  ✅ Silindi: \(p)"
+                  else echo "  ❌ SİLİNEMEDİ: \(p)"; CLEANUP_FAILED=1; fi
+                else
+                  echo "  ➖ Zaten yok: \(p)"
+                fi
+                """
+            }.joined(separator: "\n")
 
         // Korunan kullanıcı verisi (vhost'lar) — silinmediği AÇIKÇA bildirilir
         let preservedPaths = plan.preservedPaths
@@ -1681,7 +1697,29 @@ class ServiceManager: BaseManager {
 
         // ── Durdurma ve kaldırma komutları ────────────────────────────────
         // Tüm servisler Homebrew — launchctl remove ile durdur, brew uninstall ile kaldır
-        let stopCmd        = "brew services stop \(brewName) 2>/dev/null || true"
+        // Durdurmak YETMEZ, durduğunu DOĞRULAMAK gerekir. `brew services stop`
+        // launchd'ye isteği bırakır ve hemen döner; MariaDB'nin düzgün kapanması
+        // saniyeler sürebilir. Veri dizini sunucu hâlâ yazarken silinirse, silme
+        // yarım kalır ve geriye tutarsız dosyalar kalır — üstelik o an alınmış bir
+        // yedek de bozuk olur. Port hâlâ dinleniyorsa kaldırmaya HİÇ girilmez.
+        let portGuard = port.map { p in """
+
+        echo "   Servisin gerçekten durduğu doğrulanıyor (port \(p))..."
+        STOPPED=0
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            if ! nc -z 127.0.0.1 \(p) >/dev/null 2>&1; then STOPPED=1; break; fi
+            sleep 1
+        done
+        if [ "$STOPPED" != "1" ]; then
+            echo ""
+            echo "❌ \(serviceName) 10 saniyede durmadı — port \(p) hâlâ dinleniyor."
+            echo "   Veri dizini SİLİNMEDİ: çalışan bir sunucunun altından dosya çekmek"
+            echo "   geriye tutarsız bir veri dizini bırakır. Servisi durdurup tekrar deneyin."
+            exit 1
+        fi
+        echo "   ✓ durdu"
+""" } ?? ""
+        let stopCmd = "brew services stop \(brewName) 2>/dev/null || true" + portGuard
         let uninstallCmd   = "brew uninstall --force \(brewName)"
         let packageLabel   = "Paket   : \(brewName)"
         let autoremoveBlock = """
@@ -1754,20 +1792,34 @@ class ServiceManager: BaseManager {
         echo ""
         \(runtimeExtra)
         echo "🗑️  Paket kaldırılıyor..."
+        # `brew uninstall --force` paket ZATEN yokken de 0 döner: çıkış kodu tek
+        # başına "kaldırıldı" demek değil. Muhafızın ölçtüğü şey, veri dosyalarına
+        # dokunmadan önce paketin gerçekten gitmiş olması.
         if ! \(uninstallCmd); then
             echo ""
             echo "❌ brew uninstall başarısız — config ve veri dosyalarına DOKUNULMADI."
             echo "   Sorunu giderdikten sonra tekrar deneyin."
             exit 1
         fi
+        if brew list --formula \(brewName) >/dev/null 2>&1; then
+            echo ""
+            echo "❌ \(brewName) hâlâ kurulu görünüyor — config ve veri dosyalarına DOKUNULMADI."
+            exit 1
+        fi
         echo ""
 
         echo "🗑️  Config & kütüphane dosyaları temizleniyor..."
+        CLEANUP_FAILED=0
         \(rmCommands)
         echo ""
         \(preservedNote)
         \(phpmyadminExtra)
         \(autoremoveBlock)
+        if [ "$CLEANUP_FAILED" = "1" ]; then
+            echo "⚠️  \(serviceName) kaldırıldı ama YUKARIDA ❌ ile işaretli yollar silinemedi."
+            echo "   O dosyalar diskte duruyor; elle silmeniz gerekebilir."
+            exit 1
+        fi
         echo "✅ \(serviceName) başarıyla kaldırıldı!"
         """
     }
