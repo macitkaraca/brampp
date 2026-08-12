@@ -166,6 +166,14 @@ struct DatabaseTabView: View {
             loadDatabases()
         }
         // ServiceManager'daki kurulum (phpMyAdmin/pgAdmin) başladığında sheet'i aç
+        .onAppear {
+            // Kurulum bu sekme EKRANDA DEĞİLKEN başlamış olabilir (MCP aracı,
+            // başka sekme, menü). false→true geçişi çoktan olup bittiği için
+            // `onChange` kurtarmıyor — duruma bakılır, geçişe değil.
+            if serviceManager.isInstalling || serviceManager.isAwaitingInput {
+                showInstallLog = true
+            }
+        }
         .onChange(of: serviceManager.isInstalling) { _, installing in
             if installing { showInstallLog = true }
         }

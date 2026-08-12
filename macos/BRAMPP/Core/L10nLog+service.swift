@@ -19,6 +19,10 @@ extension L10n {
         // %@ = toplam paket, %@ = yönetilen paket
         // %@ = php.ini yolu
         // %@ = uzantı adı
+        // %@ = süren işin başlığı
+        "log.svc.installBusy":
+            ["tr": "Bir işlem zaten sürüyor (%@) — ikincisi başlatılmadı",
+             "en": "An operation is already running (%@) — a second one was not started"],
         "log.php.installBusy":
             ["tr": "%@ için kurulum zaten sürüyor — ikinci kurulum başlatılmadı",
              "en": "An install is already running for %@ — a second one was not started"],

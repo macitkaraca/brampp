@@ -118,6 +118,12 @@ class ServiceManager: BaseManager {
     @Published var installationLog: String   = ""
     @Published var installationTitle: String = ""
     @Published var isInstalling: Bool        = false
+    /// Son kurulum/kaldırma akışının sonucu. `nil` = henüz sonuçlanmadı.
+    ///
+    /// Başlık bunu okur. Eskiden `installationLog.contains("✅")` ile çıkarım
+    /// yapılıyordu: gövdedeki ARA adım tiklerini bütünün başarısı sanıyor ve
+    /// açıkça iptal edilmiş bir PostgreSQL yapılandırması yeşil tik alıyordu.
+    @Published var lastRunSucceeded: Bool? = nil
 
     // MARK: - Kurulum Onay İstemi (interaktif y/n)
 
@@ -792,6 +798,11 @@ class ServiceManager: BaseManager {
 
     func installService(_ service: Service) {
         guard requireBrew(forKey: "log.op.serviceInstall", [service.name]) else { return }
+        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
+        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
+        }
         guard let i = services.firstIndex(where: { $0.id == service.id }) else { return }
 
         // streamBashPTY kendi PTY'sini oluşturur; withPTY sarması gerekmez
@@ -862,6 +873,11 @@ class ServiceManager: BaseManager {
     /// phpMyAdmin'i ServicesTab'daki İlerleme Penceresi'nde kurar; config sağ konsolda gösterilir.
     func installPhpMyAdmin() {
         guard requireBrew(forKey: "log.op.phpmyadminInstall") else { return }
+        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
+        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
+        }
         isInstalling     = true
         installationTitle = "phpMyAdmin Kuruluyor"
         installationLog  = "🚀 phpMyAdmin kurulum başlatılıyor...\n\(Shell.brewBin) install phpmyadmin\n\n"
@@ -870,6 +886,7 @@ class ServiceManager: BaseManager {
         Task {
             let r = await streamInstallLog("\(Shell.brewBin) install phpmyadmin 2>&1")
 
+            lastRunSucceeded = r.isSuccess
             isInstalling = false
 
             if r.isSuccess {
@@ -1029,6 +1046,11 @@ class ServiceManager: BaseManager {
     /// pgAdmin4'ü ServicesTab İlerleme Penceresi'nde kurar; Apache/Nginx config sağ konsolda gösterilir.
     func installPgAdmin4() {
         guard requireBrew(forKey: "log.op.pgadminInstall") else { return }
+        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
+        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
+        }
         isInstalling      = true
         installationTitle = "pgAdmin4 Kuruluyor"
         installationLog   = "🚀 pgAdmin4 kurulum başlatılıyor...\n\(Shell.brewBin) install pgadmin4\n\n"
@@ -1037,6 +1059,7 @@ class ServiceManager: BaseManager {
         Task {
             let r = await streamInstallLog("\(Shell.brewBin) install pgadmin4 2>&1")
 
+            lastRunSucceeded = r.isSuccess
             isInstalling = false
 
             if r.isSuccess {
@@ -1156,6 +1179,7 @@ class ServiceManager: BaseManager {
                 installationLog += "  ✅ Kullanıcı verisi silindi (~/.pgadmin)\n"
             }
 
+            lastRunSucceeded = true
             isInstalling = false
             if r.isSuccess {
                 installationLog += "\n✅ pgAdmin4 tamamen kaldırıldı.\n"
@@ -1175,6 +1199,11 @@ class ServiceManager: BaseManager {
     /// yapılandırır. MySQL/MariaDB + PostgreSQL'i aynı arayüzden yönetir —
     /// pgAdmin'in ~700 MB'lık kurulumuna hafif alternatif.
     func installAdminer() {
+        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
+        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
+        }
         // PHP şart — Adminer bir PHP uygulaması
         let php = AppSettings.load().defaultPHPVersion
         guard php.isInstalled || PHPVersion.allCases.contains(where: { $0.isInstalled }) else {
@@ -1198,6 +1227,7 @@ class ServiceManager: BaseManager {
             // isAdminerInstalled yanlışlıkla true olur ve bozuk kurulum "kurulu" görünür.
             guard r.isSuccess, FileHelper.exists(PathConfig.adminerFile) else {
                 FileHelper.remove(PathConfig.adminerFile)
+                lastRunSucceeded = false  // İndirme başarısız — yarım dosya silindi.
                 isInstalling = false
                 installationLog += "\n❌ İndirme başarısız — internet bağlantınızı kontrol edin.\n"
                 log(key: "log.svc.adminerDownloadFailed", type: .error)
@@ -1209,6 +1239,7 @@ class ServiceManager: BaseManager {
             let apacheOK = await configureAdminerForApache()
             let nginxOK  = PathConfig.isNginxInstalled ? await configureAdminerForNginx() : true
 
+            lastRunSucceeded = apacheOK && nginxOK
             isInstalling = false
             if apacheOK || nginxOK {
                 installationLog += "\n✅ Adminer kuruldu!\n"
@@ -1376,6 +1407,7 @@ class ServiceManager: BaseManager {
                     installationLog += "❌ PostgreSQL başlatılamadı — yapılandırma durduruluyor\n"
                     installationLog += "💡 İpucu: Terminalde çalıştırın:\n"
                     installationLog += "   brew services stop postgresql@\(version) 2>/dev/null; brew services run postgresql@\(version)\n"
+                    lastRunSucceeded = false  // İPTAL edilen akış başarı değildir; başlık yeşil tik gösteriyordu.
                     isInstalling = false
                     log(key: "log.svc.pgStartFailed", args: [version], type: .error)
                     return
@@ -1470,6 +1502,7 @@ class ServiceManager: BaseManager {
             ══════════════════════════════════════════
             """
 
+            lastRunSucceeded = true
             isInstalling = false
             log(key: "log.svc.pgInitialConfigDone", args: [version], type: .success)
             refreshStatus()
@@ -1609,6 +1642,11 @@ class ServiceManager: BaseManager {
 
     func uninstallService(_ service: Service) {
         guard requireBrew(forKey: "log.op.serviceUninstall", [service.name]) else { return }
+        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
+        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
+        }
         guard let i = services.firstIndex(where: { $0.id == service.id }) else { return }
 
         let brewName = service.brewName ?? service.id

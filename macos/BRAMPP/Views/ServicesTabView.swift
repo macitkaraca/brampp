@@ -65,6 +65,13 @@ struct ServicesTabView: View {
             legendView
         }
         // Kurulum başladığında log sheet'ini otomatik aç
+        .onAppear {
+            // Kurulum bu sekme EKRANDA DEĞİLKEN başlamış olabilir; false→true
+            // geçişi olup bittiği için `onChange` kurtarmıyor.
+            if serviceManager.isInstalling || serviceManager.isAwaitingInput {
+                showInstallLog = true
+            }
+        }
         .onChange(of: serviceManager.isInstalling) { _, installing in
             if installing { showInstallLog = true }
         }
@@ -805,8 +812,13 @@ struct InstallationProgressSheet: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
-                    Image(systemName: serviceManager.installationLog.contains("✅") ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(serviceManager.installationLog.contains("✅") ? .green : .red)
+                    // Sonuç AÇIKÇA okunur. `installationLog.contains("✅")` gövdedeki
+                    // ARA adım tiklerini bütünün başarısı sanıyordu: açıkça iptal
+                    // edilmiş bir PostgreSQL yapılandırması, loguna daha önce bir ✅
+                    // düştüğü için yeşil tik alıyordu.
+                    Image(systemName: serviceManager.lastRunSucceeded == true
+                                      ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(serviceManager.lastRunSucceeded == true ? .green : .red)
                     Text(serviceManager.installationTitle)
                         .font(.headline)
                     Spacer()
