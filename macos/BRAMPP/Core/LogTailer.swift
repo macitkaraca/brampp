@@ -124,8 +124,18 @@ final class LogTailer: ObservableObject {
         defer { try? handle.close() }
         try? handle.seek(toOffset: offset)
         let data = (try? handle.readToEnd()) ?? Data()
-        offset = size
-        guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
+        // `size` yukarıda ÖRNEKLENDİ; `readToEnd` o andaki sona kadar okur ve dosya bu
+        // arada büyümüş olabilir. Konumu `size`a ayarlamak, okunup EKRANA BASILMIŞ
+        // fazlalığı bir sonraki turda yeniden okutur ve aynı satırlar iki kez görünür.
+        // Okuma konumunun tek doğru kaynağı gerçekten okunan bayt sayısıdır.
+        offset += UInt64(data.count)
+        guard !data.isEmpty else { return }
+        // KAYIPSIZ çözümleme: tek bir geçersiz bayt (ikili çıktı, bozuk kodlama, çok
+        // baytlı bir karakterin ortasında yakalanan yazma) katı `String(data:)`ı nil
+        // döndürüyor ve `guard` ile TÜM parça atılıyordu — pencere hiç güncellenmiyor,
+        // kullanıcı logun durduğunu sanıyordu. Bozuk bayt U+FFFD olarak görünsün,
+        // yeter ki geri kalan satırlar kaybolmasın.
+        let chunk = String(decoding: data, as: UTF8.self)
 
         if text == placeholder { text = "" }
         text = Self.capped(text + chunk, maxLines: maxLines)

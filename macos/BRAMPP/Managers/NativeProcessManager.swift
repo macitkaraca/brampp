@@ -247,6 +247,31 @@ enum NativeProcessManager {
     /// Domain'in gerçek çalışma bilgisini toplar: wrapper PID + portu dinleyen asıl app PID
     /// + CPU/bellek. İzleme panelinde gösterilir. (Her satırda değil; talep üzerine çağrılır.)
     @MainActor
+    /// `ps -o pid=,%cpu=,rss=,comm=` satırını ayrıştırır — SAF.
+    ///
+    /// İlk ÜÇ alan konumla alınır, KALAN HER ŞEY komuttur. Boşluğa göre bölmek,
+    /// yürütücü yolu boşluk içerdiğinde ("/Users/x/My Tools/node") sütunları
+    /// kaydırıyor ve kullanıcı komut adının parçasını CPU değeri olarak görüyordu.
+    static func parseProcessLine(_ output: String) -> (pid: Int?, cpu: String?,
+                                                       rssKB: Int?, command: String?) {
+        let line = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty else { return (nil, nil, nil, nil) }
+        var fields: [String] = []
+        var rest = Substring(line)
+        for _ in 0..<3 {
+            rest = rest.drop(while: { $0.isWhitespace })
+            let f = rest.prefix(while: { !$0.isWhitespace })
+            guard !f.isEmpty else { break }
+            fields.append(String(f))
+            rest = rest.dropFirst(f.count)
+        }
+        let command = rest.trimmingCharacters(in: .whitespaces)
+        return (fields.count > 0 ? Int(fields[0]) : nil,
+                fields.count > 1 ? fields[1] : nil,
+                fields.count > 2 ? Int(fields[2]) : nil,
+                command.isEmpty ? nil : (command as NSString).lastPathComponent)
+    }
+
     static func processInfo(for domain: Domain) async -> AppProcessInfo {
         // PID dosyası, süreç öldükten sonra da diskte kalır. Doğrulamadan raporlamak
         // "wrapper hâlâ ayakta" izlenimi verir; isRunning=false olsa bile bu PID'i gören
@@ -264,18 +289,21 @@ enum NativeProcessManager {
         let r = await Shell.bashAsync("""
         PID=$(lsof -ti TCP:\(port) -sTCP:LISTEN 2>/dev/null | head -1)
         [ -z "$PID" ] && exit 1
-        ps -p "$PID" -o pid=,comm=,%cpu=,rss= 2>/dev/null
+        # comm SONA alınır: yürütücü yolu BOŞLUK içerebilir ("/Users/x/My Tools/node")
+        # ve ortada dururken %cpu ile rss sütunlarını kaydırıyordu — kullanıcı komut
+        # adının bir parçasını CPU değeri olarak görüyordu. Sayısal alanlar önde sabit.
+        ps -p "$PID" -o pid=,%cpu=,rss=,comm= 2>/dev/null
         """)
         guard r.isSuccess, !r.output.isEmpty else {
             return AppProcessInfo(wrapperPID: wrapperPID, appPID: nil, command: nil, cpu: nil, memoryMB: nil)
         }
-        // Çıktı: "12345 node 0.4 45678"  (rss KB cinsinden)
-        let parts = r.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            .components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        let appPID  = parts.count > 0 ? Int(parts[0]) : nil
-        let command = parts.count > 1 ? (parts[1] as NSString).lastPathComponent : nil
-        let cpu     = parts.count > 2 ? parts[2] : nil
-        let memMB   = parts.count > 3 ? Int(parts[3]).map { String(format: "%.0f", Double($0) / 1024.0) } : nil
+        // Çıktı: "12345 0.4 45678 /opt/homebrew/bin/node"  (rss KB cinsinden)
+        // İlk ÜÇ alan konumla alınır, kalan HER ŞEY komuttur — boşluklu yol bölünmez.
+        let parsed = Self.parseProcessLine(r.output)
+        let appPID  = parsed.pid
+        let command = parsed.command
+        let cpu     = parsed.cpu
+        let memMB   = parsed.rssKB.map { String(format: "%.0f", Double($0) / 1024.0) }
 
         return AppProcessInfo(wrapperPID: wrapperPID, appPID: appPID, command: command, cpu: cpu, memoryMB: memMB)
     }
@@ -401,8 +429,15 @@ enum NativeProcessManager {
         if [ -f "$APPLOG" ]; then
             LOGSIZE=$(stat -f%z "$APPLOG" 2>/dev/null || echo 0)
             if [ "$LOGSIZE" -gt 5242880 ]; then
-                tail -c 1048576 "$APPLOG" > "$APPLOG.tmp" 2>/dev/null && mv "$APPLOG.tmp" "$APPLOG"
-                echo "[$(date '+%Y-%m-%d %H:%M:%S')] ℹ️  Log döndürüldü (5 MB üzeri — son 1 MB korundu)"
+                # INODE KORUNMALI. Sarmalayıcının fd'si (`>> app.log`) BU inode'a bağlı
+                # ve yolu bir daha çözmez. `mv` rename(2) yapıp adı YENİ bir inode'a
+                # bağlasaydı, bu koşunun tüm çıktısı adı silinmiş eski inode'a yazılır,
+                # `app.log` 1 MB'ta donar ve log penceresi bir daha hiçbir şey göstermezdi.
+                # `>` (O_TRUNC) aynı inode'u boşaltıp yeniden doldurur.
+                if tail -c 1048576 "$APPLOG" > "$APPLOG.tmp" 2>/dev/null; then
+                    cat "$APPLOG.tmp" > "$APPLOG" && rm -f "$APPLOG.tmp"
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ℹ️  Log döndürüldü (5 MB üzeri — son 1 MB korundu)"
+                fi
             fi
         fi
 

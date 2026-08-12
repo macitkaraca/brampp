@@ -3335,4 +3335,32 @@ final class BRAMPPTests: XCTestCase {
         // Boş dosyada newline EKLENMEMELİ: `-s` koruması bunun için var.
         XCTAssertTrue(DomainManager.hostsEnsureTrailingNewline.contains("-s /etc/hosts"))
     }
+
+    // MARK: - ps çıktısı ayrıştırma
+
+    /// BOŞLUKLU YOL. Yürütücü "/Users/x/My Tools/node" ise boşluğa göre bölmek
+    /// sütunları kaydırır ve kullanıcı komut adının parçasını CPU değeri olarak görür.
+    func testParseProcessLine_KeepsColumnsAlignedWithSpacedPath() {
+        let p = NativeProcessManager.parseProcessLine("12345 0.4 45678 /Users/x/My Tools/node")
+        XCTAssertEqual(p.pid, 12345)
+        XCTAssertEqual(p.cpu, "0.4")
+        XCTAssertEqual(p.rssKB, 45678)
+        XCTAssertEqual(p.command, "node", "yolun son bileşeni alınmalı, sütun kaymamalı")
+    }
+
+    func testParseProcessLine_HandlesPlainPathAndEmptyOutput() {
+        let p = NativeProcessManager.parseProcessLine("  999 12.5 1024 /opt/homebrew/bin/python3  ")
+        XCTAssertEqual(p.pid, 999)
+        XCTAssertEqual(p.command, "python3")
+        let empty = NativeProcessManager.parseProcessLine("")
+        XCTAssertNil(empty.pid); XCTAssertNil(empty.command)
+    }
+
+    /// Komut alanı hiç yoksa çökmemeli — ps beklenmedik biçimde kısa dönebilir.
+    func testParseProcessLine_ToleratesMissingCommand() {
+        let p = NativeProcessManager.parseProcessLine("42 0.0 100")
+        XCTAssertEqual(p.pid, 42)
+        XCTAssertEqual(p.rssKB, 100)
+        XCTAssertNil(p.command)
+    }
 }

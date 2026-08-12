@@ -69,18 +69,27 @@ enum ConsoleLogFile {
         let url = fileURL(for: date)
         queue.async {
             guard let data = line.data(using: .utf8) else { return }
-            let fm = FileManager.default
-            if !fm.fileExists(atPath: url.path) {
-                try? fm.createDirectory(atPath: PathConfig.logs,
-                                        withIntermediateDirectories: true)
-                fm.createFile(atPath: url.path, contents: nil)
+            try? FileManager.default.createDirectory(atPath: PathConfig.logs,
+                                                     withIntermediateDirectories: true)
+            // O_APPEND: konumlanma ve yazma ÇEKİRDEKTE tek atomik işlemdir.
+            // `seekToEnd()` + `write()` iki ayrı syscall'dır ve süreçler arası atomik
+            // DEĞİLDİR: kurulu uygulama, Xcode derlemesi ve test ana uygulaması aynı
+            // günlük dosyaya yazdığından biri diğerinin satırının üstüne binebiliyordu.
+            // O_CREAT sayesinde ayrı bir "dosya var mı" dansı da gerekmez; dosya her
+            // yazımda yeniden açılır, çünkü gün dönünce hedef değişir ve açık tutulan
+            // bir tanıtıcı eski dosyaya yazmaya devam ederdi.
+            let fd = open(url.path, O_WRONLY | O_APPEND | O_CREAT, 0o644)
+            guard fd >= 0 else { return }
+            defer { close(fd) }
+            data.withUnsafeBytes { buf in
+                guard let base = buf.baseAddress else { return }
+                var written = 0
+                while written < buf.count {
+                    let n = write(fd, base.advanced(by: written), buf.count - written)
+                    if n <= 0 { break }        // kısmi yazım: sinyal ya da disk hatası
+                    written += n
+                }
             }
-            // Handle her yazımda açılıp kapanır: uygulama günlerce açık kalabilir ve
-            // gün dönünce hedef dosya değişir; açık tutulan handle eski dosyaya yazardı.
-            guard let handle = try? FileHandle(forWritingTo: url) else { return }
-            defer { try? handle.close() }
-            try? handle.seekToEnd()
-            try? handle.write(contentsOf: data)
         }
     }
 
