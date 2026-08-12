@@ -1398,7 +1398,12 @@ final class MCPServer: ObservableObject {
         if source == "file" {
             // Diskteki geçmiş: bellekteki 300 satırlık tampon uzun işlemlerde
             // süpürüldüğü için "biraz önce ne oldu" ancak buradan yanıtlanır.
-            let days = since.map { max(1, Int(ceil(Double($0) / 1440.0)) + 1) } ?? 2
+            // `since` verilmediyse pencere DARALTILMAZ: diskte tutulan tüm geçmiş
+            // taranır. `?? 2` yüzünden "dört gün önce ne oldu" sorusu sessizce boş
+            // dönüyordu — üstelik pencereyi GENİŞLETMENİN tek yolu, şemada DARALTICI
+            // diye belgelenen `since_minutes`i vermekti.
+            let days = since.map { max(1, Int(ceil(Double($0) / 1440.0)) + 1) }
+                ?? ConsoleLogFile.retentionDays
             let raw = ConsoleLogFile.recentText(days: min(days, ConsoleLogFile.retentionDays))
             guard !raw.isEmpty else {
                 return .text("Disk logu boş — Ayarlar'da 'Konsolu diske kaydet' kapalı olabilir.")
@@ -1543,14 +1548,27 @@ final class MCPServer: ObservableObject {
 
     private func toolStopShare(_ arguments: [String: Any]) async -> ToolOutcome {
         guard let manager = tunnelManager else { return .failure("TunnelManager hazır değil") }
-        guard let name = (arguments["name"] as? String)?
-            .trimmingCharacters(in: .whitespaces), !name.isEmpty else {
+        guard let raw = (arguments["name"] as? String)?
+            .trimmingCharacters(in: .whitespaces), !raw.isEmpty else {
             return .invalidParams("'name' zorunlu")
         }
+        // `start_share` ve `resolveDomain` adı küçüğe indiriyor, kayıt anahtarı da
+        // öyle saklanıyor. Burada indirilmediği için "Foo.test" ile açılan bir
+        // paylaşım "foo.test" ile kapatılamıyordu. Port anahtarı (":3000") harf
+        // içermediğinden küçültmeden etkilenmez.
+        let name = raw.lowercased()
         guard manager.tunnel(for: name) != nil else {
-            return .failure("'\(name)' için açık paylaşım yok")
+            return .failure("'\(raw)' için açık paylaşım yok")
         }
-        await manager.stop(domainName: name)
+        // DÖNÜŞ DEĞERİ YUTULMAMALI. `false`, sürecin SIGTERM ve SIGKILL'i atlattığı
+        // ve adresin HÂLÂ yayında olduğu anlamına gelir; kayıt da bilerek silinmez.
+        // Koşulsuz "adres artık ölü" demek, ajanı üzerinden kullanıcıya kesin ve
+        // yanlış bir güvence verir — site internete açık kalmaya devam eder.
+        guard await manager.stop(domainName: name) else {
+            return .failure("'\(name)' paylaşımı DURDURULAMADI — cloudflared süreci "
+                          + "sinyalleri atlattı ve adres HÂLÂ yayında. Konsoldaki "
+                          + "satır PID'i veriyor; süreci elle kapatmak gerekiyor.")
+        }
         return .text("'\(name)' paylaşımı durduruldu — herkese açık adres artık ölü.")
     }
 
@@ -2120,9 +2138,15 @@ final class MCPServer: ObservableObject {
         let result: Shell.Result
         switch engine {
         case .mysql:
+            // Kullanıcı ÖNCE yoklanır, döküm SONRA TEK KEZ uygulanır. `cmd1 || cmd2`
+            // kalıbı burada güvenli değil: MySQL'de DDL örtük commit yapar, yani
+            // yarıda kesilen ilk deneme geri ALINMAZ ve ikinci deneme o ana kadarki
+            // INSERT'leri tekrar işleyip satırları ikiye katlar.
+            let probe = await Shell.brewBashAsync(
+                "mysql -u root -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
+            let user = probe.isSuccess ? "root" : NSUserName()
             result = await Shell.brewBashAsync(
-                "mysql -u root \(Shell.quote(name)) < \(src) 2>/dev/null || "
-                + "mysql -u \(Shell.quote(NSUserName())) \(Shell.quote(name)) < \(src)")
+                "mysql -u \(Shell.quote(user)) \(Shell.quote(name)) < \(src) 2>&1")
         case .postgres:
             let port: Int
             switch runningPostgresPort() {

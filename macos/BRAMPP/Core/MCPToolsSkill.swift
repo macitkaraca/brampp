@@ -75,8 +75,8 @@ enum MCPToolsSkill {
 
     | Scope | Read tools | Write tools |
     | --- | --- | --- |
-    | Domains | `list_domains` | `create_domain`, `update_domain`, `set_domain_enabled`, `start_app`, `stop_app` |
-    | Services | `service_status`, `health_check`, `app_status` | `start_service`, `stop_service`, `restart_service`, `install_service` |
+    | Domains | `list_domains`, `health_check`, `app_status` | `create_domain`, `update_domain`, `set_domain_enabled`, `start_app`, `stop_app` |
+    | Services | `service_status` | `start_service`, `stop_service`, `restart_service`, `install_service` |
     | Databases | `db_list`, `db_query` | `db_create`, `db_export`, `db_import` |
     | Logs | `read_log`, `read_domain_log` | — |
     | Sharing | `list_shares` | `start_share`, `stop_share` |
