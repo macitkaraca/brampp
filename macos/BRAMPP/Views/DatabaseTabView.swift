@@ -860,7 +860,7 @@ struct DatabaseTabView: View {
             rootTCPConfigured = nil
             return
         }
-        let tcpTest = await Shell.bashAsync("mysql -u root -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
+        let tcpTest = await Shell.bashAsync("mysql --no-defaults -u root --password= -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
         rootTCPConfigured = tcpTest.isSuccess
     }
 

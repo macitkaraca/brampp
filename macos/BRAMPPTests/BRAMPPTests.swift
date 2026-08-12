@@ -3441,4 +3441,19 @@ final class BRAMPPTests: XCTestCase {
                                                brewName: "mkcert", brewPrefix: "/opt/homebrew")
         XCTAssertFalse(s.contains("nc -z 127.0.0.1"))
     }
+
+    // MARK: - Sihirbaz denetimleri
+
+    /// YORUMLANMIŞ include Apache tarafından yok sayılır. Düz alt dize araması onu da
+    /// eşleştiriyor, sihirbaz adımı "tamam" gösteriyor ve kullanıcı phpMyAdmin'in
+    /// çalışmadığı bir yapılandırmayla kalıyordu.
+    func testPhpMyAdminInclude_IgnoresCommentedLines() {
+        let line = "IncludeOptional /opt/homebrew/etc/httpd/extra/phpmyadmin.conf"
+        XCTAssertFalse(SetupWizardView.httpdIncludesPhpMyAdmin("# \(line)\n", includeLine: line),
+                       "yorumlanmış include etkin sayılmamalı")
+        XCTAssertFalse(SetupWizardView.httpdIncludesPhpMyAdmin("   #\(line)\n", includeLine: line))
+        XCTAssertTrue(SetupWizardView.httpdIncludesPhpMyAdmin("\(line)\n", includeLine: line))
+        XCTAssertTrue(SetupWizardView.httpdIncludesPhpMyAdmin("  \(line)  \n", includeLine: line))
+        XCTAssertFalse(SetupWizardView.httpdIncludesPhpMyAdmin("", includeLine: line))
+    }
 }

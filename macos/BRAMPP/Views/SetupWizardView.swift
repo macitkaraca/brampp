@@ -657,7 +657,7 @@ struct SetupWizardView: View {
 
     /// MariaDB root TCP erişimini async olarak kontrol eder — view body'i bloklamaz.
     private func checkMariaDBRootTCPAccessAsync() async {
-        let result = await Shell.bashAsync("mysql -u root -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
+        let result = await Shell.bashAsync("mysql --no-defaults -u root --password= -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
         mariaDBRootAccessOk = result.isSuccess
     }
 
@@ -738,7 +738,7 @@ struct SetupWizardView: View {
     /// TCP + boş şifre ile bağlanabilmek hem "şifresiz" hem "native auth" anlamına gelir —
     /// phpMyAdmin/VS Code gibi araçların ihtiyacı tam olarak budur.
     private func checkMariaDBRootAuthAsync() async {
-        let tcpTest = await Shell.bashAsync("mysql -u root -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
+        let tcpTest = await Shell.bashAsync("mysql --no-defaults -u root --password= -h 127.0.0.1 --connect-timeout=3 -e 'SELECT 1' 2>/dev/null")
         mariaDBRootNoPassword = tcpTest.isSuccess
         mariaDBRootNativeAuth  = tcpTest.isSuccess
     }
@@ -1635,9 +1635,25 @@ struct SetupWizardView: View {
         consoleOutput.append(appOK     ? "✅ phpmyadmin.config.inc.php güncellendi" : "❌ phpmyadmin.config.inc.php yazılamadı")
     }
 
+    /// httpd.conf phpMyAdmin include'ını ETKİN olarak içeriyor mu?
+    ///
+    /// Düz alt dize araması YETMEZ: `# IncludeOptional …/phpmyadmin.conf` satırı da
+    /// eşleşiyordu. Yorumlanmış bir include Apache tarafından yok sayılır, ama sihirbaz
+    /// adımı "tamam" gösterip kullanıcıyı phpMyAdmin'in çalışmadığı bir yapılandırmayla
+    /// baş başa bırakıyordu.
+    static func httpdIncludesPhpMyAdmin(_ content: String, includeLine: String) -> Bool {
+        let needle = includeLine.trimmingCharacters(in: .whitespaces)
+        return content.components(separatedBy: .newlines).contains { raw in
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.hasPrefix("#") else { return false }
+            return line == needle || line.contains("phpmyadmin.conf")
+        }
+    }
+
     private func checkHttpdContainsPhpMyAdminAlias() -> Bool {
         guard let content = FileHelper.readString(PathConfig.httpdConf) else { return false }
-        return content.contains("phpmyadmin.conf")
+        return Self.httpdIncludesPhpMyAdmin(content,
+                                            includeLine: VHostTemplates.phpmyadminIncludeConfig())
     }
 
     /// config.inc.php: varsa ilgili satırları yamalar; yoksa sıfırdan yazar.
@@ -1805,6 +1821,22 @@ struct SetupWizardView: View {
             return
         }
 
+        // YEDEK → YAZ → configtest → GEÇMEZSE GERİ AL.
+        //
+        // Sihirbaz `httpd.conf`u — makinedeki PAYLAŞILAN Apache yapılandırmasını —
+        // doğrudan düzenliyor: port, ServerName, include satırları, modüller. Bunlardan
+        // biri Apache'yi başlatılamaz hâle getirirse geriye dönecek bir kopya yoktu ve
+        // kullanıcı hangi satırın bozduğunu elle bulmak zorunda kalıyordu.
+        let httpdBackup = PathConfig.httpdConf + ".brampp.bak"
+        guard let httpdBefore = FileHelper.readString(PathConfig.httpdConf) else {
+            consoleOutput.append("❌ httpd.conf okunamadı — dosyaya DOKUNULMADI")
+            refreshConfigView(); return
+        }
+        guard FileHelper.write(httpdBefore, to: httpdBackup) else {
+            consoleOutput.append("❌ httpd.conf yedeklenemedi — dosyaya DOKUNULMADI")
+            refreshConfigView(); return
+        }
+
         PathConfig.createRequiredDirectories()
         createPhpMyAdminConfig()
         let mainConfigResult = normalizeApacheMainConfig()
@@ -1829,7 +1861,26 @@ struct SetupWizardView: View {
             FileHelper.ensureApacheModule($0.name, loadPath: $0.path, in: PathConfig.httpdConf)
         }
 
-        let hasFailures = !mainConfigResult || includeResults.contains(false) || moduleResults.contains(false)
+        var hasFailures = !mainConfigResult || includeResults.contains(false) || moduleResults.contains(false)
+
+        // Yazım "başarılı" olsa bile Apache'nin bu yapılandırmayı KABUL ETTİĞİ ayrı bir
+        // sorudur. `configtest` geçmezse yazdıklarımız geri alınır: bozuk bir httpd.conf
+        // yalnızca bu adımı değil, sonraki her başlatmayı da düşürür.
+        if !hasFailures {
+            // `brewBash`in eşzamanlı hâli yok; `bash` aynı kabuğu kullanıyor ve
+            // `isBrewInstalled` bu adıma girilmeden önce zaten doğrulanmış oluyor.
+            let test = Shell.bash("apachectl configtest 2>&1")
+            if Diagnostics.configVerdict(server: "Apache", output: test.output,
+                                         exitOK: test.isSuccess).level == .fail {
+                if FileHelper.write(httpdBefore, to: PathConfig.httpdConf) {
+                    consoleOutput.append("❌ configtest geçmedi — httpd.conf YEDEKTEN geri alındı")
+                    consoleOutput.append(test.output.split(separator: "\n").prefix(3).joined(separator: "\n"))
+                } else {
+                    consoleOutput.append("❌ configtest geçmedi ve geri alma da başarısız — yedek: \(httpdBackup)")
+                }
+                hasFailures = true
+            }
+        }
 
         if hasFailures {
             consoleOutput.append("⚠️ Bazı Apache yapılandırmaları yazılamadı. Dosya izinlerini kontrol edin.")
@@ -2231,6 +2282,21 @@ struct SetupWizardView: View {
 
         // Include yalnızca dosya GERÇEKTEN yazıldıysa eklenmeli: var olmayan dosyaya
         // işaret eden Include, Apache'nin hiç başlamamasına yol açar.
+        // ÜZERİNE YAZMADAN ÖNCE YEDEK. Bu dosya bütünüyle yeniden yazılıyor: Homebrew'un
+        // stok hâli `original/` kopyasından kurtarılabilir ama kullanıcının BU dosyaya
+        // elle eklediği `<VirtualHost>` blokları kurtarılamaz. Yedek alınamıyorsa
+        // yazıma hiç girilmez — geri dönüşü olmayan bir işlem için "belki almışızdır"
+        // yeterli değil.
+        if FileHelper.exists(PathConfig.httpdSSLConf) {
+            let backup = PathConfig.httpdSSLConf + ".brampp.bak"
+            guard let current = FileHelper.readString(PathConfig.httpdSSLConf),
+                  FileHelper.write(current, to: backup) else {
+                consoleOutput.append("❌ httpd-ssl.conf yedeklenemedi — dosyaya DOKUNULMADI")
+                return
+            }
+            consoleOutput.append("ℹ️  Önceki httpd-ssl.conf yedeklendi: \(backup)")
+        }
+
         if FileHelper.write(config, to: PathConfig.httpdSSLConf) {
             consoleOutput.append("✅ httpd-ssl.conf localhost için güncellendi (HTTPS :\(httpsPort))")
             if ensureApacheIncludeEnabled("Include \"\(PathConfig.httpdSSLConf)\"", in: PathConfig.httpdConf) {
