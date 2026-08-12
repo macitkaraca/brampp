@@ -53,6 +53,13 @@ extension L10n {
         "log.app.updateManifestFallback":
             ["tr": "%@ kanalı okunamadı — GitHub sürüm bilgisine düşüldü, sağlama doğrulaması yapılamaz",
              "en": "The %@ channel could not be read — fell back to GitHub release information, checksum verification is unavailable"],
+        "log.app.selfUpdateStarting":
+            ["tr": "Yerinde güncelleme: yeni sürüm hazırlandı, BRAMPP kapanıp yeni sürümle açılacak — Homebrew servisleriniz çalışmaya devam eder",
+             "en": "Updating in place: the new version is staged, BRAMPP will quit and reopen on it — your Homebrew services keep running"],
+        // %@ = hata metni
+        "log.app.selfUpdateLaunchFailed":
+            ["tr": "❌ Güncelleme adımı başlatılamadı, kurulu sürüm olduğu gibi duruyor: %@",
+             "en": "❌ The update step could not be started, your installed version is untouched: %@"],
         // %@ = atlanan sürüm
         "log.app.updateSkipped":
             ["tr": "%@ sürümü kullanıcı tarafından atlandı — bildirim gösterilmedi",

@@ -99,6 +99,14 @@ struct DiagnosticsSheetView: View {
                     .font(.caption).foregroundColor(.secondary)
             }
             Spacer()
+            // Onarım YALNIZCA yapılacak bir şey varken görünür. Her zaman duran ama
+            // çoğu zaman hiçbir şey yapmayan bir düğme, basıldığında sessiz kalır ve
+            // kullanıcı özelliğin bozuk olduğunu düşünür.
+            if diagnostics.canRepairAliasOrder {
+                Button(loc.t("diag.repairAlias")) { Task { await diagnostics.repairAliasOrder() } }
+                    .disabled(diagnostics.isRunning)
+                    .help(loc.t("diag.repairAlias.help"))
+            }
             Button(loc.t("diag.rerun")) { Task { await diagnostics.run() } }
                 .disabled(diagnostics.isRunning)
             Button(loc.t("common.close")) { dismiss() }

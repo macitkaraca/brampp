@@ -499,17 +499,102 @@ final class TunnelManager: BaseManager {
     /// Bu yüzden `getaddrinfo` kullanılır: tarayıcı neyi görüyorsa o. Süre dolarsa adres
     /// yine verilir ama nedeni ve çözümü konsola yazılır — kullanıcı çıplak bir
     /// ERR_NAME_NOT_RESOLVED yerine ne olduğunu bilir.
+    /// Ad KENARDA göründükten sonra sistem çözümleyicisine tanınan ek süre.
+    ///
+    /// Kısa olması gerekiyor: kenar adı biliyorsa gecikme artık Cloudflare'de değil,
+    /// kullanıcının çözümleyicisindedir ve o çözümleyici çoğu zaman dakikalarca
+    /// gelmez. Ölçüm: 8.8.8.8 taze bir trycloudflare adını 6 denemede 1 kez yanıtladı,
+    /// 1.1.1.1 altıda altı. Bu süreyi 45 saniye beklemek, hiç gelmeyecek bir cevabı
+    /// beklemektir.
+    static let systemGrace: TimeInterval = 6
+
+    /// Beklemenin nasıl biteceği — SAF karar, testten geçebilsin diye ayrıldı.
+    enum WaitVerdict: Equatable {
+        /// Bu Mac adı çözebiliyor: adres gerçekten kullanılabilir.
+        case ready
+        case keepWaiting
+        /// Ad var ama BU Mac göremiyor. Adres yine verilir, uyarıyla — saklamak
+        /// kullanıcıya yardım etmez, çünkü telefonundan ya da başka bir ağdan açılır.
+        case handOverWithWarning
+    }
+
+    static func waitVerdict(systemResolves: Bool, now: Date, deadline: Date,
+                            edgeSeenAt: Date?,
+                            grace: TimeInterval = TunnelManager.systemGrace) -> WaitVerdict {
+        if systemResolves { return .ready }
+        if now >= deadline { return .handOverWithWarning }
+        // Kenar adı gördüyse geri sayım ORADAN başlar; toplam zaman aşımının kalanını
+        // beklemenin bir karşılığı yok.
+        if let edgeSeenAt, now.timeIntervalSince(edgeSeenAt) >= grace { return .handOverWithWarning }
+        return .keepWaiting
+    }
+
+    /// `dig +short` çıktısı gerçekten bir kayıt döndürdü mü? SAF.
+    ///
+    /// Boş çıktı "yok" demektir; `;` ile başlayan satırlar dig'in kendi notlarıdır ve
+    /// adres sayılmaz — sayılsaydı bir zaman aşımı uyarısı "ad bulundu" olarak okunurdu.
+    nonisolated static func digFoundAddress(in output: String) -> Bool {
+        output.split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .contains { !$0.isEmpty && !$0.hasPrefix(";") }
+    }
+
+    /// Adı Cloudflare'in KENDİ çözümleyicisine sorar.
+    ///
+    /// Bu, `systemCanResolve`in YERİNE geçmez — yanında durur. Tarayıcı `getaddrinfo`
+    /// kullanır; 1.1.1.1'in cevabına bakıp "hazır" demek, kullanıcının açamayacağı bir
+    /// bağlantı vermek olurdu (ölçüldü: kenar 0,02 sn'de çözdü, aynı anda sistem
+    /// çözümleyicisi aynı adı hiç çözemedi). Buradaki tek işi, beklemenin ARTIK
+    /// anlamsız olduğunu erken söylemek.
+    /// Kenar sorgusunun ÜÇ sonucu olur; ikisi karıştırılırsa bedeli her turda ödenir.
+    enum EdgeProbe: Equatable {
+        /// Ad kenarda var.
+        case sighted
+        /// Kenar cevap verdi ama ad yok — tünel gerçekten hazır değil.
+        case absent
+        /// Soru SORULAMADI: dig yok, 1.1.1.1 engelli ya da zaman aşımı. Bir daha
+        /// sorulmaz — engelli bir ağda her tur 2 saniye kaybettirirdi.
+        case unusable
+    }
+
+    nonisolated static func edgeCanResolve(_ host: String) async -> EdgeProbe {
+        let r = await Shell.runAsync("/usr/bin/dig", arguments: [
+            "+short", "+time=2", "+tries=1", "@1.1.1.1", host, "A",
+        ], timeout: 6)
+        guard r.isSuccess else { return .unusable }
+        return Self.digFoundAddress(in: r.output) ? .sighted : .absent
+    }
+
     private func waitUntilResolvable(url: String,
                                      timeout: TimeInterval = TunnelManager.dnsTimeout) async {
         let host = url.replacingOccurrences(of: "https://", with: "")
                       .replacingOccurrences(of: "http://", with: "")
         guard !host.isEmpty else { return }
         let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if await Self.systemCanResolve(host) { return }
-            try? await Task.sleep(nanoseconds: 900_000_000)
+        var edgeSeenAt: Date?
+        /// Kenar sorusu SORULABİLİR mi? Bir kez "sorulamaz" cevabı alındıysa bir daha
+        /// denenmez: dig'in olmadığı ya da 1.1.1.1'in engellendiği bir ağda her tur
+        /// zaman aşımını baştan ödemek, beklemeyi kısaltmak için eklenen sorgunun
+        /// beklemeyi UZATMASI olurdu.
+        var edgeAskable = true
+
+        while true {
+            let resolves = await Self.systemCanResolve(host)
+            if !resolves, edgeSeenAt == nil, edgeAskable {
+                switch await Self.edgeCanResolve(host) {
+                case .sighted:  edgeSeenAt = Date()
+                case .absent:   break
+                case .unusable: edgeAskable = false
+                }
+            }
+            switch Self.waitVerdict(systemResolves: resolves, now: Date(),
+                                    deadline: deadline, edgeSeenAt: edgeSeenAt) {
+            case .ready:               return
+            case .handOverWithWarning: log(key: "log.tunnel.dnsSlow", args: [host], type: .warning)
+                                       return
+            case .keepWaiting:         try? await Task.sleep(nanoseconds: 900_000_000)
+            }
         }
-        log(key: "log.tunnel.dnsSlow", args: [host], type: .warning)
     }
 
     /// `getaddrinfo` — tarayıcı ve curl ile AYNI yol. Ana iş parçacığını bloklamamak

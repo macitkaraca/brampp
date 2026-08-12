@@ -27,6 +27,67 @@ final class DiagnosticsManager: BaseManager {
         return (name, pid)
     }
 
+    // MARK: - Alias sırası onarımı
+
+    /// Onarılabilecek companion yapılandırmaları — (yol, Alias öneki, güncel içerik).
+    private var repairableConfigs: [(path: String, prefix: String, content: String)] {
+        [(PathConfig.phpmyadminConf, "/phpmyadmin", VHostTemplates.phpmyadminConfig()),
+         (PathConfig.adminerConf,    "/adminer",    VHostTemplates.adminerApacheConfig())]
+    }
+
+    /// Eski Alias sırasını taşıyan, BRAMPP'ın kendi yazdığı bir dosya var mı?
+    var canRepairAliasOrder: Bool {
+        repairableConfigs.contains { c in
+            guard let text = FileHelper.readString(c.path) else { return false }
+            return Diagnostics.aliasOrderIsWrong(text, prefix: c.prefix)
+        }
+    }
+
+    /// Bozuk sıralı dosyaları güncel şablonla yeniden yazar.
+    ///
+    /// PAYLAŞILAN Apache yapılandırmasına dokunuyoruz, o yüzden üç koruma birlikte:
+    /// önce `.brampp.bak` yedeği, sonra `configtest`, geçmezse YEDEKTEN GERİ DÖNÜŞ.
+    /// Denetimin "sihirbaz configtest'siz, yedeksiz, geri alınamaz yazıyor" bulgusu
+    /// tam da bunun yokluğuydu; yeni bir yazıcı eklerken aynı hatayı tekrarlamıyoruz.
+    func repairAliasOrder() async {
+        guard !isRunning else { return }
+        isRunning = true
+        defer { isRunning = false }
+
+        var restored: [(String, String)] = []      // (yol, eski içerik)
+        var rewritten = 0
+
+        for c in repairableConfigs {
+            guard let old = FileHelper.readString(c.path),
+                  Diagnostics.aliasOrderIsWrong(old, prefix: c.prefix) else { continue }
+            guard FileHelper.write(old, to: c.path + ".brampp.bak") else {
+                log(key: "log.diag.repairBackupFailed", args: [c.path], type: .error)
+                continue
+            }
+            guard FileHelper.write(c.content, to: c.path) else {
+                log(key: "log.diag.repairWriteFailed", args: [c.path], type: .error)
+                continue
+            }
+            restored.append((c.path, old))
+            rewritten += 1
+        }
+
+        guard rewritten > 0 else { return }
+
+        let test = await Shell.brewBashAsync("apachectl configtest 2>&1")
+        if Diagnostics.configVerdict(server: "Apache", output: test.output,
+                                     exitOK: test.isSuccess).level == .fail {
+            for (path, old) in restored { _ = FileHelper.write(old, to: path) }
+            log(key: "log.diag.repairRolledBack", type: .error)
+            await run()
+            return
+        }
+
+        _ = await Shell.brewBashAsync("\(PathConfig.brew) services restart httpd 2>&1")
+        log(key: "log.diag.repaired", args: ["\(rewritten)"], type: .success)
+        await run()
+    }
+
     func run() async {
         guard !isRunning else { return }
         isRunning = true

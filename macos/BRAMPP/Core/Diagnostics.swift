@@ -125,6 +125,30 @@ enum Diagnostics {
     /// İlk uyarı satırı — Apache'nin `[modül:warn]` ve Nginx'in `[warn]` biçimlerini
     /// birlikte tarar. Satırın başındaki zaman damgası ve PID atılır; kullanıcıya
     /// yararlı olan kısım mesajın kendisi.
+    // MARK: - Alias sırası onarımı
+
+    /// Bir companion yapılandırması ESKİ Alias sırasını mı taşıyor? SAF.
+    ///
+    /// Apache Alias'ları yazıldıkları sırada dener. Eğik çizgisiz olan (`/phpmyadmin`)
+    /// eğik çizgilinin ÖNEKİDİR; önce yazılırsa ikincisi hiçbir zaman eşleşmez ve
+    /// `configtest` AH00671 verir. Üretici 1.6'da düzeltildi ama DİSKTE duran dosyaya
+    /// kimse dokunmadı: Mart'ta yazılmış bir dosya bugün de aynı uyarıyı üretiyor.
+    /// Düzeltilen şey ile kullanıcının makinesindeki şey arasındaki fark tam olarak bu.
+    ///
+    /// Yalnızca gerçek yönerge satırları sayılır; yorumlar atlanır — şablonun kendi
+    /// açıklaması `Alias` kelimesini geçiriyor ve sayılsaydı her dosya bozuk görünürdü.
+    static func aliasOrderIsWrong(_ content: String, prefix: String) -> Bool {
+        var bare = -1, slashed = -1
+        for (i, raw) in content.components(separatedBy: .newlines).enumerated() {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.hasPrefix("#") else { continue }
+            if bare < 0,    line.hasPrefix("Alias \(prefix) ")  { bare = i }
+            if slashed < 0, line.hasPrefix("Alias \(prefix)/ ") { slashed = i }
+        }
+        guard bare >= 0, slashed >= 0 else { return false }
+        return bare < slashed
+    }
+
     static func warningLine(in output: String) -> String? {
         guard let raw = output.components(separatedBy: .newlines).first(where: {
             let l = $0.lowercased()

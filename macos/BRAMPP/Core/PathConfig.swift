@@ -77,6 +77,12 @@ struct PathConfig {
     /// `/tmp` DEĞİL (herkese okunur; doğrulama ile açma arasında dosya takas edilebilir),
     /// `~/Downloads` DEĞİL (kullanıcı biz doğrulamadan çift tıklayabilir).
     static let updates: String      = "\(appSupport)/updates"
+    /// Yerinde güncellemenin takas betiği ve GÜNLÜĞÜ.
+    ///
+    /// `updates/` ALTINDA DEĞİL, çünkü `UpdateInstaller.pruneOldStaging` her açılışta o
+    /// dizindeki noktayla başlamayan her adı siliyor. Başarısız bir güncellemenin tek
+    /// kara kutusu, geri dönen eski sürüm açılır açılmaz yok olurdu.
+    static let swapDir: String      = "\(appSupport)/swap"
 
     static func tunnelPid(domain: String) -> String { "\(tunnels)/\(domain).pid" }
     static func tunnelLog(domain: String) -> String { "\(tunnels)/\(domain).log" }

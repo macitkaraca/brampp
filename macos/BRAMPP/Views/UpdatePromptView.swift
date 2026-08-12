@@ -22,6 +22,12 @@ struct UpdatePromptView: View {
     private let blocks: [UpdateNotes.Block]
     private let notesTruncated: Bool
 
+    /// Yerinde güncelleme hazırlanıyor mu — düğme iki kez basılamasın ve kullanıcı
+    /// birkaç saniyelik kopyalama sırasında hiçbir şey olmuyor sanmasın.
+    @State private var swapping = false
+    /// Hazırlık başarısızsa sebebi; kullanıcı neden eski yola düştüğünü bilmeli.
+    @State private var swapError: String?
+
     init(current: String,
          release: UpdateChecker.ReleaseInfo,
          installer: UpdateInstaller,
@@ -237,6 +243,20 @@ struct UpdatePromptView: View {
     // MARK: - Eylemler
 
     private var actionRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Hazırlık başarısızsa sebep BURADA durur ve pencere açık kalır: hata
+            // kullanıcıyı eski yola (kalıbı aç, sürükle) yönlendiriyor, çıkışa değil.
+            if let swapError {
+                Label(swapError, systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundColor(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            actionButtons
+        }
+        .padding(16)
+    }
+
+    private var actionButtons: some View {
         HStack(spacing: 8) {
             Button(loc.t("upd.action.skip"), action: onSkip)
                 .buttonStyle(.bordered).controlSize(.small)
@@ -256,7 +276,34 @@ struct UpdatePromptView: View {
 
             primaryAction
         }
-        .padding(16)
+    }
+
+    /// Yeni paketi hedefin YANINA kopyalar, sonra takas betiğini bırakıp çıkar.
+    ///
+    /// Kopyalama uygulama çalışırken yapıldığı için bu adımda bir hata çıkarsa hiçbir
+    /// şey değişmemiş olur: kurulu sürüm yerinde durur, kullanıcı doğrulanmış kalıpla
+    /// eski yola düşebilir.
+    private func startSelfUpdate(_ dmg: URL) {
+        swapping = true
+        swapError = nil
+        Task {
+            // Koşu kimliği yalnızca ad çakışmasını önler; saat dilimi ya da geri giden
+            // sistem saati bir sorun değil, çünkü çakışan ad zaten siliniyor.
+            let run = Int(Date().timeIntervalSince1970)
+            switch await SelfUpdater.prepare(verifiedDMG: dmg, run: run) {
+            case .success(let prepared):
+                // Takas başlamadıysa uygulama ÇIKMAZ: arayüz eski hâline dönmeli,
+                // yoksa tüm düğmeler `swapping` yüzünden kilitli kalır ve pencerede
+                // basılabilecek hiçbir şey olmaz.
+                if !SelfUpdater.commitAndQuit(prepared, console: installer.console) {
+                    swapping = false
+                    swapError = loc.t("upd.selfFail.script")
+                }
+            case .failure(let err):
+                swapping = false
+                swapError = loc.t(SelfUpdater.messageKey(for: err))
+            }
+        }
     }
 
     @ViewBuilder
@@ -265,11 +312,28 @@ struct UpdatePromptView: View {
         case .downloading, .verifying:
             Button(loc.t("upd.dl.cancel")) { installer.cancel() }
                 .buttonStyle(.bordered).controlSize(.small)
-        case .ready:
+        case .ready(let dmg):
             Button(loc.t("upd.dl.discard")) { installer.discard() }
                 .buttonStyle(.bordered).controlSize(.small)
-            Button(loc.t("upd.dl.reveal")) { installer.revealVerified() }
+                .disabled(swapping)
+            // Yerinde kurulum YALNIZCA hedefe yazabiliyorsak sunulur. Yazamıyorsak
+            // düğme hiç görünmez: kullanıcıyı uygulamadan ettikten sonra "olmadı"
+            // demek, hiç denememekten kötüdür. O durumda eski yol (kalıbı aç, sürükle)
+            // birincil eylem olarak kalır.
+            if SelfUpdater.currentBlocker() == nil {
+                Button(loc.t("upd.dl.reveal")) { installer.revealVerified() }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .disabled(swapping)
+                Button(swapping ? loc.t("upd.action.installingNow")
+                                : loc.t("upd.action.installNow")) {
+                    startSelfUpdate(dmg)
+                }
                 .buttonStyle(.borderedProminent).controlSize(.small)
+                .disabled(swapping)
+            } else {
+                Button(loc.t("upd.dl.reveal")) { installer.revealVerified() }
+                    .buttonStyle(.borderedProminent).controlSize(.small)
+            }
         case .idle, .failed:
             // AYARLA ÇELİŞMEZ. "Yalnızca haber ver" seçiliyken pencerenin "İndir ve
             // doğrula" düğmesi göstermesi, iki denetimin çelişkili bir durum İFADE

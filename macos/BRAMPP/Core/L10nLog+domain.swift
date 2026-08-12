@@ -18,6 +18,19 @@ extension L10n {
         "log.dom.shareStoppedWithDomain":
             ["tr": "⚠️ %@ paylaşımı kapatıldı — alan adı değiştiği için herkese açık adres artık bu siteye gitmiyordu",
              "en": "⚠️ Sharing for %@ was stopped — with the domain gone, the public address no longer pointed at this site"],
+        // %@ = yol
+        "log.diag.repairBackupFailed":
+            ["tr": "❌ Yedek alınamadı, dosyaya DOKUNULMADI: %@",
+             "en": "❌ Could not write the backup, the file was left alone: %@"],
+        "log.diag.repairWriteFailed":
+            ["tr": "❌ Yapılandırma yazılamadı: %@", "en": "❌ Could not write the configuration: %@"],
+        "log.diag.repairRolledBack":
+            ["tr": "❌ Onarım sonrası configtest geçmedi — dosyalar YEDEKTEN geri alındı, Apache'ye dokunulmadı",
+             "en": "❌ configtest failed after the repair — the files were restored from backup and Apache was left alone"],
+        // %@ = onarılan dosya sayısı
+        "log.diag.repaired":
+            ["tr": "✅ %@ yapılandırma dosyasındaki Alias sırası düzeltildi, Apache yeniden başlatıldı (.brampp.bak yedeği duruyor)",
+             "en": "✅ Alias order fixed in %@ configuration file(s) and Apache restarted (the .brampp.bak backup is kept)"],
         "log.diag.clean":
             ["tr": "Teşhis tamamlandı — sorun bulunamadı",
              "en": "Diagnostics finished — nothing wrong found"],

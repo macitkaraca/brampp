@@ -3062,4 +3062,204 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(PHPExtensionManager.disabledNames(inConfD: ["ext-my-ext-thing.ini.disabled"]),
                        ["my-ext-thing"])
     }
+
+    // MARK: - Yerinde güncelleme
+
+    /// YER DEĞİŞTİRME her şeyin önünde gelir. Karantinalı bir kalıptan açılan kopyanın
+    /// geçici dizini yazılabilir olabilir; oraya kurmak kullanıcının uygulamasını
+    /// değiştirmez, yalnızca çöp üretir.
+    func testSelfUpdater_TranslocationOutranksWritability() {
+        XCTAssertEqual(
+            SelfUpdater.blocker(bundlePath: "/private/var/folders/x/AppTranslocation/ABC/d/BRAMPP.app",
+                                parentWritable: true, bundleWritable: true),
+            .translocated)
+    }
+
+    /// Yazılamayan bir hedefte düğme HİÇ gösterilmemeli — kullanıcıyı uygulamadan
+    /// ettikten sonra "olmadı" demek, hiç dememekten kötüdür.
+    func testSelfUpdater_ReportsUnwritableTarget() {
+        XCTAssertEqual(SelfUpdater.blocker(bundlePath: "/Applications/BRAMPP.app",
+                                           parentWritable: false, bundleWritable: true),
+                       .parentNotWritable)
+        XCTAssertEqual(SelfUpdater.blocker(bundlePath: "/Applications/BRAMPP.app",
+                                           parentWritable: true, bundleWritable: false),
+                       .bundleNotWritable)
+        XCTAssertNil(SelfUpdater.blocker(bundlePath: "/Applications/BRAMPP.app",
+                                         parentWritable: true, bundleWritable: true))
+    }
+
+    /// BOŞLUKLU YOL. Kullanıcı uygulamayı "/Users/x/My Apps" altında tutuyorsa,
+    /// tırnaklanmamış bir `mv` yolu ikiye böler ve takas yarıda kalır — geri alınacak
+    /// bir şey de bulunmaz.
+    func testSelfUpdater_SwapScriptQuotesPathsWithSpaces() {
+        let s = SelfUpdater.swapScript(parentPID: 4242,
+                                       stagedPath: "/My Apps/.BRAMPP-update-1",
+                                       targetPath: "/My Apps/BRAMPP.app",
+                                       logPath: "/tmp/my logs/swap.log",
+                                       binaryName: "BRAMPP")
+        XCTAssertTrue(s.contains("'/My Apps/BRAMPP.app'"), "hedef tırnaklanmalı")
+        XCTAssertTrue(s.contains("'/My Apps/.BRAMPP-update-1'"), "hazırlanan kopya tırnaklanmalı")
+        XCTAssertTrue(s.contains("'/tmp/my logs/swap.log'"), "log yolu tırnaklanmalı")
+    }
+
+    /// Betiğin GERİ ALMA yolu bulunmak zorunda: yeni sürüm açılmazsa eski paket geri
+    /// konmalı. Bu kaybolursa hata anında kullanıcı uygulamasız kalır.
+    func testSelfUpdater_SwapScriptRollsBackWhenNewVersionDoesNotLaunch() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/A/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        XCTAssertTrue(s.contains("mv \"$OLD\""), "eski paketi geri koyan bir yol olmalı")
+        XCTAssertTrue(s.contains("grep -qF"), "yeni sürümün açıldığı DOĞRULANMALI")
+        // Düz metin araması yetmez: betiğin açıklama satırı "set -e"nin NEDEN
+        // kullanılmadığını anlatıyor ve o metni içeriyor. Aranan şey DİREKTİF.
+        let directives = s.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        XCTAssertFalse(directives.contains("set -e"),
+                       "set -e, geri alma adımlarına varmadan kabuğu düşürürdü")
+        XCTAssertTrue(s.contains("kill -0 1"), "ana sürecin çıkışı beklenmeli")
+    }
+
+    // MARK: - Tünel DNS beklemesi
+
+    /// Sistem çözümleyicisi adı görüyorsa iş biter — kenarın ne dediğinin önemi yok.
+    func testWaitVerdict_SystemResolutionEndsTheWait() {
+        let now = Date()
+        XCTAssertEqual(TunnelManager.waitVerdict(systemResolves: true, now: now,
+                                                 deadline: now.addingTimeInterval(45),
+                                                 edgeSeenAt: nil),
+                       .ready)
+    }
+
+    /// Kenar adı GÖRDÜYSE gecikme artık Cloudflare'de değil, kullanıcının
+    /// çözümleyicisinde. Kalan 40 saniyeyi beklemek hiç gelmeyecek cevabı beklemektir:
+    /// kısa süre dolunca adres uyarıyla verilir.
+    func testWaitVerdict_EdgeSightingShortensTheWait() {
+        let now = Date()
+        let deadline = now.addingTimeInterval(40)   // toplam süre HÂLÂ bol
+        XCTAssertEqual(TunnelManager.waitVerdict(systemResolves: false, now: now,
+                                                 deadline: deadline,
+                                                 edgeSeenAt: now.addingTimeInterval(-7),
+                                                 grace: 6),
+                       .handOverWithWarning)
+        // Süre henüz dolmadıysa beklemeye devam
+        XCTAssertEqual(TunnelManager.waitVerdict(systemResolves: false, now: now,
+                                                 deadline: deadline,
+                                                 edgeSeenAt: now.addingTimeInterval(-2),
+                                                 grace: 6),
+                       .keepWaiting)
+    }
+
+    /// Kenar adı HİÇ görmediyse tam zaman aşımı korunur: bu, tünelin gerçekten
+    /// hazır olmadığı durumdur ve erken pes etmek kullanıcıyı ölü bir adresle bırakır.
+    func testWaitVerdict_WithoutEdgeSightingFullTimeoutStands() {
+        let now = Date()
+        XCTAssertEqual(TunnelManager.waitVerdict(systemResolves: false, now: now,
+                                                 deadline: now.addingTimeInterval(30),
+                                                 edgeSeenAt: nil),
+                       .keepWaiting)
+        XCTAssertEqual(TunnelManager.waitVerdict(systemResolves: false, now: now,
+                                                 deadline: now.addingTimeInterval(-1),
+                                                 edgeSeenAt: nil),
+                       .handOverWithWarning)
+    }
+
+    /// dig'in kendi not satırları ADRES DEĞİLDİR; sayılsaydı bir zaman aşımı uyarısı
+    /// "ad bulundu" diye okunur ve bekleme erken kesilirdi.
+    func testDigFoundAddress_IgnoresCommentaryAndEmptyOutput() {
+        XCTAssertTrue(TunnelManager.digFoundAddress(in: "104.16.231.132\n104.16.230.132\n"))
+        XCTAssertFalse(TunnelManager.digFoundAddress(in: ""))
+        XCTAssertFalse(TunnelManager.digFoundAddress(in: "\n  \n"))
+        XCTAssertFalse(TunnelManager.digFoundAddress(in: ";; connection timed out\n"))
+    }
+
+    // MARK: - Alias sırası onarımı
+
+    /// Kullanıcının makinesindeki GERÇEK dosya: eğik çizgisiz Alias önce geliyor,
+    /// bu yüzden Apache AH00671 veriyor.
+    func testAliasOrder_DetectsTheRealBrokenFile() {
+        let broken = """
+        # phpMyAdmin Global Alias
+        Alias /phpmyadmin /opt/homebrew/share/phpmyadmin
+        Alias /phpmyadmin/ /opt/homebrew/share/phpmyadmin/
+        """
+        XCTAssertTrue(Diagnostics.aliasOrderIsWrong(broken, prefix: "/phpmyadmin"))
+    }
+
+    /// Güncel şablon onarım İSTEMEMELİ; istese her açılışta gereksiz bir yeniden
+    /// yazma ve Apache reload'u tetiklenirdi.
+    func testAliasOrder_CurrentTemplateNeedsNoRepair() {
+        XCTAssertFalse(Diagnostics.aliasOrderIsWrong(VHostTemplates.phpmyadminConfig(),
+                                                     prefix: "/phpmyadmin"))
+        XCTAssertFalse(Diagnostics.aliasOrderIsWrong(VHostTemplates.adminerApacheConfig(),
+                                                     prefix: "/adminer"))
+    }
+
+    /// YORUM satırları sayılmamalı. Şablonun kendi açıklaması "Alias" kelimesini
+    /// geçiriyor; sayılsaydı doğru sıralı her dosya bozuk görünürdü.
+    func testAliasOrder_IgnoresComments() {
+        let s = """
+        # Alias /phpmyadmin burada yanlış sırada olurdu
+        Alias /phpmyadmin/ /x/
+        Alias /phpmyadmin /x
+        """
+        XCTAssertFalse(Diagnostics.aliasOrderIsWrong(s, prefix: "/phpmyadmin"))
+    }
+
+    /// Alias'lardan biri yoksa onarılacak bir sıra da yoktur — elle yazılmış bir
+    /// dosyayı "bozuk" sayıp üzerine yazmak, kullanıcının yapılandırmasını silerdi.
+    func testAliasOrder_IncompleteFileIsNotRepairable() {
+        XCTAssertFalse(Diagnostics.aliasOrderIsWrong("Alias /phpmyadmin /x", prefix: "/phpmyadmin"))
+        XCTAssertFalse(Diagnostics.aliasOrderIsWrong("", prefix: "/phpmyadmin"))
+    }
+
+    /// Süreç denetimi DÜZENLİ İFADE olmamalı. `pgrep -f` deseni ERE sayar; yolunda
+    /// `+` gibi bir metakarakter olan bir kullanıcıda eşleşme tutmaz ve BAŞARILI bir
+    /// güncelleme geri alınırdı.
+    func testSelfUpdater_MatchesProcessLiterallyNotAsRegex() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/A/C++ Tools/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        // Betiğin açıklaması `pgrep -f`in NEDEN kullanılmadığını anlatıyor ve o metni
+        // içeriyor; aranan şey açıklama değil, ÇALIŞTIRILAN komut.
+        let code = s.split(separator: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("#") }
+            .joined(separator: "\n")
+        XCTAssertFalse(code.contains("pgrep"), "regex tabanlı eşleşme kullanılmamalı")
+        XCTAssertTrue(code.contains("grep -qF"), "düz metin eşleşmesi kullanılmalı")
+    }
+
+    /// Geri alma hedefi ÖNCE SİLMEMELİ. `rm -rf` + `mv` sırası, aralarında hiçbir
+    /// uygulamanın bulunmadığı bir pencere açar; betik o an ölürse kullanıcıda
+    /// çalışan kopya kalmaz.
+    func testSelfUpdater_RollbackRenamesRatherThanDeletingTheTarget() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/A/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        XCTAssertFalse(s.contains("rm -rf '/A/BRAMPP.app'\n"),
+                       "hedef doğrudan silinmemeli")
+        XCTAssertTrue(s.contains("'/A/BRAMPP.app'.brampp-failed"),
+                      "geri alma, hedefi yana alarak yapılmalı")
+    }
+
+    /// Açılışın SÜREKLİLİĞİ denetlenmeli. İlk görünmeyle yetinilirse, açılışta çöken
+    /// bir sürüm geri dönüş kopyasını yarım saniyede sildirir ve kullanıcı her
+    /// açılışta düşen bir uygulamayla, geri dönecek hiçbir şey olmadan kalır.
+    func testSelfUpdater_WaitsForTheNewVersionToStayAlive() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/A/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        XCTAssertEqual(s.components(separatedBy: "grep -qF").count - 1, 2,
+                       "biri ilk görünme, biri ayakta kalma denetimi olmak üzere iki tur")
+        XCTAssertTrue(s.contains("seen=0"), "ayakta kalmayan sürüm başarısız sayılmalı")
+    }
+
+    /// Betiğe gömülen HİÇBİR yol tırnaksız kalmamalı: `$` taşıyan bir klasör adı
+    /// kabuk tarafından genişletilir ve betik ilk satırında sözdizimi hatasıyla ölür.
+    func testSelfUpdater_NeverEmbedsAnUnquotedPath() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/Uyg $HOME/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        XCTAssertFalse(s.contains("takas başlıyor: /Uyg $HOME"),
+                       "yol çift tırnaklı metnin İÇİNE gömülmemeli")
+        XCTAssertTrue(s.contains("'/Uyg $HOME/BRAMPP.app'"), "yol tek tırnakla korunmalı")
+    }
 }
