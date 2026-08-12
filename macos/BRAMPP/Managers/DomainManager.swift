@@ -575,7 +575,7 @@ class DomainManager: BaseManager {
             // doğrulama TÜM güncellemeyi geri alır ve kullanıcının diğer değişiklikleri de
             // sessizce kaybolurdu.
             var current = domain
-            if current.sslEnabled, !FileHelper.exists(current.sslCertPath) {
+            if current.sslEnabled, await sslCertNeedsRenewal(current.sslCertPath) {
                 if !(await createSSLCertificate(for: current)) {
                     current.sslEnabled = false
                     current.redirectHTTPToHTTPS = false
@@ -663,7 +663,7 @@ class DomainManager: BaseManager {
             // Sertifika dışarıdan silinmiş ya da mkcert CA sıfırlanmış olabilir. Var olmayan
             // sertifikaya işaret eden bir SSL bloğu Apache/Nginx'i komple başlatmaz — bu yüzden
             // addDomain ile AYNI davranış: önce yeniden üret, olmuyorsa HTTP'ye düş.
-            if updated.sslEnabled, !FileHelper.exists(updated.sslCertPath) {
+            if updated.sslEnabled, await sslCertNeedsRenewal(updated.sslCertPath) {
                 if !(await createSSLCertificate(for: updated)) {
                     log(key: "log.dom.sslFailedEnableHttp", type: .warning)
                     updated.sslEnabled = false
@@ -972,6 +972,28 @@ class DomainManager: BaseManager {
 
     func installMkcertCA() async -> Bool {
         await mkcertManager.installCA { [weak self] msg, type in self?.log(msg, type: type) }
+    }
+
+    /// Sertifika yok mu, ya da yakında dolacak mı?
+    ///
+    /// Yenileme kapılarının hepsi yalnızca dosyanın VARLIĞINA bakıyordu. mkcert
+    /// yaprakları 2 yıl 3 ay geçerli; süresi dolmuş bir `cert.pem` diskte durduğu için
+    /// hiçbir kod yolu yeniden üretimi tetiklemiyor, tarayıcı da
+    /// `NET::ERR_CERT_DATE_INVALID` veriyordu — üstelik uygulama sertifikayı "var"
+    /// saydığı için kullanıcıya hiçbir şey söylemiyordu.
+    ///
+    /// BELİRLENEMİYORSA YENİLENMEZ. `openssl` bulunamaz ya da beklenmedik bir çıktı
+    /// verirse `false` döner: kararsızlıkta yeniden üretmek, çalışan bir sertifikayı
+    /// gereksiz yere değiştirip her düzenlemede Apache'yi yeniden yükletirdi.
+    private func sslCertNeedsRenewal(_ path: String) async -> Bool {
+        guard FileHelper.exists(path) else { return true }
+        // `-checkend N`: sertifika N saniye içinde dolacaksa çıkış kodu 1.
+        let r = await Shell.runAsync("/usr/bin/openssl",
+                                     arguments: ["x509", "-in", path, "-noout",
+                                                 "-checkend", "2592000"],   // 30 gün
+                                     timeout: 20)
+        // exitCode 0 → hâlâ geçerli · 1 → doluyor · başka her şey → belirlenemedi
+        return r.exitCode == 1
     }
 
     private func createSSLCertificate(for domain: Domain) async -> Bool {

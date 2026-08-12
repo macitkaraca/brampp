@@ -155,7 +155,33 @@ class MkcertManager: ObservableObject {
         let caroot = carootResult.output.trimmingCharacters(in: .whitespacesAndNewlines)
         let certPath    = "\(caroot)/rootCA.pem"
         let keyPath     = "\(caroot)/rootCA-key.pem"
-        let alreadyExists = FileHelper.exists(certPath) && FileHelper.exists(keyPath)
+        let certExists = FileHelper.exists(certPath)
+        let keyExists  = FileHelper.exists(keyPath)
+
+        // rootCA.pem VAR ama rootCA-key.pem YOK — kalıcı kilitlenme.
+        //
+        // mkcert bu durumda "keyless" moda düşer: mevcut sertifika durduğu için YENİ
+        // bir CA üretmez, kaybolan anahtarı da geri getiremez (yeni anahtar mevcut
+        // sertifikayla eşleşmezdi). Eskiden buradan sessizce geçiliyor, ardından
+        // hiçbir yaprak sertifika imzalanamıyor ve düğme sonsuza dek anlamsız bir
+        // "CA kurulumu başarısız (kod: 0)" veriyordu. Çıkış yolu CAROOT'u temizlemek,
+        // ama bunu KULLANICI seçmeli: eski CA'yla imzalanmış sertifikaların hepsi
+        // geçersizleşir ve her alan adının yeniden üretilmesi gerekir.
+        if certExists && !keyExists {
+            installLog += """
+
+            ❌ Yerel CA bozuk: rootCA.pem var ama rootCA-key.pem yok.
+               mkcert bu durumda yeni bir CA üretmez ve hiçbir sertifika imzalayamaz.
+               Çözüm: \(caroot) dizinini silip mkcert adımını yeniden çalıştırın.
+               UYARI: eski CA ile üretilmiş tüm site sertifikaları geçersiz olur ve
+               yeniden üretilmeleri gerekir.
+
+            """
+            logger?("❌ Yerel CA bozuk — rootCA-key.pem eksik", .error)
+            return false
+        }
+
+        let alreadyExists = certExists && keyExists
 
         // Adım 1: CA sertifika dosyaları yoksa oluştur (sudo gerekmez).
         // MKCERT_TRUST_STORES=none → güven kurma adımını atla, sadece dosyaları oluştur.

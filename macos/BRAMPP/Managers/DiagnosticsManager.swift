@@ -142,18 +142,25 @@ final class DiagnosticsManager: BaseManager {
         if FileHelper.exists(PathConfig.mkcert) {
             let root = "\(caDir)/rootCA.pem"
             if FileHelper.exists(root) {
-                // Üretilmiş olması yetmez; sistem güven deposunda OLMASI gerekir,
-                // yoksa tarayıcı yerel sertifikaları yine reddeder.
-                let trusted = await Shell.bashAsync(
-                    "security find-certificate -a -p /Library/Keychains/System.keychain "
-                  + "2>/dev/null | grep -c 'BEGIN CERTIFICATE'")
-                let n = Int(trusted.output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+                // Üretilmiş olması yetmez; sistemin güven POLİTİKASINA göre gerçekten
+                // güvenilmesi gerekir.
+                //
+                // Eski denetim `find-certificate -a … | grep -c 'BEGIN CERTIFICATE'`
+                // idi: System anahtarlığındaki HER sertifikayı sayıyordu. Apple'ın kök
+                // sertifikaları orada durduğundan sayı hiçbir zaman sıfır olmuyor ve
+                // denetim mkcert'in kökünü hiç ARAMADAN her koşulda "geçti" diyordu.
+                // `verify-cert` zinciri değerlendirir: login ve system anahtarlıklarını
+                // birlikte görür ve "Asla Güvenme" işaretli bir sertifikada düşer.
+                let verify = await Shell.runAsync("/usr/bin/security",
+                                                  arguments: ["verify-cert", "-c", root])
+                let trusted = verify.isSuccess
                 out.append(.init(id: "mkcert", title: "Yerel sertifika otoritesi",
-                                 level: n > 0 ? .pass : .warn,
-                                 detail: n > 0 ? "sistem güven deposunda"
-                                               : "üretilmiş ama güven deposunda görünmüyor",
-                                 remedy: n > 0 ? nil
-                                       : "Kurulum sihirbazındaki mkcert adımını yeniden çalıştırın."))
+                                 level: trusted ? .pass : .warn,
+                                 detail: trusted ? "sistem güven deposunda"
+                                                 : "üretilmiş ama güvenilmiyor",
+                                 remedy: trusted ? nil
+                                       : "Tarayıcı yerel sertifikaları reddeder. Kurulum "
+                                       + "sihirbazındaki mkcert adımını yeniden çalıştırın."))
             } else {
                 out.append(.init(id: "mkcert", title: "Yerel sertifika otoritesi", level: .warn,
                                  detail: "henüz üretilmemiş",
