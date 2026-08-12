@@ -471,6 +471,14 @@ Nothing compiles across the three. What holds them together is written down in
 [`spec/`](spec/): the [MCP tool contract](spec/mcp-tools.md) and the
 [update manifest](spec/update-manifest.md). A build is BRAMPP when it implements those.
 
+## Security
+
+Found something? See [SECURITY.md](SECURITY.md) — report privately, not in a public issue.
+
+## Contributing
+
+Repository layout, how to build and test, and the traps worth knowing before you touch anything: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 [MIT](LICENSE) © 2023–2026 Karaca Teknoloji

@@ -473,6 +473,14 @@ Her birinin önce vermesi gereken kararlar [`windows/README.md`](windows/README.
 yazılı: [MCP araç sözleşmesi](spec/mcp-tools.md) ve
 [güncelleme manifesti](spec/update-manifest.md). Bir yapı, bunları uyguladığında BRAMPP'tır.
 
+## Güvenlik
+
+Bir açık mı buldunuz? [SECURITY.tr.md](SECURITY.tr.md) — herkese açık issue yerine özel bildirin.
+
+## Katkı
+
+Depo düzeni, derleme ve test, ve bir şeye dokunmadan önce bilmeye değer tuzaklar: [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md).
+
 ## Lisans
 
 [MIT](LICENSE) © 2023–2026 Karaca Teknoloji
