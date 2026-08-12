@@ -5,6 +5,32 @@
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section class="band" id="v18">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.8</h2>
+      <p class="lede">Updating now finishes inside the app: one button, the app quits and reopens on the new version. No opening the image and dragging — and no administrator password, ever.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Update and restart.</b> The new version is copied next to the target <b>while the app is still running</b>, so after quitting only two same-volume renames remain — the window in which no application exists lasts milliseconds rather than seconds. The old bundle is not deleted but <b>moved aside</b>: it is removed once the new version has launched <b>and stayed alive</b>, and put back if it has not. Your Homebrew services keep running — you are updating the app, not shutting down your environment. If the target folder is not writable the button is <b>not offered at all</b> and dragging stays the primary action; teaching people that BRAMPP asks for their password to update itself is teaching them exactly what an attacker wants.</li>
+      <li><b>Repair configuration, in Diagnostics</b> — shown only when there is something to repair. It fixes the old <code>Alias</code> order in the phpMyAdmin/Adminer configuration: the file is backed up as <code>.brampp.bak</code>, <code>configtest</code> is run, and the backup is restored if it fails.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>The shared address arrives sooner.</b> The wait polled the system resolver for a full 45 seconds. Measured on a live tunnel: <code>dig @1.1.1.1</code> resolved the name in <b>0.02s</b> while the system resolver could not resolve it <b>at all</b>. Going by <code>dig</code> alone would be wrong — browsers use <code>getaddrinfo</code>, and calling it ready on the edge's answer hands over a link that will not open. Both run together: <code>dig</code> only establishes that the name exists at the edge, and the moment it does, the system resolver gets <b>six seconds</b> instead of forty-five before the address is handed over with the warning it already carried.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>The update window opened behind the main window.</b> Activating the app brings its own main window forward, leaving the notice that had just been ordered front underneath it — so the window opened and the user never saw it.</li>
+    </ul>
+  </div>
+</section>
+
 <section id="v17">
   <div class="wrap">
     <div class="shead">

@@ -5,6 +5,32 @@
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
+<section class="band" id="v18">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 Ağustos 2026</span>
+      <h2>1.8</h2>
+      <p class="lede">Güncelleme artık uygulamanın içinde bitiyor: bir düğme, uygulama kapanıyor, yeni sürümle açılıyor. Kalıbı açıp sürüklemek gerekmiyor — ve yönetici parolası hiçbir koşulda istenmiyor.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>"Güncelle ve yeniden başlat".</b> Yeni sürüm, uygulama <b>çalışırken</b> hedefin yanına kopyalanıyor; çıkıştan sonra geriye aynı birimdeki iki yeniden adlandırma kalıyor, yani uygulamanın var olmadığı pencere saniyeler değil milisaniyeler sürüyor. Eski paket silinmiyor, <b>yana alınıyor</b>: yeni sürüm açılıp <b>ayakta kaldığında</b> siliniyor, açılmazsa geri konuyor. Homebrew servisleriniz durdurulmuyor — uygulamayı güncelliyorsunuz, geliştirme ortamınızı kapatmıyorsunuz. Hedef klasöre yazılamıyorsa düğme <b>hiç gösterilmiyor</b> ve eski yol birincil eylem olarak kalıyor; "BRAMPP kendini güncellemek için parolanı istiyor" alışkanlığı, bir saldırganın isteyeceği tam o alışkanlıktır.</li>
+      <li><b>Teşhis panelinde "Yapılandırmayı onar"</b> — yalnızca onarılacak bir şey varken görünüyor. phpMyAdmin/Adminer yapılandırmasındaki eski <code>Alias</code> sırasını düzeltiyor: dosyayı <code>.brampp.bak</code> olarak yedekliyor, <code>configtest</code> çalıştırıyor ve geçmezse yedekten geri alıyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Paylaşım adresi daha erken geliyor.</b> Bekleme, sistem çözümleyicisini 45 saniye boyunca yokluyordu. Canlı bir tünelde ölçüldü: <code>dig @1.1.1.1</code> adı <b>0,02 saniyede</b> çözdü, aynı anda sistem çözümleyicisi aynı adı <b>hiç çözemedi</b>. Yalnızca <code>dig</code>'e bakmak yanlış olurdu — tarayıcı <code>getaddrinfo</code> kullanır ve kenar cevabına "hazır" demek, açılamayacak bir bağlantı vermek olur. İkisi birlikte çalışıyor: <code>dig</code> yalnızca adın kenarda var olduğunu saptıyor, saptadığı anda sistem çözümleyicisine 45 değil <b>6 saniye</b> tanınıyor ve adres, zaten var olan uyarısıyla veriliyor.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Güncelleme penceresi ana pencerenin arkasında açılıyordu</b> — uygulama etkinleştirilirken AppKit kendi ana penceresini öne getiriyor, az önce öne alınmış bildirim onun altında kalıyordu. Yani pencere açılıyor ama kullanıcı görmüyordu.</li>
+    </ul>
+  </div>
+</section>
+
 <section id="v17">
   <div class="wrap">
     <div class="shead">
