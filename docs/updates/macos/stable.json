@@ -1,15 +1,15 @@
 {
-  "version": "1.10",
+  "version": "2.0",
   "channel": "stable",
   "published": "2026-08-12",
-  "release": "https://github.com/macitkaraca/brampp/releases/tag/v1.10",
+  "release": "https://github.com/macitkaraca/brampp/releases/tag/v2.0",
   "minimumOS": "14.0",
   "mandatory": false,
   "blockedVersions": [],
   "downloads": {
     "arm64": {
-      "url": "https://github.com/macitkaraca/brampp/releases/download/v1.10/BRAMPP-1.10.dmg",
-      "sha256": "7ee99372db565ad1c6a5fb93c7879945a86d3582fc431db4df05d66b3424e0ae"
+      "url": "https://github.com/macitkaraca/brampp/releases/download/v2.0/BRAMPP-2.0.dmg",
+      "sha256": "4b34a05d9fe8eeb76e2c9bffefb4332df3e1e9db6a4559e81c7d230656cdda07"
     }
   }
 }
