@@ -250,10 +250,16 @@ struct UpdatesSettingsView: View {
 
     /// Elle denetim: atlama/erteleme DİNLENMEZ — insan sordu, yanıtı görmeli.
     private func checkNow() {
+        // TEK yol: menüdeki öğeyle aynı bildirimi gönderir. İki ayrı denetim akışı,
+        // birinde düzeltilen bir davranışın diğerinde eski kalmasıyla biterdi —
+        // durum penceresi de yalnızca birinde açılırdı.
         checking = true
+        NotificationCenter.default.post(name: .showUpdateCheck, object: nil)
+        // Pencereyi ve denetimi uygulama düzeyindeki gözlemci yönetir; burada
+        // yalnızca Ayarlar satırının bayat kalmaması için kısa bir bekleyip tazeleme
+        // var. Denetimin kendisini İKİNCİ kez çalıştırmıyoruz.
         Task {
-            let r = await appState.performUpdateCheck(force: true)
-            result = r
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
             checking = false
             reload()
         }

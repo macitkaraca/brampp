@@ -97,14 +97,52 @@ final class UpdatePromptWindowController: NSObject, NSWindowDelegate {
         focus(win)
     }
 
-    /// Elle denetimde yeni sürüm ÇIKMADIĞINDA kullanıcı yine de bir yanıt görmeli —
-    /// menüden bir şey isteyip hiçbir şey olmaması, özelliğin bozuk olduğunu düşündürür.
-    func showInfo(_ message: String) {
-        let alert = NSAlert()
-        alert.messageText = Localizer.shared.t("set.update.check")
-        alert.informativeText = message
-        alert.addButton(withTitle: Localizer.shared.t("common.close"))
-        alert.runModal()
+    // MARK: - Elle denetimin durum penceresi
+
+    private var statusWindow: NSWindow?
+
+    /// Denetim BAŞLARKEN açılır. Sonuç ancak ağ turu bitince beliriyordu; menüye basan
+    /// kullanıcı için aradaki saniyeler "hiçbir şey olmadı" demekti.
+    func presentChecking() {
+        showStatus(.checking)
+    }
+
+    /// Denetim bitti, yeni sürüm YOK ya da denetim başarısız.
+    func showCheckResult(_ state: UpdateCheckStatusView.State) {
+        showStatus(state)
+    }
+
+    /// Denetim bitti ve yeni sürüm VAR — durum penceresi kapanır, yerini asıl
+    /// bildirim alır. İkisi aynı anda durursa kullanıcı hangisine bakacağını bilemez.
+    func dismissChecking() {
+        statusWindow?.close()
+        statusWindow = nil
+    }
+
+    private func showStatus(_ state: UpdateCheckStatusView.State) {
+        let root = UpdateCheckStatusView(state: state,
+                                         onClose: { [weak self] in self?.dismissChecking() })
+            .environmentObject(Localizer.shared)
+
+        if let win = statusWindow {
+            // Aynı pencere içeriği değiştirilir: "denetleniyor" satırının yerine sonuç
+            // gelir. Yeni pencere açmak, ekranda iki pencere bırakır ve ilki nereye
+            // gittiği belli olmadan kapanırdı.
+            win.contentView = NSHostingView(rootView: root)
+            focus(win)
+            return
+        }
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 130),
+                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        win.title = Localizer.shared.t("set.update.check")
+        win.isReleasedWhenClosed = false
+        win.contentView = NSHostingView(rootView: root)
+        // ÜSTTE KALIR. Kullanıcının AÇIKÇA istediği, kısa ömürlü bir yanıt penceresi;
+        // ana pencerenin arkasına düşerse yine "hiçbir şey olmadı" hissi verirdi.
+        win.level = .floating
+        win.center()
+        statusWindow = win
+        focus(win)
     }
 
     /// Sunum bir sonraki run-loop turuna ERTELENİR — `presentMainWindow`'daki iki

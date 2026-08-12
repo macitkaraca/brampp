@@ -864,18 +864,21 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
                 // AppState'in yaratılmasından önce koşabilir.
                 guard let appState = BRAMPPAppDelegate.shared?.appStateRef else { return }
                 Task { @MainActor in
+                    // Pencere denetimle BİRLİKTE açılır. Sonuç ancak ağ turu bitince
+                    // beliriyordu ve aradaki saniyeler kullanıcı için "hiçbir şey
+                    // olmadı" demekti — menü öğesini bozuk gösteren buydu.
+                    UpdatePromptWindowController.shared.presentChecking()
                     let result = await appState.performUpdateCheck(force: true)
                     // Elle denetimde SESSİZ KALINMAZ: yeni sürüm yoksa da bir yanıt
                     // gerekir, yoksa menü öğesi bozukmuş gibi görünür.
                     switch result {
                     case .updateAvailable, .currentBlocked:
-                        break                       // pencere zaten açıldı
-                    case .upToDate:
-                        UpdatePromptWindowController.shared
-                            .showInfo(Localizer.shared.t("set.update.upToDate"))
+                        // Asıl bildirim açıldı; durum penceresi çekilir.
+                        UpdatePromptWindowController.shared.dismissChecking()
+                    case .upToDate(let current):
+                        UpdatePromptWindowController.shared.showCheckResult(.upToDate(current))
                     case .failed:
-                        UpdatePromptWindowController.shared
-                            .showInfo(Localizer.shared.t("set.update.failed"))
+                        UpdatePromptWindowController.shared.showCheckResult(.failed)
                     }
                 }
             }
