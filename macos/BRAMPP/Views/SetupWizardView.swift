@@ -458,14 +458,21 @@ struct SetupWizardView: View {
                 title: loc.t("wiz.g.mkcert"),
                 subtitle: loc.t("wiz.g.mkcert.sub"),
                 items: mkcertCheckItems,
-                action: mkcertCheckItems.allSatisfy(\.isComplete) ? nil : { installMkcertCA() }
+                action: mkcertCheckItems.allSatisfy(\.isComplete) ? nil : { installMkcertCA() },
+                // İSTEĞE BAĞLI. HTTPS olmadan da yerel geliştirme yapılır; zorunlu
+                // olduğu için mkcert kurulumu bir sebeple takılan kullanıcı (kayıp
+                // rootCA-key.pem, anahtarlık reddi) sihirbazı hiç bitiremiyor ve
+                // çalışan bir HTTP ortamına da geçemiyordu.
+                isRequired: false
             ),
             SetupCheckGroup(
                 id: "localhost",
                 title: loc.t("wiz.g.localhost"),
                 subtitle: loc.t("wiz.g.localhost.sub"),
                 items: localhostCheckItems,
-                action: localhostCheckItems.allSatisfy(\.isComplete) ? nil : { setupLocalhostEnvironment() }
+                action: localhostCheckItems.allSatisfy(\.isComplete) ? nil : { setupLocalhostEnvironment() },
+                // Aynı gerekçe: localhost HTTPS mkcert'e bağlı, o atlanabiliyorsa bu da.
+                isRequired: false
             )
         ]
 

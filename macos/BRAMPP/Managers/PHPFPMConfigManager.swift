@@ -70,67 +70,57 @@ enum PHPFPMConfigManager {
 
     /// `www.conf` içeriğini BRAMPP'ın beklediği listen/user/group değerlerine getirir.
     /// Saf metin dönüşümü — dosya sistemine dokunmaz (birim testten çağrılabilir).
+    /// `www.conf` içeriğini BRAMPP'ın beklediği listen/user/group değerlerine getirir.
+    /// Saf metin dönüşümü — dosya sistemine dokunmaz (birim testten çağrılabilir).
+    ///
+    /// YALNIZCA İLK HAVUZ BÖLÜMÜ yazılır. Eskiden dosyadaki HER `listen =` satırı aynı
+    /// değere çevriliyordu: birden çok havuzu olan bir `www.conf`ta ([www] ve [site2])
+    /// iki havuz aynı porta bağlanmaya çalışıyor ve php-fpm "Address already in use"
+    /// ile HİÇ başlamıyordu. Eksik direktifler de dosyanın sonuna değil, o bölümün
+    /// sonuna eklenir — sona eklenmiş bir `listen`, bir SONRAKİ havuza ait olurdu.
     static func normalized(_ input: String, version: String) -> String {
-        var content = input
+        let want: [(key: String, line: String)] = [
+            ("listen",       "listen = 127.0.0.1:\(PathConfig.Ports.phpPort(version: version))"),
+            ("user",         "user = _www"),
+            ("group",        "group = _www"),
+            ("listen.owner", "listen.owner = _www"),
+            ("listen.group", "listen.group = _www"),
+        ]
 
-        let listenValue = "listen = 127.0.0.1:\(PathConfig.Ports.phpPort(version: version))"
-        let userValue = "user = _www"
-        let groupValue = "group = _www"
-        let ownerValue = "listen.owner = _www"
-        let listenGroupValue = "listen.group = _www"
-
-        let lines = content.components(separatedBy: .newlines)
-        var updatedLines: [String] = []
-
-        var hasListen = false
-        var hasUser = false
-        var hasGroup = false
-        var hasOwner = false
-        var hasListenGroup = false
-
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-
-            if trimmed.hasPrefix("listen =") || trimmed.hasPrefix(";listen =") {
-                updatedLines.append(listenValue)
-                hasListen = true
-                continue
-            }
-
-            if trimmed.hasPrefix("user =") || trimmed.hasPrefix(";user =") {
-                updatedLines.append(userValue)
-                hasUser = true
-                continue
-            }
-
-            if trimmed.hasPrefix("group =") || trimmed.hasPrefix(";group =") {
-                updatedLines.append(groupValue)
-                hasGroup = true
-                continue
-            }
-
-            if trimmed.hasPrefix("listen.owner =") || trimmed.hasPrefix(";listen.owner =") {
-                updatedLines.append(ownerValue)
-                hasOwner = true
-                continue
-            }
-
-            if trimmed.hasPrefix("listen.group =") || trimmed.hasPrefix(";listen.group =") {
-                updatedLines.append(listenGroupValue)
-                hasListenGroup = true
-                continue
-            }
-
-            updatedLines.append(line)
+        var lines = input.components(separatedBy: .newlines)
+        // İlk havuz başlığı `[www]` gibi bir satırdır; ondan önce global ayarlar olabilir.
+        var start = 0
+        var end = lines.count
+        var seenHeader = false
+        for (i, raw) in lines.enumerated() {
+            let l = raw.trimmingCharacters(in: .whitespaces)
+            guard l.hasPrefix("["), l.hasSuffix("]") else { continue }
+            if !seenHeader { seenHeader = true; start = i + 1 }
+            else { end = i; break }          // İKİNCİ havuz başladı — dokunma
         }
 
-        if !hasListen { updatedLines.append(listenValue) }
-        if !hasUser { updatedLines.append(userValue) }
-        if !hasGroup { updatedLines.append(groupValue) }
-        if !hasOwner { updatedLines.append(ownerValue) }
-        if !hasListenGroup { updatedLines.append(listenGroupValue) }
+        /// Satır bu direktifi mi tanımlıyor? `;` ve boşluk toleranslı, ad TAM eşleşmeli
+        /// (`listen` ile `listen.owner` karışmasın).
+        func defines(_ line: String, _ key: String) -> Bool {
+            var s = line.trimmingCharacters(in: .whitespaces)
+            if s.hasPrefix(";") { s = String(s.dropFirst()).trimmingCharacters(in: .whitespaces) }
+            guard let eq = s.firstIndex(of: "=") else { return false }
+            return s[s.startIndex..<eq].trimmingCharacters(in: .whitespaces) == key
+        }
 
-        content = updatedLines.joined(separator: "\n")
-        return content
+        var found = Set<String>()
+        for i in start..<end {
+            for w in want where defines(lines[i], w.key) {
+                lines[i] = w.line
+                found.insert(w.key)
+                break
+            }
+        }
+
+        // Eksikler BÖLÜMÜN sonuna girer, dosyanın değil.
+        let missing = want.filter { !found.contains($0.key) }.map(\.line)
+        if !missing.isEmpty { lines.insert(contentsOf: missing, at: end) }
+
+        return lines.joined(separator: "\n")
     }
 }

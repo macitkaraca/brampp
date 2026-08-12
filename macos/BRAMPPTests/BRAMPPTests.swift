@@ -3456,4 +3456,44 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertTrue(SetupWizardView.httpdIncludesPhpMyAdmin("  \(line)  \n", includeLine: line))
         XCTAssertFalse(SetupWizardView.httpdIncludesPhpMyAdmin("", includeLine: line))
     }
+
+    // MARK: - PHP-FPM havuz normalleştirmesi
+
+    /// ÇOK HAVUZLU www.conf. Her `listen` satırı aynı değere çevrilirse iki havuz aynı
+    /// porta bağlanmaya çalışır ve php-fpm "Address already in use" ile HİÇ başlamaz.
+    func testFPMNormalize_TouchesOnlyTheFirstPool() {
+        let out = PHPFPMConfigManager.normalized("""
+        [www]
+        listen = /tmp/eski.sock
+        user = nobody
+        [site2]
+        listen = 127.0.0.1:9999
+        user = someone
+        """, version: "8.3")
+        XCTAssertTrue(out.contains("[site2]\nlisten = 127.0.0.1:9999"),
+                      "ikinci havuz OLDUĞU GİBİ kalmalı")
+        XCTAssertTrue(out.contains("user = someone"), "ikinci havuzun user'ı korunmalı")
+        XCTAssertEqual(out.components(separatedBy: "listen = 127.0.0.1:9999").count - 1, 1)
+    }
+
+    /// Eksik direktifler BÖLÜMÜN sonuna girmeli; dosyanın sonuna eklenen bir `listen`
+    /// bir SONRAKİ havuza ait olurdu.
+    func testFPMNormalize_AddsMissingDirectivesInsideTheFirstPool() {
+        let out = PHPFPMConfigManager.normalized("[www]\nphp_admin_value[x] = 1\n[other]\nlisten = /tmp/o.sock",
+                                                 version: "8.3")
+        let wwwIdx   = out.range(of: "[www]")!.lowerBound
+        let otherIdx = out.range(of: "[other]")!.lowerBound
+        let userIdx  = out.range(of: "user = _www")!.lowerBound
+        XCTAssertTrue(wwwIdx < userIdx && userIdx < otherIdx,
+                      "eksik direktif ilk havuzun İÇİNE girmeli")
+    }
+
+    /// `listen` ile `listen.owner` karışmamalı — önek eşleşmesi ikisini birbirine yazardı.
+    func testFPMNormalize_DoesNotConfuseListenWithListenOwner() {
+        let out = PHPFPMConfigManager.normalized("[www]\nlisten.owner = nobody\nlisten = /tmp/s.sock",
+                                                 version: "8.3")
+        XCTAssertTrue(out.contains("listen.owner = _www"))
+        XCTAssertTrue(out.contains("listen = 127.0.0.1:"))
+        XCTAssertFalse(out.contains("/tmp/s.sock"))
+    }
 }
