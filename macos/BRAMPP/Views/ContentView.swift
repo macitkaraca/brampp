@@ -41,8 +41,15 @@ struct ContentView: View {
         // sheet'i DomainsTabView bayrak üzerinden açar (o an ekranda değilse bildirimi
         // dinleyemeyeceğinden bayrak gerekli).
         .onReceive(NotificationCenter.default.publisher(for: .showAddDomainSheet)) { _ in
+            // Pencere gizliyken (hideWindowOnClose) sheet GÖRÜNMEZ kuyruklanır: ekranda
+            // hiçbir şey olmaz, pencere sonradan öne gelince beklenmedik anda belirir.
+            // RootView'daki `.showHelpSheet` yolu bu korumayı zaten taşıyor.
+            BRAMPPAppDelegate.shared?.presentMainWindow()
             selectedTab = .domains
-            domainManager.pendingOpenAddSheet = true
+            // `presentMainWindow` işi bir sonraki run-loop turuna erteler (`.accessory`
+            // → `.regular` geçişi için zorunlu); bayrak da o turdan SONRA dikilmeli ki
+            // sheet görünür pencerede sunulsun.
+            DispatchQueue.main.async { domainManager.pendingOpenAddSheet = true }
         }
     }
 

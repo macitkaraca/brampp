@@ -119,6 +119,14 @@ final class MCPServer: ObservableObject {
     @Published var lastError: String? = nil
 
     private var listener: NWListener?
+
+    /// Bir dinleyici nesnesi CANLI mı?
+    ///
+    /// Port meşgulken listener `.waiting` durumunda bekler: `isRunning` false'tur ama
+    /// nesne yaşar ve port serbest kalınca kendi kendine `.ready` olur. Bu durumda
+    /// yeniden başlatmak hiçbir şey kazandırmaz, yalnızca her tazeleme turunda bir
+    /// "durduruldu" satırı üretir.
+    var hasActiveListener: Bool { listener != nil }
     /// Gerçekten dinlenen port — Ayarlar bunu gösterir (istenen port geçersizse
     /// varsayılana düşülür ve arayüz gerçek adresi göstermelidir).
     @Published private(set) var port: Int = 8765

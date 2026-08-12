@@ -301,7 +301,13 @@ class AppState: ObservableObject {
                     // mahkûm etmemek için kapı her turda yeniden sorulur ve açıldığında
                     // dinleyici geç de olsa ayağa kalkar. (Test ana uygulaması/önizleme
                     // kısıtlaması geçici DEĞİLDİR, orada bu koşul hiç sağlanmaz.)
+                    // `hasActiveListener`: port başka bir süreçte meşguldür ve dinleyici
+                    // `.waiting` durumunda BEKLİYORDUR. `isRunning` false'tur ama nesne
+                    // canlıdır ve port serbest kalınca kendiliğinden `.ready` olur.
+                    // Bunu sormadan her tazeleme turunda `start()` çağrılıyor, her tur
+                    // konsola bir "MCP sunucusu durduruldu" satırı düşüyordu.
                     if !self.mcpServer.isRunning,
+                       !self.mcpServer.hasActiveListener,
                        AppSettings.load().mcpServerEnabled,
                        ProcessRole.mayMutateSharedEnvironment {
                         self.mcpServer.start(port: AppSettings.load().mcpServerPort)
@@ -703,7 +709,14 @@ struct WindowHideInterceptor: NSViewRepresentable {
                 return false   // çıkışı yukarıdaki akış yönetir
             }
             sender.orderOut(nil)
-            NSApp.setActivationPolicy(.accessory)
+            // Menü çubuğu simgesi KAPALIYKEN `.accessory`'ye geçmek uygulamayı
+            // ERİŞİLEMEZ bırakır: `MenuBarExtra(isInserted:)` eklenmemiştir, Dock
+            // ikonu kalkar, ⌘Tab listesinde de yoktur — pencere yok, simge yok,
+            // Dock yok. Dock ikonu korunursa tıklama `applicationShouldHandleReopen`
+            // olayını üretir ve pencere geri gelir.
+            if settings.showMenuBarIcon {
+                NSApp.setActivationPolicy(.accessory)
+            }
             return false
         }
     }
@@ -990,7 +1003,15 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func dockStopAndQuit() {
-        realQuit(stopServices: true)
+        // ⌘Q ile AYNI yol. `realQuit(stopServices: true)` yalnızca `brew services stop`
+        // yapıyordu; Node/Python/.NET arka uçları `nohup` ile başlatıldığından BRAMPP
+        // ölse de yaşamaya devam eder ve bir sonraki açılışta "port kullanımda" olarak
+        // geri gelirlerdi. `stopAllAndQuit` önce o süreçleri durdurur, sonra servisleri.
+        if let appState = appStateRef {
+            appState.serviceManager.stopAllAndQuit()
+        } else {
+            realQuit(stopServices: true)   // AppState henüz yoksa son çare
+        }
     }
 
     // MARK: Quit intercept — sistem "Kapat" → gizle

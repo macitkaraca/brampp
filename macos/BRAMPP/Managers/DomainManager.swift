@@ -1490,7 +1490,13 @@ class DomainManager: BaseManager {
                 case .python, .nodejs, .dotnet:
                     statuses[d.id] = await NativeProcessManager.isRunning(domain: d)
                 default:
-                    statuses[d.id] = d.webServer == .nginx ? nginx : apache
+                    // Devre dışı bırakılmış domainin vhost'u ve /etc/hosts girişi
+                    // SİLİNMİŞTİR — web sunucusu ayakta olsa da bu site servis
+                    // edilmez. Sunucunun durumunu domainin durumu gibi göstermek
+                    // satırda yeşil "çalışıyor" noktası çizip kullanıcıyı yanıltıyordu.
+                    // App platformları bilerek dışarıda: orada `isRunning` gerçek bir
+                    // süreç denetimidir ve Başlat/Durdur düğmesini sürer.
+                    statuses[d.id] = d.isEnabled && (d.webServer == .nginx ? nginx : apache)
                 }
             }
             for (id, running) in statuses {
