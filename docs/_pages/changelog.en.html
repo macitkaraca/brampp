@@ -5,6 +5,38 @@
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section id="v19">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">12 August 2026</span>
+      <h2>1.9</h2>
+      <p class="lede">Eighteen fixes, most of one kind: the app reported that something had happened when it had not — or never mentioned something that did.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Closing the window with the menu bar icon turned off made the app unreachable.</b> No window, no Dock icon, no menu bar item, nothing in Cmd-Tab — the only way back was to relaunch.</li>
+      <li><b>Stop services and quit, from the Dock menu, left Node, Python and .NET apps running.</b> They are started with <code>nohup</code>, so they outlive BRAMPP and return as a port already in use.</li>
+      <li><b>A deleted domain's vhost could be written back.</b> The delete path has four waiting points and one of them can ask for an administrator password; an in-flight edit would restore the vhost during that window.</li>
+      <li><b>Stopping a share said the address was dead even when it was not.</b> When the process survives the signals the site stays on the internet, while the assistant reported it closed.</li>
+      <li><b>Application logs vanished past 5 MB.</b> Rotation gave the file a new identity while the app kept writing to the old one, so the window showed nothing more for that run.</li>
+      <li><b>A single malformed byte hid the whole log</b> — the window stopped updating and the log looked like it had gone quiet.</li>
+      <li><b>The same log lines appeared twice.</b></li>
+      <li><b>A disabled domain showed a green running dot whenever the web server was up</b>, though its vhost had been removed and the site was not being served.</li>
+      <li><b>Restoring a database could double rows on MySQL.</b> When the first attempt failed the dump was applied again from the start, replaying inserts that the failed attempt had already committed.</li>
+      <li><b>Only two days of the on-disk log history were searched</b> though seven are kept: "what happened four days ago" came back empty.</li>
+      <li><b>A new domain welded itself onto the last line of <code>/etc/hosts</code></b> when the file did not end in a newline — losing the new name and corrupting the line it landed on.</li>
+      <li><b>When the Apache configuration was already broken, freshly written companion files were deleted too</b> — which fixed nothing and lost them as well.</li>
+      <li><b>A console line claiming the MCP server had stopped appeared on every refresh</b> while the port was held by another process.</li>
+      <li><b>Two copies of BRAMPP writing the same log file overwrote each other's lines.</b></li>
+      <li><b>A space in the executable path shifted the columns in process information</b>, showing part of the command name as the CPU figure.</li>
+      <li><b>Cmd-N with the window hidden queued a window nobody could see.</b></li>
+      <li><b>Stopping a share did not lowercase the domain</b>, so a share opened with capitals could not be closed with lowercase.</li>
+      <li><b>The help text listed two tools under the wrong permission area.</b></li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v18">
   <div class="wrap">
     <div class="shead">
