@@ -1,7 +1,7 @@
 {
   "version": "2.02",
   "channel": "stable",
-  "published": "2026-08-13",
+  "published": "2026-08-14",
   "release": "https://github.com/macitkaraca/brampp/releases/tag/v2.02",
   "minimumOS": "14.0",
   "mandatory": false,
