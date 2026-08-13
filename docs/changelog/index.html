@@ -613,7 +613,31 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="v201">
+<section id="v202">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">August 14, 2026</span>
+      <h2>2.02</h2>
+      <p class="lede">The update check itself was broken, from the menu and from Settings alike. You clicked, nothing happened, and no error appeared anywhere. This release fixes it and writes the boundary into tests so it cannot break the same way again.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>The "Check for Updates" menu item did nothing at all.</b> The item sat in the menu, took your click, and produced not a single line in response. Two menu groups were targeting the same place: one rebuilt the app menu outright, the other anchored itself after the group that no longer existed. That is not defined behaviour — the item is drawn, but its action is never wired. Neither the compiler nor the running app said a word.</li>
+      <li><b>Underneath that sat a second fault: the Settings button was silent too.</b> Both entry points sent the same internal notification, and nothing was listening for it — so fixing the menu alone would still have produced nothing. The check is now called directly, with nothing in between.</li>
+      <li><b>Update windows fell behind the main window.</b> You started a check and then stared at a screen where nothing appeared to happen; the window had opened, it just was not visible. It now stays on top.</li>
+      <li><b>The "Checking…" label in Settings was not waiting for the result</b>, it was counting a fixed delay: on a slow connection it cleared before the check finished, on a fast one it lingered after. It now waits for the real answer.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>There is now one place to check for updates: Settings → Updates.</b> The app-menu item is gone. Two doors to the same job ends with a behaviour fixed behind one of them and left stale behind the other.</li>
+      <li><b>The check answers you now.</b> A "checking" window opens the moment you click, and turns into a green confirmation telling you that you are up to date. Previously nothing appeared at all when there was no new version — which is exactly what made the menu item look broken.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 August 2026</span>
@@ -639,7 +663,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v20">
+<section id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -669,7 +693,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v19">
+<section class="band" id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -701,7 +725,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v18">
+<section id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -727,7 +751,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v17">
+<section class="band" id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -745,7 +769,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v16">
+<section id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -783,7 +807,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v15">
+<section class="band" id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -805,7 +829,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v14">
+<section id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -837,7 +861,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v13">
+<section class="band" id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -872,7 +896,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v12">
+<section id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 August 2026</span>
@@ -897,7 +921,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v11">
+<section class="band" id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 July 2026</span>
