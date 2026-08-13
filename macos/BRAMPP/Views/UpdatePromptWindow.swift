@@ -85,6 +85,14 @@ final class UpdatePromptWindowController: NSObject, NSWindowDelegate {
         win.isReleasedWhenClosed = false
         win.contentView = NSHostingView(rootView: root)
         win.delegate = self
+        // ÜSTTE KALIR. Bunu daha önce bilerek yapmamıştım — "bu bir uyarı değil, bir
+        // teklif" gerekçesiyle. Ama pencerenin ana pencerenin arkasına düşmesi bu
+        // özelliğin en çok bildirilen sorunu oldu: kullanıcı denetimi başlatıyor,
+        // hiçbir şey olmamış gibi görünüyor. Görünmeyen bir teklif, teklif değildir.
+        // `.floating` yalnızca ana pencerenin değil, diğer uygulamaların da üstünde
+        // tutar; kısa ömürlü ve kullanıcının kendi istediği bir pencere için kabul
+        // edilebilir bir bedel.
+        win.level = .floating
         win.center()
         window = win
 
