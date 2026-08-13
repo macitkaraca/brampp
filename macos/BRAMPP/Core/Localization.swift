@@ -204,7 +204,6 @@ enum L10n {
         // ServicesTabView
         "svc.pmaOpenHelp":     ["tr": "phpMyAdmin'i tarayıcıda aç", "en": "Open phpMyAdmin in browser"],
         "svc.mariadbNotRunning": ["tr": "MariaDB çalışmıyor", "en": "MariaDB is not running"],
-        "svc.pgadminOpenHelp2": ["tr": "pgAdmin'i tarayıcıda aç (localhost/pgadmin4)", "en": "Open pgAdmin in browser (localhost/pgadmin4)"],
         "svc.pgNotRunning":    ["tr": "PostgreSQL çalışmıyor", "en": "PostgreSQL is not running"],
 
         // DatabaseTabView — Adminer bağlantı ipuçları
@@ -284,7 +283,6 @@ enum L10n {
         "svc.stopAllHelp":    ["tr": "Çalışan tüm servisleri durdurur", "en": "Stops all running services"],
         "svc.refreshHelp":    ["tr": "Servis durumlarını yenile", "en": "Refresh service statuses"],
         "svc.portSettingsHelp": ["tr": "HTTP / HTTPS port ayarları", "en": "HTTP / HTTPS port settings"],
-        "svc.pgadminInstallHelp": ["tr": "brew install pgadmin4 — web tabanlı pgAdmin kurulur", "en": "brew install pgadmin4 — installs web-based pgAdmin"],
         "svc.uninstallHelp":  ["tr": "%@ ve kütüphane dosyalarını kaldır", "en": "Remove %@ and its library files"],
         "svc.apachePortNote": ["tr": "httpd.conf ve httpd-ssl.conf dosyaları güncellenir,\nApache otomatik olarak yeniden başlatılır.", "en": "httpd.conf and httpd-ssl.conf are updated,\nApache restarts automatically."],
         "svc.nginxPortNote":  ["tr": "servers/ dizinindeki tüm .conf dosyaları güncellenir,\nNginx otomatik olarak yeniden başlatılır.", "en": "All .conf files in the servers/ directory are updated,\nNginx restarts automatically."],
@@ -295,14 +293,12 @@ enum L10n {
         "svc.no":             ["tr": "Hayır (n)", "en": "No (n)"],
 
         // DatabaseTabView
-        "db.adminerDesc":     ["tr": "phpMyAdmin tarzı hafif arayüz — pgAdmin'e ~500 KB'lık alternatif", "en": "phpMyAdmin-style lightweight UI — a ~500 KB alternative to pgAdmin"],
+        "db.adminerDesc":     ["tr": "phpMyAdmin tarzı hafif arayüz — tek dosya, ~500 KB", "en": "phpMyAdmin-style lightweight UI — a single file, ~500 KB"],
         "db.adminerOpen":     ["tr": "Adminer Aç", "en": "Open Adminer"],
         "db.adminerOpenHelp": ["tr": "localhost/adminer adresini tarayıcıda açar", "en": "Opens localhost/adminer in the browser"],
         "db.adminerRemoveHelp": ["tr": "Adminer'i kaldır (dosya + Apache/Nginx yapılandırmaları)", "en": "Remove Adminer (file + Apache/Nginx configs)"],
         "db.adminerInstallHelp": ["tr": "Tek dosya indirilir; Apache + Nginx otomatik yapılandırılır", "en": "A single file is downloaded; Apache + Nginx are configured automatically"],
         "db.pgConfigHelp":    ["tr": "pg_hba.conf trust auth • postgres superuser • boş şifre • test DB", "en": "pg_hba.conf trust auth • postgres superuser • empty password • test DB"],
-        "db.pgadminOpenHelp": ["tr": "https://localhost/pgadmin4 adresini tarayıcıda açar", "en": "Opens https://localhost/pgadmin4 in the browser"],
-        "db.pgadminRemoveHelp": ["tr": "pgAdmin4'ü tamamen kaldır (paket + config + veri)", "en": "Completely remove pgAdmin4 (package + config + data)"],
         "db.myCnfNote":       ["tr": "[mariadbd] bölümüne yazılır; kaydedince MariaDB yeniden başlar.", "en": "Written to the [mariadbd] section; MariaDB restarts on save."],
         // ── Redis istatistik paneli ──
         "db.redis.stats":     ["tr": "Canlı Durum",        "en": "Live Status"],
@@ -366,8 +362,8 @@ enum L10n {
                               "en": "Add PHP, Node.js, Python, .NET or static sites with New Domain. Automatic HTTPS (mkcert), /etc/hosts entry and vhost are created. Right-click menu: Rename, Disable, toggle SSL, Test Connection."],
 
         "help.database.title": ["tr": "Veritabanı", "en": "Database"],
-        "help.database.body":  ["tr": "MariaDB, PostgreSQL ve Redis'i yönetin. Veritabanı oluştur/sil, .sql yedek al / geri yükle. Web arayüzü için phpMyAdmin, pgAdmin veya Adminer (tek dosya, hem MySQL hem PostgreSQL) kurabilirsiniz. redis.conf / my.cnf / postgresql.conf ayar panelleri mevcuttur.",
-                              "en": "Manage MariaDB, PostgreSQL and Redis. Create/drop databases, back up/restore .sql dumps. For a web UI install phpMyAdmin, pgAdmin or Adminer (single file, both MySQL and PostgreSQL). Config panels for redis.conf / my.cnf / postgresql.conf are available."],
+        "help.database.body":  ["tr": "MariaDB, PostgreSQL ve Redis'i yönetin. Veritabanı oluştur/sil, .sql yedek al / geri yükle. Web arayüzü için phpMyAdmin veya Adminer (tek dosya, hem MySQL hem PostgreSQL) kurabilirsiniz. redis.conf / my.cnf / postgresql.conf ayar panelleri mevcuttur.",
+                              "en": "Manage MariaDB, PostgreSQL and Redis. Create/drop databases, back up/restore .sql dumps. For a web UI install phpMyAdmin or Adminer (single file, both MySQL and PostgreSQL). Config panels for redis.conf / my.cnf / postgresql.conf are available."],
 
         "help.hosts.title": ["tr": "/etc/hosts Onarımı", "en": "/etc/hosts Repair"],
         "help.hosts.body":  ["tr": "Domain girişleri /etc/hosts'tan silinirse, Alan Adları sekmesinin üstünde turuncu bir onarım şeridi çıkar; \"Onar\" ile tümü tek seferde eklenir (yönetici şifresi gerekir).",
@@ -873,8 +869,6 @@ enum L10n {
         "db.deleteTitle":  ["tr": "Veritabanı Sil", "en": "Delete Database"],
         "db.delete":       ["tr": "Sil", "en": "Delete"],
         "db.deleteConfirm": ["tr": "'%@' veritabanı kalıcı olarak silinecek. Bu işlem geri alınamaz.", "en": "Database '%@' will be permanently deleted. This cannot be undone."],
-        "db.pgadmin.removeTitle": ["tr": "pgAdmin4'ü Kaldır", "en": "Remove pgAdmin4"],
-        "db.pgadmin.removeMsg": ["tr": "pgAdmin4 paketi, Apache/Nginx yapılandırmaları ve kayıtlı sunucu bağlantıları (~/.pgadmin) tamamen silinecek.", "en": "The pgAdmin4 package, Apache/Nginx configs and saved server connections (~/.pgadmin) will be fully removed."],
         "db.adminer.removeTitle": ["tr": "Adminer'i Kaldır", "en": "Remove Adminer"],
         "db.adminer.removeMsg": ["tr": "Adminer dosyası ve Apache/Nginx yapılandırmaları silinecek.", "en": "The Adminer file and Apache/Nginx configs will be removed."],
         "db.opError":      ["tr": "Veritabanı İşlem Hatası", "en": "Database Operation Error"],
@@ -886,7 +880,6 @@ enum L10n {
         "common.status":   ["tr": "Durum", "en": "Status"],
         "db.installFromServices": ["tr": "Servisler sekmesinden kurabilirsiniz", "en": "You can install it from the Services tab"],
         "db.adminerInstall":  ["tr": "Adminer Kur", "en": "Install Adminer"],
-        "db.pgadminInstall":  ["tr": "pgAdmin Kur", "en": "Install pgAdmin"],
         "db.phpMyAdminInstall": ["tr": "phpMyAdmin Kur", "en": "Install phpMyAdmin"],
         "dom.autoRefresh": ["tr": "Otomatik Yenile", "en": "Auto Refresh"],
         "dom.buildInstall": ["tr": "Derle / Kur", "en": "Build / Install"],
@@ -910,10 +903,6 @@ enum L10n {
         "db.pg.firstConfig": ["tr": "İlk Yapılandırma", "en": "Initial Setup"],
         "db.pg.firstConfigDesc": ["tr": "trust auth, postgres superuser, boş şifre, test DB", "en": "trust auth, postgres superuser, empty password, test DB"],
         "db.configure":    ["tr": "Yapılandır", "en": "Configure"],
-        "db.pgadmin.desc": ["tr": "Web tabanlı PostgreSQL yönetim arayüzü — Apache/Nginx üzerinden erişilir", "en": "Web-based PostgreSQL admin UI — accessed via Apache/Nginx"],
-        "db.pgadmin.open": ["tr": "pgAdmin Aç", "en": "Open pgAdmin"],
-        "db.webConfig":    ["tr": "Web Sunucusu Yapılandırması", "en": "Web Server Configuration"],
-        "db.notInstalledShort": ["tr": "(kurulu değil)", "en": "(not installed)"],
         "db.databases":    ["tr": "Veritabanları", "en": "Databases"],
         "db.restore":      ["tr": "Geri Yükle…", "en": "Restore…"],
         "db.restore.help": ["tr": ".sql dökümünü bir veritabanına geri yükle", "en": "Restore a .sql dump into a database"],

@@ -613,7 +613,31 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
-<section id="v202">
+<section id="v203">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">14 Ağustos 2026</span>
+      <h2>2.03</h2>
+      <p class="lede">pgAdmin4 desteği kaldırıldı, ve alan adı silmenin arkada bıraktıkları toplandı.</p>
+    </div>
+
+    <h3 class="sub-h">Kaldırıldı</h3>
+    <ul class="bullets">
+      <li><b>pgAdmin4 artık kurulmuyor ve yönetilmiyor.</b> Homebrew pgAdmin4'ü formula olmaktan çıkarıp cask'a taşımıştı; BRAMPP hâlâ eski formula yolunu sınadığı için "kurulu değil" diyor, dolayısıyla Kaldır düğmesi de hiç görünmüyordu — kendi yazdığı yapılandırma dosyası arayüzden temizlenemez hâldeydi. Bir masaüstü uygulamasının kurulumunu üstlenmek BRAMPP'ın işi değil; PostgreSQL yönetimi için <b>Adminer</b> duruyor (tek dosya, hem MySQL hem PostgreSQL) ve o hep çalışıyordu. PostgreSQL'in kendisine dokunulmadı. Güncelleyince pgAdmin4 kendiliğinden kaldırılmaz — dilerseniz <code>brew uninstall --cask pgadmin4</code> ile kaldırabilirsiniz.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Alan adı silinirken açık paylaşım kapatılamazsa artık silme yapılmıyor.</b> Eskiden paylaşımı durdurma denemesinin sonucu atılıyor ve koşulsuz "kapatıldı" yazılıyordu. Tünel gerçekten ölmediyse kayıt ve vhost yine de siliniyor, herkese açık adres yayında kalmaya devam ediyor ama artık <b>varsayılan siteyi</b> gösteriyordu — üstelik tünel alan adına bağlı olduğu için arayüzden durdurulamıyordu.</li>
+      <li><b>Silme, alan adının log dosyalarını bırakıyordu.</b> Her silinen alan adı arkasında iki-dört dosya kalıyordu. Artık dört yol birden temizleniyor: nginx alan adlarına bir de Apache companion vhost'u yazılıyor, ve sunucu tercihi sonradan değiştiyse eski sunucunun dosyaları da diskte duruyordu.</li>
+      <li><b>Tünel log ve pid dosyaları</b> alan adı silindikten sonra da kalıyordu.</li>
+      <li><b>/etc/hosts satırı kaldırılamazsa artık uyarı düşüyor.</b> Kayıt zaten silinmiş olduğundan o satırı bir daha hiçbir akış aramıyor ve sessizce kalıcı oluyordu.</li>
+      <li><b>Silme onayı ne olduğunu söylüyor.</b> Yalnızca "geri alınamaz" diyordu; site klasörünüzün ve içindekilerin <b>kaldığını</b> söylemiyordu.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -637,7 +661,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v201">
+<section id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 Ağustos 2026</span>
@@ -663,7 +687,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v20">
+<section class="band" id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -693,7 +717,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v19">
+<section id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -725,7 +749,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v18">
+<section class="band" id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -751,7 +775,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v17">
+<section id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -769,7 +793,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v16">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -807,7 +831,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v15">
+<section id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -829,7 +853,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v14">
+<section class="band" id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -861,7 +885,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v13">
+<section id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -896,7 +920,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v12">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 Ağustos 2026</span>
@@ -921,7 +945,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v11">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 Temmuz 2026</span>

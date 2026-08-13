@@ -10,7 +10,7 @@ Key facts:
 - Not a binary bundle: it controls the user's existing Homebrew services (`brew services run`)
 - Local domains: creates vhosts, /etc/hosts entries and per-domain SSL certificates (mkcert)
 - Supported stacks: PHP 8.1–8.5, Node.js, Python (FastAPI/Django/Flask), ASP.NET Core, static/SPA
-- Databases: MariaDB/MySQL, PostgreSQL (multi-version), Redis; phpMyAdmin/pgAdmin/Adminer installers
+- Databases: MariaDB/MySQL, PostgreSQL (multi-version), Redis; phpMyAdmin/Adminer installers
 - PHP profiler: drives Xdebug's profile mode from the UI; cachegrind output collected in one folder; trigger mode by default so only marked requests are measured
 - Languages: English and Turkish UI (runtime switchable)
 - MCP server: built-in Model Context Protocol endpoint (http://127.0.0.1:8765/mcp, loopback only,

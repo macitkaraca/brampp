@@ -349,60 +349,11 @@ extension L10n {
             ["tr": "MariaDB durduruldu (geçici başlatılmıştı)",
              "en": "MariaDB stopped (it had been started temporarily)"],
 
-        // ── pgAdmin4 ────────────────────────────────────────────────────────
-        "log.svc.pgadmin4Installing":
-            ["tr": "pgAdmin4 kuruluyor...",
-             "en": "Installing pgAdmin4…"],
-        "log.svc.pgadmin4Installed":
-            ["tr": "pgAdmin4 kuruldu",
-             "en": "pgAdmin4 installed"],
         // %@ = hata açıklaması
-        "log.svc.pgadmin4InstallFailed":
-            ["tr": "pgAdmin4 kurulamadı: %@",
-             "en": "Could not install pgAdmin4: %@"],
-        "log.svc.pgadmin4ServiceStarting":
-            ["tr": "pgAdmin4 servisi başlatılıyor...",
-             "en": "Starting the pgAdmin4 service…"],
         // %@ = port
-        "log.svc.pgadmin4ServiceStarted":
-            ["tr": "✅ pgAdmin4 servisi başlatıldı (port %@)",
-             "en": "✅ pgAdmin4 service started (port %@)"],
         // %@ = brew çıktısı
-        "log.svc.pgadmin4ServiceStartFailed":
-            ["tr": "⚠️ Servis başlatma: %@",
-             "en": "⚠️ Service start: %@"],
-        "log.svc.pgadmin4ApacheConfiguring":
-            ["tr": "🔧 Apache için pgAdmin4 yapılandırılıyor...",
-             "en": "🔧 Configuring pgAdmin4 for Apache…"],
-        "log.svc.pgadmin4NginxConfiguring":
-            ["tr": "🔧 Nginx için pgAdmin4 yapılandırılıyor...",
-             "en": "🔧 Configuring pgAdmin4 for Nginx…"],
-        "log.svc.pgadmin4ConfCreated":
-            ["tr": "pgadmin4.conf oluşturuldu",
-             "en": "pgadmin4.conf created"],
         // %@ = hedef yol
-        "log.svc.pgadmin4ConfWriteFailed":
-            ["tr": "pgadmin4.conf yazılamadı: %@",
-             "en": "Could not write pgadmin4.conf: %@"],
-        "log.svc.pgadmin4IncludeExists":
-            ["tr": "httpd.conf zaten pgAdmin4 include içeriyor",
-             "en": "httpd.conf already contains the pgAdmin4 include"],
-        "log.svc.pgadmin4IncludeAdded":
-            ["tr": "httpd.conf güncellendi — pgAdmin4 include eklendi",
-             "en": "httpd.conf updated — pgAdmin4 include added"],
-        "log.svc.pgadmin4NginxBlockAdded":
-            ["tr": "nginx.conf güncellendi — pgAdmin4 location bloğu eklendi",
-             "en": "nginx.conf updated — pgAdmin4 location block added"],
-        "log.svc.pgadmin4Uninstalling":
-            ["tr": "pgAdmin4 kaldırılıyor...",
-             "en": "Uninstalling pgAdmin4…"],
-        "log.svc.pgadmin4Uninstalled":
-            ["tr": "pgAdmin4 kaldırıldı (config + veri temizlendi)",
-             "en": "pgAdmin4 uninstalled (configuration and data cleaned up)"],
         // %@ = hata açıklaması
-        "log.svc.pgadmin4UninstallIncomplete":
-            ["tr": "pgAdmin4 kaldırma tamamlanamadı: %@",
-             "en": "pgAdmin4 uninstall did not complete: %@"],
 
         // ── Adminer ─────────────────────────────────────────────────────────
         "log.svc.adminerNeedsPhp":

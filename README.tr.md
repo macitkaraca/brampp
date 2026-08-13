@@ -109,7 +109,7 @@ Sınırları baştan bilmek bir akşamınızı kurtarır:
 - **Yerel alan adları** — `projem.test` saniyeler içinde: vhost + `/etc/hosts` kaydı + site klasörü + örnek proje. Alan adı başına Apache **veya** Nginx.
 - **Her stack** — PHP (alan adı başına sürüm), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, statik site & SPA (history-mode fallback dahil).
 - **Yerel HTTPS** — tek tıkla [mkcert](https://github.com/FiloSottile/mkcert): yerel CA, alan adı başına sertifika, HTTP→HTTPS yönlendirme. Yeşil kilit, evinizde.
-- **Veritabanı yönetimi** — oluştur/sil, yedekle/geri yükle (PostgreSQL'de tek transaction), phpMyAdmin / pgAdmin / Adminer kurulumu, `my.cnf` / `postgresql.conf` / `redis.conf` panelleri (güvenli yazma ile).
+- **Veritabanı yönetimi** — oluştur/sil, yedekle/geri yükle (PostgreSQL'de tek transaction), phpMyAdmin / Adminer kurulumu, `my.cnf` / `postgresql.conf` / `redis.conf` panelleri (güvenli yazma ile).
 - **PHP eklenti yöneticisi** — 26 seçilmiş eklenti (xdebug, redis, imagick…), aç/kapat, PECL kurulumu, `php.ini` hızlı ayarları.
 - **Uygulama süreç yöneticisi** — Node/Python/.NET uygulamaları sıfır bağımlılıklı bir süpervizörle: otomatik yeniden başlatma, birleşik loglar, sahibi olmadığı süreci ASLA öldürmeyen güvenli durdurma.
 - **Kurulum sihirbazı** — Apache portları, PHP-FPM, mkcert CA, localhost SSL, MariaDB root erişimi ve phpMyAdmin'i adım adım yapılandırır. Tek bir config dosyasına dokunmadan `https://localhost`.
@@ -131,7 +131,7 @@ Tüm yerel siteleriniz tek listede: platform rozeti (PHP / Node.js / Python / .N
 
 ### ⚙️ Servisler
 
-Tüm stack kategorilere ayrılmış: web sunucuları, PHP-FPM sürümleri, çalışma zamanları, veritabanları, önbellek. Tek tıkla başlat/durdur, canlı port rozetleri, Apache/Nginx ayar düğmeleri ve servis satırında kurulum düğmeleri (phpMyAdmin, pgAdmin, Adminer). Kurulu olmayan servisler gizlenebilir ya da buradan kurulabilir.
+Tüm stack kategorilere ayrılmış: web sunucuları, PHP-FPM sürümleri, çalışma zamanları, veritabanları, önbellek. Tek tıkla başlat/durdur, canlı port rozetleri, Apache/Nginx ayar düğmeleri ve servis satırında kurulum düğmeleri (phpMyAdmin, Adminer). Kurulu olmayan servisler gizlenebilir ya da buradan kurulabilir.
 
 ![Servisler sekmesi — kategorilere ayrılmış Homebrew servisleri, canlı durumla](screenshots/tr/services.png)
 

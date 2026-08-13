@@ -109,7 +109,7 @@ Being clear about the edges saves you an evening:
 - **Local domains** — create `myproject.test` in seconds: virtual host, `/etc/hosts` entry, site folder and sample project generated automatically. Apache *or* Nginx per domain.
 - **Every stack, one app** — PHP (per-domain PHP version), Node.js, Python (FastAPI/Django/Flask + venv), ASP.NET Core, static sites & SPAs (history-mode fallback included).
 - **Real HTTPS locally** — one-click [mkcert](https://github.com/FiloSottile/mkcert) integration: local CA, per-domain certificates, HTTP→HTTPS redirect. The green padlock, at home.
-- **Databases without the CLI** — create/drop databases, dump & restore (single-transaction for PostgreSQL), phpMyAdmin / pgAdmin / Adminer installers, `my.cnf` / `postgresql.conf` / `redis.conf` editors with safe writes.
+- **Databases without the CLI** — create/drop databases, dump & restore (single-transaction for PostgreSQL), phpMyAdmin / Adminer installers, `my.cnf` / `postgresql.conf` / `redis.conf` editors with safe writes.
 - **PHP extension manager** — 26 curated extensions (xdebug, redis, imagick…), toggle on/off, PECL install, `php.ini` quick settings.
 - **Process manager for app servers** — Node/Python/.NET apps run under a zero-dependency supervisor: auto-restart, combined logs, safe stop that never kills a process it doesn't own.
 - **Setup wizard** — checks and configures Apache ports, PHP-FPM, mkcert CA, localhost SSL, MariaDB root access and phpMyAdmin. From zero to `https://localhost` without touching a config file.
@@ -131,7 +131,7 @@ Every local site in one list: platform badge (PHP / Node.js / Python / .NET / st
 
 ### ⚙️ Services
 
-The whole stack grouped by category — web servers, PHP-FPM versions, runtimes, databases, cache. Start/stop with one click, live port badges, config buttons for Apache/Nginx, and installer buttons (phpMyAdmin, pgAdmin, Adminer) right on the service row. Services you haven't installed can be hidden or installed from here.
+The whole stack grouped by category — web servers, PHP-FPM versions, runtimes, databases, cache. Start/stop with one click, live port badges, config buttons for Apache/Nginx, and installer buttons (phpMyAdmin, Adminer) right on the service row. Services you haven't installed can be hidden or installed from here.
 
 ![Services tab — Homebrew services grouped by category with live status](screenshots/en/services.png)
 

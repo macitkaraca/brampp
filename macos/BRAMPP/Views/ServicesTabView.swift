@@ -209,10 +209,6 @@ struct ServiceRowView: View {
         PathConfig.isPhpMyAdminInstalled
     }
 
-    private var isPgAdminInstalled: Bool {
-        PathConfig.isPgAdmin4Installed
-    }
-
     private var isAdminerInstalled: Bool {
         PathConfig.isAdminerInstalled
     }
@@ -274,9 +270,8 @@ struct ServiceRowView: View {
                 }
                 .help(loc.t("svc.mailpit.open"))
             }
-            // PostgreSQL satırlarında pgAdmin + Adminer butonları
+            // PostgreSQL satırında Adminer butonu
             if service.id.hasPrefix("postgresql@") {
-                pgAdminButton
                 adminerButton
             }
             // Apache ayar butonu
@@ -422,46 +417,6 @@ struct ServiceRowView: View {
         serviceManager.installPhpMyAdmin()
     }
 
-    // MARK: - pgAdmin Button
-
-    @ViewBuilder
-    private var pgAdminButton: some View {
-        if isPgAdminInstalled {
-            Button(action: openPgAdmin) {
-                Label("pgAdmin", systemImage: "safari")
-                    .font(.caption)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .tint(.blue)
-            .disabled(service.status != .running)
-            .help(service.status == .running ? loc.t("svc.pgadminOpenHelp2") : loc.t("svc.pgNotRunning"))
-        } else {
-            Button(action: { installPgAdmin() }) {
-                Label(loc.t("db.pgadminInstall"), systemImage: "arrow.down.circle")
-                    .font(.caption)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(!Shell.isBrewInstalled)
-            .help(loc.t("svc.pgadminInstallHelp"))
-        }
-    }
-
-    private func openPgAdmin() {
-        let apacheConfigured = FileHelper.exists(PathConfig.pgadmin4Conf)
-        let nginxConfigured  = NginxConfigManager.isPgAdmin4Configured
-        let urlString: String
-        if apacheConfigured {
-            urlString = WebServerPorts.localhostHTTPS(path: "/pgadmin4")
-        } else if nginxConfigured {
-            urlString = "http://localhost:8080/pgadmin4/"
-        } else {
-            urlString = "http://127.0.0.1:\(PathConfig.pgadmin4Port)"
-        }
-        if let url = URL(string: urlString) { NSWorkspace.shared.open(url) }
-    }
-
     // MARK: - Adminer Button
 
     /// Adminer tek dosyayla hem MySQL/MariaDB hem PostgreSQL yönettiğinden
@@ -500,10 +455,6 @@ struct ServiceRowView: View {
         if let url = URL(string: urlString) { NSWorkspace.shared.open(url) }
     }
 
-    /// ServiceManager.installPgAdmin4() → InstallationProgressSheet otomatik açılır
-    private func installPgAdmin() {
-        serviceManager.installPgAdmin4()
-    }
 
     @ViewBuilder
     private var actionButtons: some View {

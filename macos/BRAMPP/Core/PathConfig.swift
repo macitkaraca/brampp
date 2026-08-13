@@ -21,7 +21,6 @@ struct PathConfig {
         static func httpdSSLConf(_ base: String) -> String   { "\(httpdExtra(base))/httpd-ssl.conf" }
         static func phpmyadminConf(_ base: String) -> String { "\(httpdExtra(base))/phpmyadmin.conf" }
         static func adminerConf(_ base: String) -> String    { "\(httpdExtra(base))/adminer.conf" }
-        static func pgadmin4Conf(_ base: String) -> String   { "\(httpdExtra(base))/pgadmin4.conf" }
         /// phpMyAdmin'in kendi PHP yapılandırması (kullanıcı düzenleyebilir)
         static func phpmyadminAppConfig(_ base: String) -> String { "\(base)/etc/phpmyadmin.config.inc.php" }
         /// brew paketinin web kökü
@@ -185,13 +184,6 @@ struct PathConfig {
     static func pgDataDir(version: String) -> String   { "\(brewBase)/var/postgresql@\(version)" }
     static func pgBin(version: String) -> String       { "\(phpOpt)/postgresql@\(version)/bin/psql" }
 
-    // MARK: - pgAdmin4 (web version — brew install pgadmin4)
-    static let pgadmin4Dir: String        = "\(brewBase)/opt/pgadmin4"
-    static let pgadmin4Conf: String       = Brew.pgadmin4Conf(brewBase)          // Apache include
-    static let pgadmin4Port: Int          = 5050
-    static var isPgAdmin4Installed: Bool  { Shell.isBrewInstalled && FileHelper.exists(pgadmin4Dir) }
-    /// pgAdmin kullanıcı verisi (kayıtlı sunucu bağlantıları vb.) — kaldırmada temizlenir
-    static let pgadmin4DataDir: String    = "\(NSHomeDirectory())/.pgadmin"
 
     // MARK: - MariaDB / Redis config
     /// Homebrew my.cnf `!includedir my.cnf.d` kullanır — kendi ayar dosyamızı buraya

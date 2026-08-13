@@ -106,8 +106,6 @@ extension L10n {
         "log.op.serviceInstall":     ["tr": "%@ kurma",                      "en": "install %@"],
         "log.op.serviceUninstall":   ["tr": "%@ kaldırma",                   "en": "uninstall %@"],
         "log.op.pgConfigure":        ["tr": "PostgreSQL %@ yapılandırması",  "en": "configure PostgreSQL %@"],
-        "log.op.pgadminInstall":     ["tr": "pgAdmin4 kurma",                "en": "install pgAdmin4"],
-        "log.op.pgadminUninstall":   ["tr": "pgAdmin4 kaldırma",             "en": "uninstall pgAdmin4"],
         "log.op.phpmyadminInstall":  ["tr": "phpMyAdmin kurma",              "en": "install phpMyAdmin"],
         "log.op.phpIniUpdate":       ["tr": "php.ini güncelleme",            "en": "update php.ini"],
         "log.op.phpExtLoad":         ["tr": "PHP extension yükleme",         "en": "load PHP extensions"],

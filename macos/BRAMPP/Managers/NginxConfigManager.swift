@@ -56,12 +56,6 @@ enum NginxConfigManager {
         return false
     }
 
-    /// nginx.conf içinde pgAdmin4 reverse proxy location bloğu var mı?
-    static var isPgAdmin4Configured: Bool {
-        guard let content = FileHelper.readString(PathConfig.nginxConf) else { return false }
-        return content.contains("location /pgadmin4/")
-    }
-
     /// nginx.conf içinde Adminer location bloğu var mı?
     static var isAdminerConfigured: Bool {
         guard let content = FileHelper.readString(PathConfig.nginxConf) else { return false }
@@ -73,7 +67,6 @@ enum NginxConfigManager {
     /// nginx.conf'u tamamen yeniden yazar.
     /// localhost HTTP + phpMyAdmin her zaman eklenir.
     /// localhost HTTPS yalnızca `sslAvailable` true ise eklenir.
-    /// pgAdmin4 location bloğu `pgAdmin4Available` true ise eklenir.
     /// Virtual host'lar için `sites-available/*.conf` include eklenir.
     ///
     /// Portlar MEVCUT nginx.conf'tan okunur (varsayılan 8080/8443) — kullanıcının port
@@ -81,13 +74,11 @@ enum NginxConfigManager {
     ///
     /// - Parameter sslAvailable: localhost SSL çifti (cert **ve** key) mevcutsa `true`
     ///   — `localhostSSLReady` ile hesaplanmalıdır
-    /// - Parameter pgAdmin4Available: pgAdmin4 kuruluysa `true` (varsayılan: otomatik detect)
     /// - Returns: Dosya yazma başarılıysa `true`
     @discardableResult
-    static func rewriteMainConfig(sslAvailable: Bool, pgAdmin4Available: Bool? = nil, adminerAvailable: Bool? = nil) -> Bool {
+    static func rewriteMainConfig(sslAvailable: Bool, adminerAvailable: Bool? = nil) -> Bool {
         // nil → otomatik tespit: diğer çağrı yerleri (kurulum sihirbazı, SSL yenileme vb.)
         // parametreyi bilmese de kurulu araçların blokları KORUNUR (yeniden yazımda kaybolmaz)
-        let hasPgAdmin  = pgAdmin4Available ?? PathConfig.isPgAdmin4Installed
         let hasAdminer  = adminerAvailable  ?? PathConfig.isAdminerInstalled
 
         // Portlar YAZIMDAN ÖNCE okunmalı — buildMainConfig mevcut nginx.conf'tan okur.
@@ -95,12 +86,11 @@ enum NginxConfigManager {
         let httpsPort = WebServerPorts.nginxHTTPS()
 
         let config = buildMainConfig(sslAvailable: sslAvailable,
-                                     pgAdmin4Available: hasPgAdmin,
                                      adminerAvailable: hasAdminer,
                                      httpPort: httpPort,
                                      httpsPort: httpsPort)
 
-        // Bu fonksiyon rutin işlemlerde de (Adminer/pgAdmin kur-kaldır, varsayılan PHP
+        // Bu fonksiyon rutin işlemlerde de (Adminer kur-kaldır, varsayılan PHP
         // değişimi) çalışır ve dosyayı SIFIRDAN yazar. Kullanıcının elle eklediği her şey
         // uçmadan önce zaman damgalı bir kopya bırakılır.
         backupMainConfig()
@@ -159,7 +149,6 @@ enum NginxConfigManager {
     ///     → mevcut nginx.conf'tan okunur; böylece rutin yeniden yazımlar kullanıcının
     ///     (ya da uygulamanın Nginx Portları ekranının) ayarını SIFIRLAMAZ.
     static func buildMainConfig(sslAvailable: Bool,
-                                pgAdmin4Available: Bool = false,
                                 adminerAvailable: Bool = false,
                                 httpPort: Int? = nil,
                                 httpsPort: Int? = nil) -> String {
@@ -172,7 +161,6 @@ enum NginxConfigManager {
         let logs     = PathConfig.nginxLogs
         let certPath = "\(PathConfig.localhostSSLDir)/cert.pem"
         let keyPath  = "\(PathConfig.localhostSSLDir)/key.pem"
-        let pgPort   = PathConfig.pgadmin4Port
 
         let adminerBlock = adminerAvailable ? """
 
@@ -189,19 +177,6 @@ enum NginxConfigManager {
         }
 """ : ""
 
-        let pgAdmin4Block = pgAdmin4Available ? """
-
-        # ─── pgAdmin4 Reverse Proxy ───────────────────────────────────────
-        location /pgadmin4/ {
-            proxy_pass              http://127.0.0.1:\(pgPort)/;
-            proxy_http_version      1.1;
-            proxy_set_header        Host $host;
-            proxy_set_header        X-Real-IP $remote_addr;
-            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header        X-Forwarded-Proto $scheme;
-            proxy_set_header        X-Script-Name /pgadmin4;
-        }
-""" : ""
 
         let httpsBlock = sslAvailable ? """
 
@@ -237,7 +212,7 @@ enum NginxConfigManager {
                 include        fastcgi_params;
             }
         }
-\(adminerBlock)\(pgAdmin4Block)
+\(adminerBlock)
         access_log "\(logs)/localhost-ssl-access.log";
         error_log  "\(logs)/localhost-ssl-error.log";
     }
@@ -286,7 +261,7 @@ http {
                 include        fastcgi_params;
             }
         }
-\(adminerBlock)\(pgAdmin4Block)
+\(adminerBlock)
         access_log "\(logs)/localhost-access.log";
         error_log  "\(logs)/localhost-error.log";
     }

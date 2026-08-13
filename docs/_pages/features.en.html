@@ -74,7 +74,7 @@
       <li><b>Export</b> with <code>mysqldump --single-transaction --routines --triggers</code> — a consistent snapshot that does not lock InnoDB tables, keeping stored routines and triggers.</li>
       <li><b>Import</b> a <code>.sql</code> file into a target database, creating it first if it does not exist.</li>
       <li><b>A partial dump is never left behind.</b> If an export fails the incomplete file is deleted — a corrupt backup is worse than no backup, because you only discover it when you need it.</li>
-      <li><b>Web clients</b> — phpMyAdmin, pgAdmin and Adminer install from inside the app if you want them.</li>
+      <li><b>Web clients</b> — phpMyAdmin and Adminer install from inside the app if you want them.</li>
       <li><b>Config editors</b> for <code>my.cnf</code>, <code>postgresql.conf</code> and <code>redis.conf</code>, with a backup written before every save.</li>
     </ul>
     <h3 class="sub-h">Redis, with numbers</h3>

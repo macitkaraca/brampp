@@ -773,31 +773,6 @@ struct VHostTemplates {
         "IncludeOptional \(PathConfig.phpmyadminConf)"
     }
 
-    static func pgadmin4IncludeConfig() -> String {
-        "IncludeOptional \(PathConfig.pgadmin4Conf)"
-    }
-
-    // MARK: - pgAdmin4 Apache Config
-
-    /// Apache httpd.conf'a IncludeOptional ile eklenen pgAdmin4 reverse proxy bloğu.
-    /// pgAdmin4 web sunucusu 127.0.0.1:5050'de çalışır; X-Script-Name header ile subpath yönlendirmesi yapılır.
-    static func pgadmin4ApacheConfig() -> String {
-        """
-        # ═══════════════════════════════════════════════════════════════════
-        # pgAdmin4 Reverse Proxy
-        # Erişim: https://localhost/pgadmin4
-        # pgAdmin4 servisi: brew services run pgadmin4 (port 5050)
-        # ═══════════════════════════════════════════════════════════════════
-
-        <Location /pgadmin4>
-            RequestHeader set X-Script-Name /pgadmin4
-            ProxyPreserveHost Off
-            ProxyPass        http://127.0.0.1:\(PathConfig.pgadmin4Port)/
-            ProxyPassReverse http://127.0.0.1:\(PathConfig.pgadmin4Port)/
-        </Location>
-        """
-    }
-
 
     // MARK: - phpMyAdmin Global Config
 

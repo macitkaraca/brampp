@@ -290,13 +290,13 @@ class BackupRestoreManager: BaseManager {
     // MARK: - Orphan Config Reconciliation
 
     /// Domain'e AİT OLMAYAN, sistem/servis yapılandırması olan .conf adları.
-    /// Bunlar domain listesiyle eşleşmez ama silinirse phpMyAdmin/Adminer/pgAdmin ve
+    /// Bunlar domain listesiyle eşleşmez ama silinirse phpMyAdmin/Adminer ve
     /// localhost tamamen erişilemez hale gelir — uzlaştırma bunlara ASLA dokunmaz.
     private static func isSystemConf(_ stem: String) -> Bool {
         let s = stem.lowercased()
         // Sıra öneki taşıyan sistem dosyaları (000-localhost.conf gibi)
         if s.hasPrefix("000-") { return true }
-        return s.contains("phpmyadmin") || s.contains("adminer") || s.contains("pgadmin")
+        return s.contains("phpmyadmin") || s.contains("adminer")
     }
 
     /// Geri yüklenen domains.json ile diskteki vhost/nginx yapılandırmalarını uzlaştırır:

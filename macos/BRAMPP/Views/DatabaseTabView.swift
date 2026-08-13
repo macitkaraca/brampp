@@ -17,8 +17,7 @@ struct DatabaseTabView: View {
     @State private var showRestoreSheet: Bool = false
     @State private var restoreFileURL: URL? = nil
     @State private var restoreDBName: String = ""
-    // pgAdmin / Adminer kaldırma onayları
-    @State private var showPgAdminRemoveAlert: Bool = false
+    // Adminer kaldırma onayı
     @State private var showAdminerRemoveAlert: Bool = false
     // Kritik DB hataları — konsol kapalı olabileceğinden alert ile de gösterilir
     @State private var dbErrorMessage: String? = nil
@@ -47,18 +46,6 @@ struct DatabaseTabView: View {
     /// MariaDB root@localhost TCP erişimi yapılandırılmış mı?
     /// nil = henüz kontrol edilmedi / bilinmiyor (MariaDB çalışmıyor).
     @State private var rootTCPConfigured: Bool? = nil
-
-    private var isPgAdminInstalled: Bool {
-        PathConfig.isPgAdmin4Installed
-    }
-
-    private var isPgAdminApacheConfigured: Bool {
-        FileHelper.exists(PathConfig.pgadmin4Conf)
-    }
-
-    private var isPgAdminNginxConfigured: Bool {
-        NginxConfigManager.isPgAdmin4Configured
-    }
 
     private var isPhpMyAdminInstalled: Bool {
         PathConfig.isPhpMyAdminInstalled
@@ -170,7 +157,7 @@ struct DatabaseTabView: View {
             selectedPGVersion = availablePGVersions.first ?? ""
             loadDatabases()
         }
-        // ServiceManager'daki kurulum (phpMyAdmin/pgAdmin) başladığında sheet'i aç
+        // ServiceManager'daki kurulum (phpMyAdmin) başladığında sheet'i aç
         .onAppear {
             // Kurulum bu sekme EKRANDA DEĞİLKEN başlamış olabilir (MCP aracı,
             // başka sekme, menü). false→true geçişi çoktan olup bittiği için
@@ -196,12 +183,6 @@ struct DatabaseTabView: View {
             Button(loc.t("db.delete"), role: .destructive) { dropDatabase(db); dbToDelete = nil }
         } message: { db in
             Text(String(format: loc.t("db.deleteConfirm"), db))
-        }
-        .alert(loc.t("db.pgadmin.removeTitle"), isPresented: $showPgAdminRemoveAlert) {
-            Button(loc.t("common.cancel"), role: .cancel) { }
-            Button(loc.t("common.remove"), role: .destructive) { serviceManager.uninstallPgAdmin4() }
-        } message: {
-            Text(loc.t("db.pgadmin.removeMsg"))
         }
         .alert(loc.t("db.adminer.removeTitle"), isPresented: $showAdminerRemoveAlert) {
             Button(loc.t("common.cancel"), role: .cancel) { }
@@ -429,113 +410,6 @@ struct DatabaseTabView: View {
                     .padding(8)
                 }
 
-                // pgAdmin4 (web version)
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("pgAdmin 4")
-                                    .font(.headline)
-                                Text(loc.t("db.pgadmin.desc"))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                if isPgAdminInstalled {
-                                    HStack(spacing: 6) {
-                                        Text("localhost/pgadmin4")
-                                            .font(.caption)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.accentColor)
-                                        Text("• port \(PathConfig.pgadmin4Port)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                            }
-                            Spacer()
-                            if isPgAdminInstalled {
-                                Button(action: openPgAdmin) {
-                                    Label(loc.t("db.pgadmin.open"), systemImage: "safari")
-                                        .font(.callout)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.blue)
-                                .disabled(dbService?.status != .running)
-                                .help(loc.t("db.pgadminOpenHelp"))
-                                Button(role: .destructive) {
-                                    showPgAdminRemoveAlert = true
-                                } label: {
-                                    Image(systemName: "trash")
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(serviceManager.isInstalling)
-                                .help(loc.t("db.pgadminRemoveHelp"))
-                            } else {
-                                Button(action: { installPgAdmin() }) {
-                                    Label(loc.t("db.pgadminInstall"), systemImage: "arrow.down.circle")
-                                        .font(.callout)
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(!Shell.isBrewInstalled || serviceManager.isInstalling)
-                                .help("brew install pgadmin4")
-                            }
-                        }
-
-                        if isPgAdminInstalled {
-                            Divider()
-
-                            // Web sunucusu yapılandırma durumu
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(loc.t("db.webConfig"))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.secondary)
-
-                                HStack(spacing: 8) {
-                                    // Apache
-                                    HStack(spacing: 4) {
-                                        Image(systemName: isPgAdminApacheConfigured ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                            .foregroundColor(isPgAdminApacheConfigured ? .green : .red)
-                                            .font(.caption)
-                                        Text("Apache")
-                                            .font(.caption)
-                                        if !isPgAdminApacheConfigured {
-                                            Button("Ayarla") {
-                                                Task { await configurePgAdmin4ForApache() }
-                                            }
-                                            .buttonStyle(.bordered)
-                                            .controlSize(.mini)
-                                            .tint(.orange)
-                                        }
-                                    }
-
-                                    Divider().frame(height: 16)
-
-                                    // Nginx
-                                    HStack(spacing: 4) {
-                                        Image(systemName: isPgAdminNginxConfigured ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                            .foregroundColor(isPgAdminNginxConfigured ? .green : .red)
-                                            .font(.caption)
-                                        Text("Nginx")
-                                            .font(.caption)
-                                        if PathConfig.isNginxInstalled && !isPgAdminNginxConfigured {
-                                            Button("Ayarla") {
-                                                Task { await configurePgAdmin4ForNginx() }
-                                            }
-                                            .buttonStyle(.bordered)
-                                            .controlSize(.mini)
-                                            .tint(.orange)
-                                        } else if !PathConfig.isNginxInstalled {
-                                            Text(loc.t("db.notInstalledShort"))
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(8)
-                }
 
                 // Adminer — hafif web DB yöneticisi (PostgreSQL de destekler)
                 adminerSection
@@ -1337,88 +1211,6 @@ struct DatabaseTabView: View {
                 reportDBError(String(format: loc.t("db.dropFailed"), result.error))
             }
             loadDatabases()
-        }
-    }
-
-    // MARK: - pgAdmin4 Actions
-
-    private func openPgAdmin() {
-        // Apache: https://localhost/pgadmin4, Nginx: http://localhost:8080/pgadmin4/
-        let urlString: String
-        if isPgAdminApacheConfigured {
-            urlString = WebServerPorts.localhostHTTPS(path: "/pgadmin4")
-        } else if isPgAdminNginxConfigured {
-            urlString = "http://localhost:8080/pgadmin4/"
-        } else {
-            urlString = "http://127.0.0.1:\(PathConfig.pgadmin4Port)"
-        }
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    /// ServiceManager.installPgAdmin4() → InstallationProgressSheet otomatik açılır
-    private func installPgAdmin() {
-        serviceManager.installPgAdmin4()
-    }
-
-    /// Apache için pgAdmin4 reverse proxy include dosyasını oluşturur ve httpd.conf'a ekler.
-    private func configurePgAdmin4ForApache() async {
-        consoleStore.log(key: "log.db.pgadminApacheConfiguring", type: .info)
-
-        // pgadmin4.conf dosyasını oluştur
-        let conf = VHostTemplates.pgadmin4ApacheConfig()
-        guard FileHelper.write(conf, to: PathConfig.pgadmin4Conf) else {
-            consoleStore.log(key: "log.db.pgadminConfWriteFailed", args: [PathConfig.pgadmin4Conf], type: .error)
-            return
-        }
-        consoleStore.log(key: "log.db.pgadminConfCreated", type: .success)
-
-        // httpd.conf'a IncludeOptional ekle
-        guard var httpdContent = FileHelper.readString(PathConfig.httpdConf) else {
-            consoleStore.log(key: "log.db.httpdReadFailed", type: .error)
-            return
-        }
-
-        let includeDirective = VHostTemplates.pgadmin4IncludeConfig()
-        if !httpdContent.contains(includeDirective) {
-            // phpmyadmin include'un hemen altına ekle
-            let pmaInclude = VHostTemplates.phpmyadminIncludeConfig()
-            if httpdContent.contains(pmaInclude) {
-                httpdContent = httpdContent.replacingOccurrences(
-                    of: pmaInclude,
-                    with: "\(pmaInclude)\n\(includeDirective)"
-                )
-            } else {
-                httpdContent += "\n\(includeDirective)\n"
-            }
-
-            if FileHelper.write(httpdContent, to: PathConfig.httpdConf) {
-                consoleStore.log(key: "log.db.httpdUpdated", type: .success)
-                consoleStore.log(key: "log.db.restartApacheHint", type: .info)
-            } else {
-                consoleStore.log(key: "log.db.httpdWriteFailed", type: .error)
-            }
-        } else {
-            consoleStore.log(key: "log.db.httpdAlreadyIncludes", type: .info)
-        }
-    }
-
-    /// Nginx için nginx.conf'u pgAdmin4 location bloğu ile yeniden yazar.
-    private func configurePgAdmin4ForNginx() async {
-        consoleStore.log(key: "log.db.pgadminNginxConfiguring", type: .info)
-
-        guard FileManager.default.fileExists(atPath: PathConfig.nginxConf) else {
-            consoleStore.log(key: "log.db.nginxConfNotFound", type: .error)
-            return
-        }
-
-        let sslAvailable = FileManager.default.fileExists(atPath: "\(PathConfig.localhostSSLDir)/cert.pem")
-        if NginxConfigManager.rewriteMainConfig(sslAvailable: sslAvailable, pgAdmin4Available: true) {
-            consoleStore.log(key: "log.db.nginxUpdated", type: .success)
-            consoleStore.log(key: "log.db.restartNginxHint", type: .info)
-        } else {
-            consoleStore.log(key: "log.db.nginxWriteFailed", type: .error)
         }
     }
 

@@ -613,7 +613,31 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="v202">
+<section id="v203">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">August 14, 2026</span>
+      <h2>2.03</h2>
+      <p class="lede">pgAdmin4 support is gone, and domain deletion no longer leaves things behind.</p>
+    </div>
+
+    <h3 class="sub-h">Removed</h3>
+    <ul class="bullets">
+      <li><b>pgAdmin4 is no longer installed or managed.</b> Homebrew moved pgAdmin4 from a formula to a cask; BRAMPP still probed the old formula path, so it reported "not installed" and the Remove button — gated on that same check — never appeared, leaving configuration BRAMPP itself had written with no way to clean it up from the UI. Installing a desktop application is not BRAMPP's job. <b>Adminer</b> remains for PostgreSQL (a single file covering both MySQL and PostgreSQL) and always worked. PostgreSQL itself is untouched. Updating does not uninstall pgAdmin4 for you — run <code>brew uninstall --cask pgadmin4</code> if you want it gone.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Deleting a domain now refuses to proceed if its open share cannot be closed.</b> The attempt's result used to be discarded and success logged unconditionally. If the tunnel did not actually die, the record and the vhost went anyway — the public address kept serving, now showing the <b>default site</b>, and since the tunnel is keyed by domain name it could no longer be stopped from the UI.</li>
+      <li><b>Deletion left the domain's log files behind</b> — two to four per domain, every time. All four paths are cleaned now: an nginx domain also gets an Apache companion vhost, and a domain that switched web servers leaves files under the old one.</li>
+      <li><b>Tunnel log and pid files</b> survived deletion of the domain they belonged to.</li>
+      <li><b>A failed /etc/hosts removal now warns.</b> With the record already gone, nothing would ever look for that line again and it became permanent in silence.</li>
+      <li><b>The delete confirmation says what happens.</b> It only said "cannot be undone" — never that your site folder and everything in it stays.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -637,7 +661,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v201">
+<section id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 August 2026</span>
@@ -663,7 +687,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v20">
+<section class="band" id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -693,7 +717,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v19">
+<section id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -725,7 +749,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v18">
+<section class="band" id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -751,7 +775,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v17">
+<section id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -769,7 +793,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v16">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -807,7 +831,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v15">
+<section id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -829,7 +853,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v14">
+<section class="band" id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -861,7 +885,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v13">
+<section id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -896,7 +920,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v12">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 August 2026</span>
@@ -921,7 +945,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v11">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 July 2026</span>

@@ -335,7 +335,6 @@ class ServiceManager: BaseManager {
     }
 
 
-
     /// Hafif durum kontrolü — Periyodik timer ve uygulama ön plana gelince çağrılır.
     ///
     /// **Port-tabanlı izleme:**
@@ -926,7 +925,7 @@ class ServiceManager: BaseManager {
             _ = FileHelper.write(VHostTemplates.adminerApacheConfig(phpPort: newPort), to: PathConfig.adminerConf)
         }
 
-        // 4) Nginx ana config (localhost + phpMyAdmin + Adminer + pgAdmin portları içinde)
+        // 4) Nginx ana config (localhost + phpMyAdmin + Adminer portları içinde)
         if FileHelper.exists(PathConfig.nginxConf) {
             let ssl = NginxConfigManager.localhostSSLReady
             _ = NginxConfigManager.rewriteMainConfig(sslAvailable: ssl)   // auto-detect: kurulu blokları korur
@@ -1041,163 +1040,11 @@ class ServiceManager: BaseManager {
         }
     }
 
-    // MARK: - pgAdmin4 Installation (InstallationProgressSheet)
-
-    /// pgAdmin4'ü ServicesTab İlerleme Penceresi'nde kurar; Apache/Nginx config sağ konsolda gösterilir.
-    func installPgAdmin4() {
-        guard requireBrew(forKey: "log.op.pgadminInstall") else { return }
-        // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
-        // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
-        guard !isInstalling else {
-            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning); return
-        }
-        isInstalling      = true
-        installationTitle = "pgAdmin4 Kuruluyor"
-        installationLog   = "🚀 pgAdmin4 kurulum başlatılıyor...\n\(Shell.brewBin) install pgadmin4\n\n"
-        log(key: "log.svc.pgadmin4Installing", type: .command)
-
-        Task {
-            let r = await streamInstallLog("\(Shell.brewBin) install pgadmin4 2>&1")
-
-            lastRunSucceeded = r.isSuccess
-            isInstalling = false
-
-            if r.isSuccess {
-                installationLog += "\n✅ pgAdmin4 başarıyla kuruldu!\n"
-                log(key: "log.svc.pgadmin4Installed", type: .success)
-                log(key: "log.svc.pgadmin4ServiceStarting", type: .command)
-                let start = await Shell.brewBashAsync("\(Shell.brewBin) services run pgadmin4 2>&1")
-                if start.isSuccess {
-                    log(key: "log.svc.pgadmin4ServiceStarted", args: ["\(PathConfig.pgadmin4Port)"], type: .success)
-                } else {
-                    log(key: "log.svc.pgadmin4ServiceStartFailed", args: [start.output], type: .warning)
-                }
-                await configurePgAdmin4ForApache()
-                if PathConfig.isNginxInstalled { await configurePgAdmin4ForNginx() }
-            } else {
-                installationLog += "\n❌ Kurulum başarısız (Hata kodu: \(r.exitCode))\n"
-                if !r.error.isEmpty { installationLog += r.error + "\n" }
-                log(key: "log.svc.pgadmin4InstallFailed", args: [r.error], type: .error)
-            }
-            refreshStatus()
-        }
-    }
-
-    func configurePgAdmin4ForApache() async {
-        log(key: "log.svc.pgadmin4ApacheConfiguring", type: .info)
-        guard FileHelper.exists(PathConfig.httpdConf) else {
-            log(key: "log.svc.httpdConfMissing", type: .error); return
-        }
-        let conf = VHostTemplates.pgadmin4ApacheConfig()
-        guard FileHelper.write(conf, to: PathConfig.pgadmin4Conf) else {
-            log(key: "log.svc.pgadmin4ConfWriteFailed", args: [PathConfig.pgadmin4Conf], type: .error); return
-        }
-        log(key: "log.svc.pgadmin4ConfCreated", type: .success)
-
-        let directive  = VHostTemplates.pgadmin4IncludeConfig()
-        let pmaInclude = VHostTemplates.phpmyadminIncludeConfig()
-        var alreadyThere = false
-
-        // httpd.conf ÖZGÜN kodlamasıyla geri yazılır; okunamıyorsa hiç dokunulmaz —
-        // aksi halde tüm Apache yapılandırması bozulur.
-        let result = ConfigFileEditor.patch(PathConfig.httpdConf) { content in
-            guard !content.contains(directive) else { alreadyThere = true; return content }
-            if content.contains(pmaInclude) {
-                return content.replacingOccurrences(of: pmaInclude, with: "\(pmaInclude)\n\(directive)")
-            }
-            return content + "\n\(directive)\n"
-        }
-
-        guard !alreadyThere else {
-            log(key: "log.svc.pgadmin4IncludeExists", type: .info); return
-        }
-        switch result {
-        case .written:
-            log(key: "log.svc.pgadmin4IncludeAdded", type: .success)
-            log(key: "log.svc.restartApacheHint", type: .info)
-        case .writeFailed:
-            log(key: "log.svc.httpdConfWriteFailed", type: .error)
-        case .missing, .unreadable:
-            log(key: "log.svc.httpdConfReadFailed", type: .error)
-        }
-    }
-
-    func configurePgAdmin4ForNginx() async {
-        log(key: "log.svc.pgadmin4NginxConfiguring", type: .info)
-        guard FileHelper.exists(PathConfig.nginxConf) else {
-            log(key: "log.svc.nginxConfMissing", type: .error); return
-        }
-        let sslAvailable = NginxConfigManager.localhostSSLReady
-        if NginxConfigManager.rewriteMainConfig(sslAvailable: sslAvailable, pgAdmin4Available: true) {
-            log(key: "log.svc.pgadmin4NginxBlockAdded", type: .success)
-            log(key: "log.svc.restartNginxHint", type: .info)
-        } else {
-            log(key: "log.svc.nginxConfWriteFailed", type: .error)
-        }
-    }
-
-    /// pgAdmin4'ü TAM kaldırır: servis durdur + brew uninstall + Apache include +
-    /// extra/pgadmin4.conf + Nginx location bloğu + kullanıcı verisi (~/.pgadmin).
-    /// (phpMyAdmin'in cascade kaldırmasıyla simetrik — eksikti, pgAdmin kalıcı kalıyordu.)
-    func uninstallPgAdmin4() {
-        guard requireBrew(forKey: "log.op.pgadminUninstall") else { return }
-        isInstalling      = true
-        installationTitle = "pgAdmin4 Kaldırılıyor"
-        installationLog   = "🗑 pgAdmin4 kaldırma başlatılıyor...\n\n"
-        log(key: "log.svc.pgadmin4Uninstalling", type: .command)
-
-        Task {
-            // 1) Servisi durdur (çalışmıyorsa zararsız)
-            installationLog += "⏹  Servis durduruluyor...\n"
-            _ = await Shell.brewBashAsync("\(Shell.brewBin) services stop pgadmin4 2>/dev/null")
-
-            // 2) Paketi kaldır
-            let r = await streamInstallLog("\(Shell.brewBin) uninstall pgadmin4 2>&1")
-
-            // 3) Apache: extra conf + httpd.conf include satırı
-            installationLog += "\n🧹 Web sunucusu yapılandırmaları temizleniyor...\n"
-            if FileHelper.exists(PathConfig.pgadmin4Conf) {
-                FileHelper.remove(PathConfig.pgadmin4Conf)
-                installationLog += "  ✅ extra/pgadmin4.conf silindi\n"
-            }
-            _ = await Shell.bashAsync(
-                "sed -i '' '/IncludeOptional.*pgadmin4\\.conf/d' \(Shell.quote(PathConfig.httpdConf)) 2>/dev/null"
-            )
-            installationLog += "  ✅ httpd.conf include satırı kaldırıldı\n"
-
-            // 4) Nginx: location bloğunu düşürerek ana config'i yeniden yaz
-            if FileHelper.exists(PathConfig.nginxConf) {
-                let ssl = NginxConfigManager.localhostSSLReady
-                if NginxConfigManager.rewriteMainConfig(sslAvailable: ssl, pgAdmin4Available: false) {
-                    installationLog += "  ✅ nginx.conf'tan pgAdmin4 bloğu kaldırıldı\n"
-                }
-            }
-
-            // 5) Kullanıcı verisi (kayıtlı bağlantılar) — tam temizlik
-            if FileHelper.exists(PathConfig.pgadmin4DataDir) {
-                FileHelper.remove(PathConfig.pgadmin4DataDir)
-                installationLog += "  ✅ Kullanıcı verisi silindi (~/.pgadmin)\n"
-            }
-
-            lastRunSucceeded = true
-            isInstalling = false
-            if r.isSuccess {
-                installationLog += "\n✅ pgAdmin4 tamamen kaldırıldı.\n"
-                log(key: "log.svc.pgadmin4Uninstalled", type: .success)
-                log(key: "log.svc.restartWebServersHint", type: .info)
-            } else {
-                installationLog += "\n⚠️ brew uninstall hata verdi — config temizliği yine yapıldı.\n"
-                log(key: "log.svc.pgadmin4UninstallIncomplete", args: [r.error], type: .warning)
-            }
-            refreshStatus()
-        }
-    }
 
     // MARK: - Adminer (tek dosyalı web DB yöneticisi)
 
     /// Adminer'i indirir (tek PHP dosyası, ~500 KB) ve HEM Apache HEM Nginx için
-    /// yapılandırır. MySQL/MariaDB + PostgreSQL'i aynı arayüzden yönetir —
-    /// pgAdmin'in ~700 MB'lık kurulumuna hafif alternatif.
+    /// yapılandırır. MySQL/MariaDB + PostgreSQL'i aynı arayüzden yönetir.
     func installAdminer() {
         // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.
         // İkinci bir akış aynı alanları ezer ve ilkini istemine yanıtsız bırakır.
@@ -1902,8 +1749,7 @@ class ServiceManager: BaseManager {
                 .config(PathConfig.Brew.httpdConf(base)),      // etc/httpd/httpd.conf
                 .config(PathConfig.Brew.httpdSSLConf(base)),   // etc/httpd/extra/httpd-ssl.conf
                 .config(PathConfig.Brew.phpmyadminConf(base)), // etc/httpd/extra/phpmyadmin.conf
-                .config(PathConfig.Brew.adminerConf(base)),    // etc/httpd/extra/adminer.conf
-                .config(PathConfig.Brew.pgadmin4Conf(base))    // etc/httpd/extra/pgadmin4.conf
+                .config(PathConfig.Brew.adminerConf(base))     // etc/httpd/extra/adminer.conf
             ], preserved: [PathConfig.Brew.vhostsDir(base)])
         case "nginx":
             // Aynı gerekçe: `sites-available/` kullanıcının domain bloklarını barındırır.

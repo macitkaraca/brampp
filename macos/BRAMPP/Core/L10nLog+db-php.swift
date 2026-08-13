@@ -51,46 +51,6 @@ extension L10n {
             ["tr": "'%@' veritabanı silindi",
              "en": "Database '%@' deleted"],
 
-        // ── log.db.* — pgAdmin4 / web sunucusu yapılandırması ────────────────
-        "log.db.pgadminApacheConfiguring":
-            ["tr": "🔧 Apache için pgAdmin4 yapılandırılıyor...",
-             "en": "🔧 Configuring pgAdmin4 for Apache…"],
-        "log.db.pgadminConfWriteFailed":
-            ["tr": "pgadmin4.conf yazılamadı: %@",
-             "en": "Could not write pgadmin4.conf: %@"],
-        "log.db.pgadminConfCreated":
-            ["tr": "pgadmin4.conf oluşturuldu",
-             "en": "pgadmin4.conf created"],
-        "log.db.httpdReadFailed":
-            ["tr": "httpd.conf okunamadı",
-             "en": "Could not read httpd.conf"],
-        "log.db.httpdUpdated":
-            ["tr": "httpd.conf güncellendi — pgAdmin4 include eklendi",
-             "en": "httpd.conf updated — pgAdmin4 include added"],
-        "log.db.restartApacheHint":
-            ["tr": " Apache'yi yeniden başlatın: Servisler → Apache → Yeniden Başlat",
-             "en": " Restart Apache: Services → Apache → Restart"],
-        "log.db.httpdWriteFailed":
-            ["tr": "httpd.conf yazılamadı — sudo izni gerekebilir",
-             "en": "Could not write httpd.conf — sudo permission may be required"],
-        "log.db.httpdAlreadyIncludes":
-            ["tr": " httpd.conf zaten pgAdmin4 include içeriyor",
-             "en": " httpd.conf already contains the pgAdmin4 include"],
-        "log.db.pgadminNginxConfiguring":
-            ["tr": "🔧 Nginx için pgAdmin4 yapılandırılıyor...",
-             "en": "🔧 Configuring pgAdmin4 for Nginx…"],
-        "log.db.nginxConfNotFound":
-            ["tr": "nginx.conf bulunamadı",
-             "en": "nginx.conf not found"],
-        "log.db.nginxUpdated":
-            ["tr": "nginx.conf güncellendi — pgAdmin4 location bloğu eklendi",
-             "en": "nginx.conf updated — pgAdmin4 location block added"],
-        "log.db.restartNginxHint":
-            ["tr": " Nginx'i yeniden başlatın: Servisler → Nginx → Yeniden Başlat",
-             "en": " Restart Nginx: Services → Nginx → Restart"],
-        "log.db.nginxWriteFailed":
-            ["tr": "nginx.conf yazılamadı",
-             "en": "Could not write nginx.conf"],
 
         // ── log.db.* — Ayar dosyaları (postgresql.conf / my.cnf / redis.conf) ─
         "log.db.pgConfReadFailed":
