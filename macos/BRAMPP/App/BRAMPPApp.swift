@@ -634,7 +634,6 @@ class AppState: ObservableObject {
 extension Notification.Name {
     static let showAddDomainSheet = Notification.Name("showAddDomainSheet")
     static let showHelpSheet      = Notification.Name("showHelpSheet")
-    /// Menüden "Güncellemeleri Denetle…" seçildi (ELLE denetim: atlama/erteleme dinlenmez)
     /// Atlanan sürüm / erteleme değişti — AÇIK duran Ayarlar penceresi tazelensin
     static let updateStateChanged = Notification.Name("updateStateChanged")
 }

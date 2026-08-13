@@ -27,12 +27,6 @@ final class Shell {
         static let brewNotInstalled = Result(
             output: "", error: "Homebrew kurulu değil.", exitCode: -99
         )
-        static let userCancelled = Result(
-            output: "", error: "İşlem kullanıcı tarafından iptal edildi.", exitCode: -128
-        )
-        static let timeout = Result(
-            output: "", error: "Zaman aşımı", exitCode: -998
-        )
     }
     
     // MARK: - Brew Detection
@@ -89,38 +83,6 @@ final class Shell {
     
     // MARK: - Homebrew Installation
     
-    /// Homebrew kuruluysa true döner; değilse kurulumu YENİ bir Terminal penceresinde BAŞLATIR.
-    ///
-    /// - Önemli: `do script` osascript'i, komut Terminal'e iletilir iletilmez döner — kurulum
-    ///   BİTİMİNİ beklemez. Bu yüzden kurulum başlatıldıktan sonra dönüş `isBrewInstalled`
-    ///   (yani "şu an kurulu mu") olur — kurulum daha yeni başladığından bu genelde `false`'tur.
-    ///   Çağıran taraf, kullanıcı Terminal'deki kurulumu bitirdikten sonra tekrar kontrol etmelidir.
-    @discardableResult
-    static func ensureBrewInstalled() -> Bool {
-        if isBrewInstalled { return true }
-        let appleScript = """
-        tell application "Terminal"
-            activate
-            do script "/bin/bash -c \\"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\\""
-        end tell
-        """
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        task.arguments = ["-e", appleScript]
-        task.standardOutput = Pipe()
-        task.standardError = Pipe()
-        do { try task.run(); task.waitUntilExit() }
-        catch { return false }
-        // osascript başarıyla Terminal'i tetikledi ≠ Homebrew kuruldu. Gerçek durumu döndür.
-        return isBrewInstalled
-    }
-    
-    @discardableResult
-    static func ensureBrewInstalledAsync() async -> Bool {
-        await withCheckedContinuation { c in
-            DispatchQueue.global(qos: .userInitiated).async { c.resume(returning: ensureBrewInstalled()) }
-        }
-    }
     
     // MARK: - Core: Senkron
 
@@ -290,45 +252,8 @@ final class Shell {
     
     // MARK: - Brew (Güvenli)
     
-    @discardableResult
-    static func brew(_ arguments: String...) -> Result {
-        guard isBrewInstalled else { return .brewNotInstalled }
-        return run(brewBin, arguments: Array(arguments))
-    }
     
-    @discardableResult
-    static func brewArgs(_ arguments: [String]) -> Result {
-        guard isBrewInstalled else { return .brewNotInstalled }
-        return run(brewBin, arguments: arguments)
-    }
     
-    @discardableResult
-    static func brewServices(_ action: String, service: String) -> Result {
-        guard isBrewInstalled else { return .brewNotInstalled }
-        switch action {
-        case "start", "run":
-            // run semantiği: login'de auto-start OLMAZ (bkz. brewServicesAsync)
-            return run(brewBin, arguments: ["services", "run", service])
-        case "restart":
-            // run semantiğini koru: brew restart yerine stop + run
-            _ = run(brewBin, arguments: ["services", "stop", service])
-            return run(brewBin, arguments: ["services", "run", service])
-        default:
-            return run(brewBin, arguments: ["services", action, service])
-        }
-    }
-    
-    static func getBrewServicesList() -> [String: String] {
-        guard isBrewInstalled else { return [:] }
-        let result = brew("services", "list")
-        guard result.isSuccess else { return [:] }
-        var dict: [String: String] = [:]
-        for line in result.output.components(separatedBy: "\n").dropFirst() {
-            let p = line.split(separator: " ", omittingEmptySubsequences: true)
-            if p.count >= 2 { dict[String(p[0])] = String(p[1]) }
-        }
-        return dict
-    }
     
     // MARK: - Sudo
     
@@ -434,70 +359,6 @@ final class Shell {
         }
     }
 
-    // MARK: - LaunchAgent Kontrolü (brew services bypass)
-
-
-    /// Brew servislerini `brew services run` semantiği ile kontrol eder — login'de auto-start OLMAZ.
-    ///
-    /// **Neden doğrudan launchctl?**
-    /// macOS Sonoma/Sequoia'da GUI uygulama alt sürecinden çalışan
-    /// `launchctl bootstrap gui/UID plist` çağrısı EIO (exit code 5) ile başarısız olur.
-    /// `launchctl load/unload` (eski API) bu kısıtlamadan etkilenmez.
-    ///
-    /// **run semantiği:**
-    /// - Plist kaynağı: `brew_prefix/opt/{name}/homebrew.mxcl.{name}.plist` (Cellar symlink)
-    ///   `~/Library/LaunchAgents/`'a KOPYALANMAZ → login/reboot'ta auto-start olmaz.
-    /// - `launchctl list` yine de `homebrew.mxcl.{name}` label'ını görür — label plist içinden gelir, kaynak path'ten değil.
-    ///
-    /// **stop:** `launchctl remove` label ile durdurur (kaynak fark etmez).
-    ///   Eski `brew services start` ile kurulmuş LaunchAgents plist'i varsa temizler.
-    ///
-    /// - Parameters:
-    ///   - action: `"start"` (run semantiği), `"stop"` veya `"restart"`
-    ///   - brewName: Homebrew formula adı (örn. `"nginx"`, `"php@8.3"`, `"mariadb"`)
-    /// - Returns: Shell.Result
-    static func launchAgentControl(action: String, brewName: String) async -> Result {
-        guard isBrewInstalled else { return .brewNotInstalled }
-
-        // opt/{name}/ → Cellar symlink — versiyon bilmek gerekmez
-        let optPlist         = "\(brewPrefix)/opt/\(brewName)/homebrew.mxcl.\(brewName).plist"
-        let label            = "homebrew.mxcl.\(brewName)"
-        let home             = FileManager.default.homeDirectoryForCurrentUser.path
-        let launchAgentPlist = "\(home)/Library/LaunchAgents/\(label).plist"
-
-        switch action {
-        case "start":
-            // run semantiği: opt plist'i yükle, LaunchAgents'a kopyalama → auto-start yok
-            // Eski `start` ile kurulmuş LaunchAgents plist'i varsa önce kaldır
-            if FileManager.default.fileExists(atPath: launchAgentPlist) {
-                _ = await bashAsync("/bin/launchctl unload -w '\(launchAgentPlist)' 2>/dev/null")
-                try? FileManager.default.removeItem(atPath: launchAgentPlist)
-            }
-            let startR = await bashAsync("/bin/launchctl load '\(optPlist)' 2>&1")
-            // exit 5 = EALREADY: servis zaten yüklü/çalışıyor → başarılı say, "already running" işareti koy
-            return startR.exitCode == 5 ? Result(output: "already running", error: "", exitCode: 0) : startR
-
-        case "stop":
-            // Label ile durdur — kaynağı (opt veya LaunchAgents) fark etmez
-            let stopR = await bashAsync("/bin/launchctl remove '\(label)' 2>&1")
-            // Eski start'tan kalan LaunchAgents plist'ini temizle (varsa)
-            if FileManager.default.fileExists(atPath: launchAgentPlist) {
-                _ = await bashAsync("/bin/launchctl unload -w '\(launchAgentPlist)' 2>/dev/null")
-                try? FileManager.default.removeItem(atPath: launchAgentPlist)
-            }
-            return stopR
-
-        case "restart":
-            _ = await bashAsync("/bin/launchctl remove '\(label)' 2>/dev/null")
-            // Servisin tamamen kapanması için bekle
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            let restartR = await bashAsync("/bin/launchctl load '\(optPlist)' 2>&1")
-            return restartR.exitCode == 5 ? Result(output: "", error: "", exitCode: 0) : restartR
-
-        default:
-            return await brewBashAsync("brew services \(action) \(brewName)")
-        }
-    }
 
     
     // MARK: - UTF-8 Incremental Decode
@@ -991,14 +852,6 @@ final class Shell {
 
     // MARK: - Utility
 
-    static func getVersion(_ command: String, versionArg: String = "--version") -> String? {
-        guard FileHelper.exists(command) else { return nil }
-        let r = run(command, arguments: [versionArg])
-        guard r.isSuccess else { return nil }
-        let line = r.output.components(separatedBy: "\n").first ?? ""
-        if let range = line.range(of: #"[\d]+\.[\d]+\.?[\d]*"#, options: .regularExpression) { return String(line[range]) }
-        return line.isEmpty ? nil : line
-    }
 
     static func getVersionAsync(_ command: String, versionArg: String = "--version") async -> String? {
         guard FileHelper.exists(command) else { return nil }

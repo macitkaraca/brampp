@@ -765,13 +765,6 @@ final class MCPServer: ObservableObject {
             .filter { $0.isPermitted(in: settings) }
             .map(\.json)
     }
-
-    /// TÜM araçlar (izin süzmesi YOK) — tarayıcıdaki kurulum sayfası uygulamanın tam
-    /// yeteneğini göstermelidir; süzme yalnızca MCP protokolüne uygulanır.
-    static func allToolDefinitions() -> [[String: Any]] {
-        toolSpecs().map(\.json)
-    }
-
     /// Kurulum sayfası ve Ayarlar için: tüm araçların adları.
     static func allToolNames() -> [String] { toolSpecs().map(\.name) }
 

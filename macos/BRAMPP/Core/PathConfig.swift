@@ -57,7 +57,6 @@ struct PathConfig {
     // MARK: - Kullanıcı
     static let home: String         = FileManager.default.homeDirectoryForCurrentUser.path
     static let sites: String        = "\(home)/Sites"
-    static let sitesDir: String     = sites
     static let localhostDir: String = "\(sites)/localhost"
     static let appSupport: String   = "\(home)/Library/Application Support/BRAMPP"
     static let ssl: String          = "\(appSupport)/ssl"
@@ -131,8 +130,6 @@ struct PathConfig {
     // MARK: - Nginx
     static let nginxBase: String               = Brew.nginxBase(brewBase)
     static let nginxConf: String               = Brew.nginxConf(brewBase)
-    static let nginxServersDir: String         = "\(nginxBase)/servers"         // legacy
-    static let nginxLocalhostConf: String      = "\(nginxBase)/servers/localhost.conf"  // legacy
     static let nginxSitesAvailableDir: String  = Brew.nginxSitesAvailableDir(brewBase)
     static let nginxLogs: String               = "\(brewBase)/var/log/nginx"
 
@@ -182,8 +179,6 @@ struct PathConfig {
     }
 
     // MARK: - PostgreSQL
-    static let pgBase: String = "\(brewBase)/var/postgresql"
-
     /// PostgreSQL asıl config'i data dizinindedir — Homebrew `etc/postgresql@X/` OLUŞTURMAZ.
     /// initdb postgresql.conf'u `var/postgresql@X/` içine yazar; düzenlemeler burada yapılmalı.
     static func pgConf(version: String) -> String     { "\(pgDataDir(version: version))/postgresql.conf" }
@@ -193,7 +188,6 @@ struct PathConfig {
     // MARK: - pgAdmin4 (web version — brew install pgadmin4)
     static let pgadmin4Dir: String        = "\(brewBase)/opt/pgadmin4"
     static let pgadmin4Conf: String       = Brew.pgadmin4Conf(brewBase)          // Apache include
-    static let pgadmin4NginxConf: String  = "\(nginxSitesAvailableDir)/pgadmin4.conf"  // Nginx site
     static let pgadmin4Port: Int          = 5050
     static var isPgAdmin4Installed: Bool  { Shell.isBrewInstalled && FileHelper.exists(pgadmin4Dir) }
     /// pgAdmin kullanıcı verisi (kayıtlı sunucu bağlantıları vb.) — kaldırmada temizlenir
@@ -223,12 +217,6 @@ struct PathConfig {
     static func processLog(domain: String) -> String      { "\(processDir(domain: domain))/app.log" }
     static func processScript(domain: String) -> String   { "\(processDir(domain: domain))/start.sh" }
     static func processConfig(domain: String) -> String   { "\(processDir(domain: domain))/.brampp.json" }
-
-    // Eski Python path'leri — geriye dönük uyumluluk
-    static let pids: String       = "\(appSupport)/pids"
-    static let pythonLogs: String = "\(appSupport)/python-logs"
-    static func pythonPidFile(domain: String) -> String  { "\(pids)/\(domain).pid" }
-    static func pythonLogFile(domain: String) -> String  { "\(pythonLogs)/\(domain).log" }
 
     /// Python bin dizini — venv yoksa PythonProcessManager tarafından PATH'e eklenir.
     /// libexec/bin varsa onu, yoksa bin'i döner.
@@ -273,7 +261,6 @@ struct PathConfig {
 
     // MARK: - Kurulum Kontrolleri
 
-    static var isHomebrewInstalled: Bool { Shell.isBrewInstalled }
     static var isMkcertInstalled: Bool   { Shell.isBrewInstalled && FileHelper.exists(mkcert) }
     static var isNginxInstalled: Bool    { Shell.isBrewInstalled && FileHelper.exists("\(brewBase)/opt/nginx") }
 
@@ -286,6 +273,4 @@ struct PathConfig {
         let standard = "\(phpOpt)/python@\(version)/bin/python3"
         return FileHelper.exists(libexec) || FileHelper.exists(standard)
     }
-    static var isDotNetInstalled: Bool                     { Shell.isBrewInstalled && FileHelper.exists(dotnet) }
-    static func isPostgreSQLInstalled(version: String) -> Bool { Shell.isBrewInstalled && FileHelper.exists("\(phpOpt)/postgresql@\(version)") }
 }

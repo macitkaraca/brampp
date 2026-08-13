@@ -17,11 +17,6 @@ struct BRAMPPConfig: Codable {
 
     // MARK: - Read
 
-    /// Site klasöründeki .brampp.json'u okur. Yoksa nil döner.
-    static func read(from directory: String) -> BRAMPPConfig? {
-        read(at: "\(directory)/\(fileName)")
-    }
-
     /// Config okuma hataları — "JSON Yükle" gibi kullanıcı eylemlerinde geri bildirim için.
     enum ConfigError: LocalizedError {
         case fileNotFound(String)

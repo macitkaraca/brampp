@@ -6,8 +6,8 @@ import Foundation
 ///
 /// PM2 gerektirmez. Uvicorn / Gunicorn süreçleri doğrudan başlatılır:
 /// - Virtual environment otomatik tespit edilir (venv/, .venv/, env/)
-/// - PID dosyası ile takip: ~/Library/Application Support/BRAMPP/pids/
-/// - Log dosyası: ~/Library/Application Support/BRAMPP/python-logs/
+/// - PID ve log dosyaları alan adı başına tek dizinde:
+///   ~/Library/Application Support/BRAMPP/processes/{domain}/ (app.pid, app.log)
 enum PythonProcessManager {
 
     // MARK: - venv Tespiti

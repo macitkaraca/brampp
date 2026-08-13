@@ -798,29 +798,6 @@ struct VHostTemplates {
         """
     }
 
-    /// Nginx sites-available/pgadmin4.conf dosyası (nginx.conf'a include edilir).
-    static func pgadmin4NginxConfig() -> String {
-        """
-        # ═══════════════════════════════════════════════════════════════════
-        # pgAdmin4 Reverse Proxy — Nginx
-        # Erişim: http://localhost:8080/pgadmin4/
-        # pgAdmin4 servisi: brew services run pgadmin4 (port 5050)
-        # ═══════════════════════════════════════════════════════════════════
-
-        # Bu blok nginx.conf içindeki localhost HTTP ve HTTPS server bloklarına eklenmelidir.
-        # Aşağıdaki location bloğunu kopyalayın veya 'Nginx Yapılandır' butonu ile otomatik ekleyin.
-
-        location /pgadmin4/ {
-            proxy_pass              http://127.0.0.1:\(PathConfig.pgadmin4Port)/;
-            proxy_http_version      1.1;
-            proxy_set_header        Host $host;
-            proxy_set_header        X-Real-IP $remote_addr;
-            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header        X-Forwarded-Proto $scheme;
-            proxy_set_header        X-Script-Name /pgadmin4;
-        }
-        """
-    }
 
     // MARK: - phpMyAdmin Global Config
 
@@ -1098,9 +1075,7 @@ struct VHostTemplates {
         """
     }
 
-    // MARK: - PM2 Ecosystem Config
-
-    // MARK: - (Eski PM2 bloğu NativeProcessManager.buildStartScript ile değiştirildi)
+    // MARK: - Süreç başlatma: NativeProcessManager.buildStartScript
 
     // MARK: - Path Helpers
 

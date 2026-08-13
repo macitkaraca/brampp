@@ -434,7 +434,7 @@ class DomainManager: BaseManager {
 
         guard await createVHostConfig(for: domain) else { isLoading = false; return false }
 
-        // PM2 ecosystem config + .brampp.json yaz (backend platformlar için)
+        // .brampp.json yaz (backend platformlar için)
         writeConfigFiles(for: domain)
 
         // Bağımlılık servisleri (MariaDB/PostgreSQL/Redis…) — PHP siteleri de dahil:
@@ -1663,11 +1663,6 @@ class DomainManager: BaseManager {
         refreshStatus()
     }
 
-    /// Uygulama loglarını okur — `app.log` (tüm platformlar için ortak).
-    func readPythonLog(for domain: Domain, lines: Int = 150) async -> String {
-        await NativeProcessManager.readLogs(for: domain, lines: lines)
-    }
-
     // MARK: - .NET Proje Yönetimi
 
     /// Site dizininde .csproj yoksa `dotnet new webapi` ile yeni proje oluşturur.
@@ -2027,13 +2022,5 @@ class DomainManager: BaseManager {
             title:   "\(domain.name) Başlatılamadı",
             message: hint
         )
-    }
-
-    // MARK: - App Log (Node.js / .NET)
-
-    /// Uygulama log dosyasından son `lines` satırı okur.
-    /// Kaynak: `{sitePath}/app.log`
-    func readAppLog(for domain: Domain, lines: Int = 150) async -> String {
-        await NativeProcessManager.readLogs(for: domain, lines: lines)
     }
 }

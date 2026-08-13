@@ -22,7 +22,7 @@ struct Domain: Identifiable, Hashable {
     var appCommand: String?
     /// Derleme/kurulum komutu — Node.js: "npm install", Python: "pip install -r requirements.txt"
     var buildCommand: String?
-    /// Ortam değişkenleri — PM2 ecosystem config'e yansıtılır
+    /// Ortam değişkenleri — süreç başlatılırken ortamına geçirilir
     var envVars: [String: String]?
     /// Başlatılmadan önce ÇALIŞIYOR olması gereken servis id'leri
     /// (örn. "mariadb", "postgresql@17", "redis"). nil/boş = bağımlılık yok.
@@ -113,9 +113,6 @@ struct Domain: Identifiable, Hashable {
         case .nginx:  return "\(PathConfig.nginxLogs)/\(name)-access.log"
         }
     }
-
-    /// PM2 ecosystem config dosyası path'i
-    var ecosystemConfigPath: String { "\(sitePath)/ecosystem.config.js" }
 
     /// BRAMPP JSON config dosyası (.brampp.json) path'i
     /// Application Support/processes/{name}/.brampp.json — site dizini kirletilmez

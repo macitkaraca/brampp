@@ -96,7 +96,7 @@ enum NodeVersion: String, Codable, CaseIterable, Identifiable {
 
     var isInstalled: Bool { PathConfig.isNodeInstalled(version: rawValue) }
 
-    /// Brew'daki node bin dizini — PM2 ecosystem PATH'e eklenir
+    /// Brew'daki node bin dizini — başlatma betiğinin PATH'ine eklenir
     var binDir: String { "\(PathConfig.brewBase)/opt/node@\(rawValue)/bin" }
 }
 

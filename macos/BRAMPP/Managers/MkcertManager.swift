@@ -5,7 +5,6 @@ import Combine
 // MARK: - Types
 
 enum MkcertStatus { case brewNotInstalled, notInstalled, caNotInstalled, caNotTrusted, ready }
-enum StatusColor { case red, orange, green }
 
 // MARK: - MkcertManager
 
@@ -29,24 +28,6 @@ class MkcertManager: ObservableObject {
         if !isCAInstalled        { return .caNotInstalled }
         if !isCATrusted          { return .caNotTrusted }
         return .ready
-    }
-    
-    var statusMessage: String {
-        switch status {
-        case .brewNotInstalled: return "Homebrew kurulu değil"
-        case .notInstalled:     return "mkcert kurulu değil"
-        case .caNotInstalled:   return "CA oluşturulmamış"
-        case .caNotTrusted:     return "CA güvenilir değil"
-        case .ready:            return "✅ Her şey hazır!"
-        }
-    }
-    
-    var statusColor: StatusColor {
-        switch status {
-        case .brewNotInstalled, .notInstalled: return .red
-        case .caNotInstalled, .caNotTrusted:   return .orange
-        case .ready:                           return .green
-        }
     }
     
     var needsSetup: Bool { status != .ready }
