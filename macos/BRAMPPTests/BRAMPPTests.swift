@@ -3530,4 +3530,97 @@ final class BRAMPPTests: XCTestCase {
         // Nginx de taşınmış olabilir: çakışma nginx'in GERÇEK portuna göre ölçülür.
         XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 9443), 443)
     }
+
+    // MARK: - Menü ve bildirim bağlantıları
+
+    /// Uygulamanın Swift kaynakları — (yol, metin).
+    ///
+    /// Bu iki testin ölçtüğü şey ÇALIŞTIRILARAK ölçülemiyor: bozuk bir menü öğesi
+    /// derlenir, çizilir ve hiçbir şey yapmaz. Kanıt ancak kaynakta.
+    private func appSourceFiles() throws -> [(path: String, text: String)] {
+        let testDir  = (#filePath as NSString).deletingLastPathComponent
+        let repoRoot = ((testDir as NSString).deletingLastPathComponent
+                        as NSString).deletingLastPathComponent
+        let root = repoRoot + "/macos/BRAMPP"
+        guard let walk = FileManager.default.enumerator(atPath: root) else {
+            throw XCTSkip("Kaynak ağacı okunamadı: \(root)")
+        }
+        var out: [(String, String)] = []
+        for case let rel as String in walk where rel.hasSuffix(".swift") {
+            if let text = FileHelper.readString(root + "/" + rel) { out.append((rel, text)) }
+        }
+        guard !out.isEmpty else { throw XCTSkip("Kaynak ağacı boş: \(root)") }
+        return out
+    }
+
+    /// **Aynı komut grubunu hem `replacing:` hem `after:`/`before:` ile hedeflemek YASAK.**
+    ///
+    /// Gerçek bir hatanın testi. "Güncellemeleri Denetle…" öğesi
+    /// `CommandGroup(after: .appInfo)` içindeydi, ama `.appInfo` bir üstte
+    /// `CommandGroup(replacing: .appInfo)` ile zaten devralınmıştı. Artık var olmayan
+    /// bir gruba "sonra" eklemek SwiftUI'da tanımlı değil: öğe menüde çiziliyor ama
+    /// EYLEMİ BAĞLANMIYOR. Tıklamak hiçbir şey yapmıyordu ve derleyici de, çalışma
+    /// zamanı da tek bir uyarı vermiyordu.
+    func testCommandGroups_DoNotAnchorToAGroupTheyAlsoReplace() throws {
+        let pattern = try NSRegularExpression(
+            pattern: #"CommandGroup\(\s*(replacing|after|before)\s*:\s*\.(\w+)"#)
+
+        for (path, text) in try appSourceFiles() {
+            var replaced = Set<String>(), anchored: [String: String] = [:]
+            let ns = text as NSString
+            for m in pattern.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                let kind  = ns.substring(with: m.range(at: 1))
+                let group = ns.substring(with: m.range(at: 2))
+                if kind == "replacing" { replaced.insert(group) } else { anchored[group] = kind }
+            }
+            for (group, kind) in anchored where replaced.contains(group) {
+                XCTFail("""
+                        \(path): `.\(group)` hem `replacing:` hem `\(kind):` ile hedefleniyor. \
+                        Değiştirilmiş bir gruba tutturulan öğe menüde görünür ama eylemi \
+                        bağlanmaz — tıklamak sessizce hiçbir şey yapmaz. Öğeyi `replacing:` \
+                        bloğunun İÇİNE taşıyın.
+                        """)
+            }
+        }
+    }
+
+    /// **Her bildirimin hem göndereni hem dinleyeni olmalı.**
+    ///
+    /// Yukarıdaki hatanın ALTINDA ikincisi vardı: menü öğesi düzeltildikten sonra bile
+    /// hiçbir şey olmuyordu, çünkü gönderilen bildirimi hiçbir gözlemci duymuyordu.
+    /// İz kaydı konsolda gönderim satırını iki kez, alım satırını sıfır kez gösterdi.
+    /// Tek yönü kalmış bir bildirim derlenir ve sessizce hiçbir iş yapmaz; bu test
+    /// o sessizliği derleme zamanına taşır.
+    func testNotificationNames_HaveBothASenderAndAListener() throws {
+        let files = try appSourceFiles()
+        let declPattern = try NSRegularExpression(
+            pattern: #"static let (\w+)\s*=\s*Notification\.Name\("#)
+
+        var declared: [String: String] = [:]              // ad → bildirildiği dosya
+        for (path, text) in files {
+            let ns = text as NSString
+            for m in declPattern.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+                declared[ns.substring(with: m.range(at: 1))] = path
+            }
+        }
+        XCTAssertFalse(declared.isEmpty, "Hiç bildirim adı bulunamadı — test kendi kendini sınamıyor")
+
+        for (name, declPath) in declared {
+            // Bildirimin KENDİ tanım satırı sayılmasın; yalnızca kullanımlar aranır.
+            var posts = false, listens = false
+            for (_, text) in files {
+                if text.contains("post(name: .\(name)") || text.contains("post(name: Notification.Name.\(name)") {
+                    posts = true
+                }
+                if text.contains("publisher(for: .\(name)") || text.contains("forName: .\(name)") {
+                    listens = true
+                }
+            }
+            XCTAssertTrue(posts,
+                          "\(declPath): `.\(name)` bildiriliyor ama hiçbir yerden GÖNDERİLMİYOR — ölü kod.")
+            XCTAssertTrue(listens,
+                          "\(declPath): `.\(name)` gönderiliyor ama hiçbir yerde DİNLENMİYOR — "
+                        + "gönderen taraf sessizce hiçbir iş yapmaz.")
+        }
+    }
 }
