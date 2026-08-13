@@ -613,6 +613,31 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
+<section id="v201">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">13 Ağustos 2026</span>
+      <h2>2.01</h2>
+      <p class="lede">Denetim birikiminin son on maddesi ve 2.0'da güncellemenin kendi bıraktığı bir iz. Ağırlık yine aynı yerde: uygulama, yapmadığı bir şeyi yaptığını söylüyordu.</p>
+    </div>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Güncelleme, disk kalıbını bağlı bırakıyordu.</b> 2.0'a geçtikten sonra her açılışta konsola <code>volume is read only</code> hatası düşüyordu: uygulama çıkarken kalıbı ayırma işi hiç çalışmıyor, bir sonraki açılış onu silmeye çalışıyordu. Ayırma artık çıkıştan önce yapılıyor; takas betiği de emniyet olarak kalanları süpürüyor.</li>
+      <li><b>Kaldırma, silemediği dosyaları sildim diye bildiriyordu</b> — MariaDB'de bu, veri dizini diskte dururken silindiğini sanmanız demekti. Ayrıca veri dizini, sunucunun durduğu doğrulanmadan siliniyordu.</li>
+      <li><b>Kurulum ekranı, iptal edilmiş bir işlem için yeşil onay gösteriyordu</b>; sonuç, log gövdesindeki herhangi bir onay işaretinden çıkarılıyordu.</li>
+      <li><b>İki kurulum aynı anda başlayabiliyordu</b> ve ikincisi birincisini yanıtlanamayan bir isteme mahkûm ediyordu.</li>
+      <li><b>Çok havuzlu bir <code>www.conf</code>'ta PHP-FPM hiç başlamıyordu</b> — her havuzun <code>listen</code> satırı aynı porta çevriliyordu.</li>
+      <li><b>Sihirbaz paylaşılan Apache yapılandırmasını geri alınamaz biçimde yazıyordu.</b> Artık yedek alınıyor, <code>configtest</code> çalıştırılıyor ve geçmezse yedekten dönülüyor. <code>httpd-ssl.conf</code> de üzerine yazılmadan önce yedekleniyor.</li>
+      <li><b>MariaDB "root parolasız mı" yoklaması yanlış şeyi ölçüyordu</b>: makinede bir yerden (ör. <code>~/.my.cnf</code>) parola bulunduğunda da başarılı sayıyordu.</li>
+      <li><b>Veritabanı ayar panelinde tek bir alanı değiştirmek, dokunulmamış dört ayarı da sıfırlıyordu.</b> BRAMPP'ın dosyası kullanıcınınkinden sonra okunduğu için yazdığı her satır onunkini eziyordu.</li>
+      <li><b>Sertifika güven denetimi her koşulda "geçti" diyordu</b>; sistemdeki tüm sertifikaları sayıyor, aradığı kökü hiç aramıyordu. Sertifika süresi de hiç denetlenmiyordu.</li>
+      <li><b>mkcert kurulumu takılan kullanıcı sihirbazı hiç bitiremiyordu</b> — HTTPS isteğe bağlı, grup da öyle işaretlendi.</li>
+      <li><b>phpMyAdmin ve pgAdmin bağlantıları standart olmayan HTTPS portunda çalışmıyordu.</b></li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v20">
   <div class="wrap">
     <div class="shead">

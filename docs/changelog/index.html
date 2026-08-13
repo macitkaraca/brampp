@@ -613,6 +613,31 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
+<section id="v201">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">13 August 2026</span>
+      <h2>2.01</h2>
+      <p class="lede">The last ten items from the audit backlog, and one trace the 2.0 update left behind. The weight is where it has been all along: the app saying it had done something it had not.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Updating left its disk image mounted.</b> After moving to 2.0 every launch logged <code>volume is read only</code>: the detach never ran as the app quit, and the next launch tried to delete the mount point. The detach now happens before quitting, and the swap script sweeps any leftover as a fallback.</li>
+      <li><b>Uninstall claimed to have deleted files it had not</b> — with MariaDB that means believing your data directory is gone while it sits on disk. It also deleted that directory without confirming the server had stopped.</li>
+      <li><b>The install screen showed a green check for an operation that had been cancelled</b>; the outcome was inferred from any tick in the log body.</li>
+      <li><b>Two installs could start at once</b>, the second leaving the first with a prompt nobody could answer.</li>
+      <li><b>PHP-FPM would not start at all with a multi-pool <code>www.conf</code></b> — every pool's <code>listen</code> was rewritten to the same port.</li>
+      <li><b>The wizard wrote shared Apache configuration with no way back.</b> It now backs the file up, runs <code>configtest</code>, and restores from the backup if that fails. <code>httpd-ssl.conf</code> is backed up before it is overwritten too.</li>
+      <li><b>The MariaDB root probe measured the wrong thing</b>: it succeeded whenever a password was found somewhere on the machine, such as in <code>~/.my.cnf</code>.</li>
+      <li><b>Changing one field in a database settings panel reset the four nobody had touched.</b> BRAMPP's file is read after the user's, so every line it wrote overrode theirs.</li>
+      <li><b>The certificate trust check passed unconditionally</b>, counting every certificate on the system without looking for the one it was checking. Expiry was never checked either.</li>
+      <li><b>Anyone whose mkcert install would not complete could not finish the wizard</b> — HTTPS is optional and the group is now marked as such.</li>
+      <li><b>phpMyAdmin and pgAdmin links did not work on a non-standard HTTPS port.</b></li>
+    </ul>
+  </div>
+</section>
+
 <section class="band" id="v20">
   <div class="wrap">
     <div class="shead">
