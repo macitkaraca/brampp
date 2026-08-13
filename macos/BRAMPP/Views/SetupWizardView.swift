@@ -54,10 +54,6 @@ struct SetupCheckGroup: Identifiable {
     var isComplete: Bool {
         items.allSatisfy(\.isComplete)
     }
-
-    var hasWarnings: Bool {
-        items.contains { !$0.isComplete }
-    }
 }
 
 struct SetupCheckItem: Identifiable {
@@ -841,16 +837,6 @@ struct SetupWizardView: View {
         ]
     }
 
-    // MARK: - Nginx Check Helpers (legacy — artık nginx.conf'ta check yapılıyor)
-
-    private func checkNginxLocalhostHTTP() -> Bool {
-        NginxConfigManager.isLocalhostHTTPConfigured
-    }
-
-    private func checkNginxLocalhostHTTPS() -> Bool {
-        NginxConfigManager.isLocalhostHTTPSConfigured
-    }
-
     // MARK: - Nginx Configure Actions
 
     private func configureNginxEnvironment() {
@@ -1037,10 +1023,6 @@ struct SetupWizardView: View {
         return hasUser && hasGroup && hasOwner && hasListenGroup
     }
 
-    private var currentMissingPackage: SetupStatus? {
-        setupItems.first { $0.status != .installed }
-    }
-
     /// Herhangi bir paket kurulumu devam ediyor mu?
     private var isPackageInstalling: Bool {
         setupItems.contains { if case .installing = $0.status { return true }; return false }
@@ -1205,66 +1187,6 @@ struct SetupWizardView: View {
         } else {
             fullyExpandedGroups.insert(id)
         }
-    }
-    // Reusable console box used in steps
-    private func consoleBox(lineCount: Int, height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Image(systemName: "terminal")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(loc.t("wiz.console"))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
-                Spacer()
-                if isChecking {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .scaleEffect(0.7)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 2) {
-                        if consoleOutput.isEmpty {
-                            Text(loc.t("wiz.waitConsole"))
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundColor(.secondary)
-                                .padding(12)
-                        } else {
-                            ForEach(Array(consoleOutput.enumerated()), id: \.offset) { index, line in
-                                Text(line)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundColor(.primary)
-                                    .textSelection(.enabled)
-                                    .id(index)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                }
-                .frame(height: height)
-                .background(Color(NSColor.textBackgroundColor))
-                .onChange(of: consoleOutput.count) {
-                    if let lastIndex = consoleOutput.indices.last {
-                        withAnimation {
-                            proxy.scrollTo(lastIndex, anchor: .bottom)
-                        }
-                    }
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 1)
-        )
     }
     
     // MARK: - Step 5: Complete
@@ -1775,31 +1697,12 @@ struct SetupWizardView: View {
             checkAndAutoAdvance()
         }
     }
-    
-    private func createVirtualHostsFolder() {
-        consoleOutput.append("▶️ VirtualHosts klasörü oluşturuluyor...")
-        PathConfig.createRequiredDirectories()
-        consoleOutput.append("✅ VirtualHosts klasörü oluşturuldu: \(PathConfig.vhostsDir)")
-        
-        // View'ı yenile için state güncellemesi tetikle
-        refreshConfigView()
-    }
-    
-    private func checkHttpdIncludesVHosts() -> Bool {
+        private func checkHttpdIncludesVHosts() -> Bool {
         guard let content = try? String(contentsOfFile: PathConfig.httpdConf, encoding: .utf8) else { return false }
         let lines = content.components(separatedBy: .newlines)
         return lines.contains { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             return !trimmed.hasPrefix("#") && trimmed.contains("VirtualHosts/*.conf")
-        }
-    }
-    
-    private func checkHttpdIncludesPhpMyAdmin() -> Bool {
-        guard let content = try? String(contentsOfFile: PathConfig.httpdConf, encoding: .utf8) else { return false }
-        let lines = content.components(separatedBy: .newlines)
-        return lines.contains { line in
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            return !trimmed.hasPrefix("#") && trimmed.contains("phpmyadmin.conf")
         }
     }
     

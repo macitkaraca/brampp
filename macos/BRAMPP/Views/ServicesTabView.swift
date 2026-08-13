@@ -920,68 +920,6 @@ struct InstallationProgressSheet: View {
     }
 }
 
-// MARK: - MariaDB Config Sheet
-
-struct MariaDBConfigView: View {
-    @EnvironmentObject var loc: Localizer
-    @Binding var isPresented: Bool
-    @EnvironmentObject var serviceManager: ServiceManager
-    @State private var isConfiguring = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text(loc.t("svc.mariadbConfig"))
-                    .font(.headline)
-                Spacer()
-                Button(loc.t("common.close")) { isPresented = false }
-            }
-
-            GroupBox(loc.t("svc.rootTcpAccess")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(loc.t("svc.mariadbConfigNote"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Divider()
-
-                    HStack(spacing: 4) {
-                        Text("Host:").font(.caption).foregroundColor(.secondary)
-                        Text("127.0.0.1").font(.caption.monospaced())
-                        Text("·").foregroundColor(.secondary)
-                        Text(loc.t("svc.userLabel")).font(.caption).foregroundColor(.secondary)
-                        Text("root").font(.caption.monospaced())
-                        Text("·").foregroundColor(.secondary)
-                        Text(loc.t("svc.passwordLabel")).font(.caption).foregroundColor(.secondary)
-                        Text(loc.t("svc.empty")).font(.caption.monospaced())
-                    }
-
-                    Button(action: {
-                        isConfiguring = true
-                        Task {
-                            await serviceManager.configureMariaDBRoot()
-                            isConfiguring = false
-                        }
-                    }) {
-                        if isConfiguring {
-                            Label(loc.t("svc.configuring"), systemImage: "arrow.triangle.2.circlepath")
-                        } else {
-                            Label(loc.t("svc.configureRoot"), systemImage: "wrench.and.screwdriver")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .disabled(isConfiguring)
-                }
-                .padding(8)
-            }
-        }
-        .padding(20)
-        .frame(width: 420)
-    }
-}
-
 #Preview {
     ServicesTabView()
         .environmentObject(ServiceManager(consoleStore: ConsoleStore()))

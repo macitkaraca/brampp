@@ -89,7 +89,6 @@ enum L10n {
         "dom.versionNotInstalled": ["tr": "%@  — kurulu değil", "en": "%@  — not installed"],
         "set.persistLog":     ["tr": "Konsolu diske kaydet", "en": "Save the console to disk"],
         "set.persistLogDesc": ["tr": "Satırlar günlük dosyalara yazılır, 7 gün sonra silinir — geçmişe dönük hata ayıklama ve MCP log okuması için", "en": "Lines are written to daily files and deleted after 7 days — for looking back and for MCP log reads"],
-        "dom.share":          ["tr": "Paylaş", "en": "Share"],
         "dom.share.badgeLive":["tr": "YAYINDA", "en": "LIVE"],
         "dom.share.copied":   ["tr": "Kopyalandı", "en": "Copied"],
         "dom.share.live":     ["tr": "Yayında — karekodu görmek veya durdurmak için tıklayın", "en": "Live — click to see the QR code or stop it"],
@@ -207,7 +206,6 @@ enum L10n {
         "svc.mariadbNotRunning": ["tr": "MariaDB çalışmıyor", "en": "MariaDB is not running"],
         "svc.pgadminOpenHelp2": ["tr": "pgAdmin'i tarayıcıda aç (localhost/pgadmin4)", "en": "Open pgAdmin in browser (localhost/pgadmin4)"],
         "svc.pgNotRunning":    ["tr": "PostgreSQL çalışmıyor", "en": "PostgreSQL is not running"],
-        "svc.rootTcpAccess":   ["tr": "root@localhost TCP Erişimi", "en": "root@localhost TCP Access"],
 
         // DatabaseTabView — Adminer bağlantı ipuçları
         "db.adminerHintMysql": ["tr": "Giriş — Sistem: MySQL · Sunucu: 127.0.0.1:3306 · Kullanıcı: root (parola boş)", "en": "Login — System: MySQL · Server: 127.0.0.1:3306 · User: root (empty password)"],
@@ -267,9 +265,7 @@ enum L10n {
 
         // ── Eksik kalan yüzeyler (toplu çeviri turu) ──
         // ContentView — yedek/konsol
-        "cv.restoreConfirm":     ["tr": "'%@' yedeği geri yüklenecek. Mevcut ayarlar değişecek.", "en": "The '%@' backup will be restored. Current settings will change."],
         "cv.restoreConfirmFull": ["tr": "'%@' yedeği geri yüklenecek. Mevcut ayarlar değişecek. Uygulamayı yeniden başlatmanız önerilir.", "en": "The '%@' backup will be restored. Current settings will change. Restarting the app is recommended."],
-        "cv.backupMenuHelp":     ["tr": "Dışa aktar / İçe aktar / Yedekle", "en": "Export / Import / Back up"],
         "cv.backupNow":          ["tr": "Şimdi Yedekle", "en": "Back Up Now"],
         "cv.export":             ["tr": "Dışa Aktar", "en": "Export"],
         "cv.import":             ["tr": "İçe Aktar", "en": "Import"],
@@ -280,7 +276,6 @@ enum L10n {
         // SettingsView
         "set.autoStartNote":  ["tr": "Başlatma: Apache/Nginx başlatıldığında domainlerin kullandığı PHP-FPM sürümleri de başlatılır. Durdurma: Apache veya Nginx tamamen durduğunda etkinleşir; diğer web sunucusu hâlâ çalışıyorsa durdurma yapılmaz.", "en": "Start: when Apache/Nginx starts, the PHP-FPM versions used by domains are started too. Stop: takes effect when Apache or Nginx fully stops; if the other web server is still running, no stop is performed."],
         "set.autoConfirmNote": ["tr": "brew kurulum sırasında \"Do you want to proceed? [y/N]\" sorduğunda, kurulum penceresinden elle y/n yazabilirsiniz. Otomatik onay açıksa, süre dolunca otomatik 'y' gönderilir. Kapalıysa yanıtı siz vermelisiniz.", "en": "When brew asks \"Do you want to proceed? [y/N]\" during installation, you can type y/n manually in the install window. If auto-confirm is on, a 'y' is sent automatically when the timer expires. If off, you must answer yourself."],
-        "set.updates":        ["tr": "Güncellemeler", "en": "Updates"],
         "set.sslAllReady":    ["tr": "Her şey hazır", "en": "Everything is ready"],
         "set.sslManageHint":  ["tr": "SSL sertifikaları Alan Adları sekmesinden yönetilebilir.", "en": "SSL certificates can be managed from the Domains tab."],
 
@@ -298,12 +293,6 @@ enum L10n {
         "svc.autoConfirmIn":  ["tr": "· %d sn içinde otomatik 'y'", "en": "· auto 'y' in %ds"],
         "svc.send":           ["tr": "Gönder", "en": "Send"],
         "svc.no":             ["tr": "Hayır (n)", "en": "No (n)"],
-        "svc.mariadbConfig":  ["tr": "MariaDB Yapılandırması", "en": "MariaDB Configuration"],
-        "svc.mariadbConfigNote": ["tr": "Homebrew MariaDB varsayılan olarak unix_socket auth kullanır. phpMyAdmin ve VS Code gibi araçların TCP ile bağlanabilmesi için root kullanıcısına mysql_native_password yetkisi verilmesi gereklidir.", "en": "Homebrew MariaDB uses unix_socket auth by default. To let tools like phpMyAdmin and VS Code connect over TCP, the root user must be granted mysql_native_password auth."],
-        "svc.userLabel":      ["tr": "Kullanıcı:", "en": "User:"],
-        "svc.empty":          ["tr": "(boş)", "en": "(empty)"],
-        "svc.configuring":    ["tr": "Yapılandırılıyor...", "en": "Configuring..."],
-        "svc.configureRoot":  ["tr": "root@localhost Yapılandır", "en": "Configure root@localhost"],
 
         // DatabaseTabView
         "db.adminerDesc":     ["tr": "phpMyAdmin tarzı hafif arayüz — pgAdmin'e ~500 KB'lık alternatif", "en": "phpMyAdmin-style lightweight UI — a ~500 KB alternative to pgAdmin"],
@@ -439,7 +428,6 @@ enum L10n {
         "set.mcp.codexOn":         ["tr": "~/.codex/config.toml içinde kayıtlı", "en": "Registered in ~/.codex/config.toml"],
         "set.mcp.codexOff":        ["tr": "~/.codex/config.toml içinde kayıtlı değil", "en": "Not registered in ~/.codex/config.toml"],
         "set.mcp.codexMissing":    ["tr": "ChatGPT Codex yapılandırma klasörü (~/.codex) bulunamadı", "en": "The ChatGPT Codex configuration folder (~/.codex) was not found"],
-        "set.mcp.codexNote":       ["tr": "Codex, Streamable HTTP'yi doğrudan destekler — köprü gerekmez, yalnızca uç nokta adresi yazılır.", "en": "Codex supports Streamable HTTP directly — no bridge needed, only the endpoint URL is written."],
         "set.mcp.portMismatch":    ["tr": "Yazılı port geçerli porttan farklı: %@ ≠ %@", "en": "The written port differs from the current one: %@ ≠ %@"],
         "set.mcp.portMismatchFix": ["tr": "Şu istemcilerin yapılandırması eski porta bakıyor: %@ — yeni adres: %@", "en": "These clients still point at the old port: %@ — new address: %@"],
         "set.mcp.portSynced":      ["tr": "Yapılandırma yeni portla güncellendi: %@ → %@", "en": "Configuration updated with the new port: %@ → %@"],
@@ -489,13 +477,9 @@ enum L10n {
         "set.dep.startPHP":        ["tr": "Web sunucusu başladığında PHP-FPM'i başlat", "en": "Start PHP-FPM when web server starts"],
         "set.dep.stopPHP":         ["tr": "Web sunucusu durduğunda PHP-FPM'i durdur", "en": "Stop PHP-FPM when web server stops"],
         "set.dep.stopDomains":     ["tr": "Web sunucusu durduğunda domain servislerini durdur", "en": "Stop domain services when web server stops"],
-        "set.dep.note":            ["tr": "Başlatma: Apache/Nginx başlatıldığında domainlerin kullandığı PHP-FPM sürümleri de başlatılır. Durdurma: Apache veya Nginx tamamen durduğunda etkinleşir; diğer web sunucusu hâlâ çalışıyorsa durdurma yapılmaz.",
-                                    "en": "Start: when Apache/Nginx starts, the PHP-FPM versions used by domains also start. Stop: triggers only when Apache or Nginx fully stops; if the other web server is still running, nothing is stopped."],
         "set.confirm.header":      ["tr": "Kurulum Onayı", "en": "Install Confirmation"],
         "set.confirm.auto":        ["tr": "Kurulum onayına otomatik 'y' gönder", "en": "Auto-send 'y' to install prompts"],
         "set.confirm.wait":        ["tr": "Bekleme süresi:", "en": "Wait time:"],
-        "set.confirm.note":        ["tr": "brew kurulum sırasında \"Do you want to proceed? [y/N]\" sorduğunda, kurulum penceresinden elle y/n yazabilirsiniz. Otomatik onay açıksa, süre dolunca otomatik 'y' gönderilir. Kapalıysa yanıtı siz vermelisiniz.",
-                                    "en": "When brew asks \"Do you want to proceed? [y/N]\" during install, you can type y/n manually in the install window. If auto-confirm is on, 'y' is sent when the timer elapses. If off, you must answer."],
 
         // ── Ayarlar: Konsol ──
         "set.view.header":         ["tr": "Görünüm", "en": "View"],
@@ -533,7 +517,6 @@ enum L10n {
         "set.update.available": ["tr": "Yeni sürüm var: %@",     "en": "Update available: %@"],
         "set.update.failed":    ["tr": "Denetlenemedi — bağlantıyı kontrol edin",
                                  "en": "Couldn't check — verify your connection"],
-        "set.update.open":      ["tr": "Sürüm sayfasını aç",     "en": "Open release page"],
         // ── Güncelleme bildirimi (Views/UpdatePromptView.swift) ──
         "upd.title":            ["tr": "Yeni sürüm hazır", "en": "A new version is ready"],
         // %@1 = kurulu sürüm, %@2 = yeni sürüm
@@ -702,15 +685,9 @@ enum L10n {
 
         "set.about.domains":       ["tr": "Kayıtlı alan adları:", "en": "Registered domains:"],
         "set.about.domainsCount":  ["tr": "%d adet", "en": "%d total"],
-        "set.updates.header":      ["tr": "Güncellemeler", "en": "Updates"],
-        "set.updates.check":       ["tr": "Güncellemeleri denetle", "en": "Check for updates"],
-        "set.updates.desc":        ["tr": "Yönetilen Homebrew paketleri (PHP, servisler) için yeni sürüm var mı kontrol eder.",
-                                    "en": "Checks whether managed Homebrew packages (PHP, services) have newer versions."],
         "set.updates.checking":    ["tr": "Denetleniyor…", "en": "Checking…"],
         "set.updates.check.btn":   ["tr": "Denetle", "en": "Check"],
         "set.updates.upToDate":    ["tr": "Tüm paketler güncel.", "en": "All packages up to date."],
-        "set.updates.available":   ["tr": "%d paket güncellenebilir:", "en": "%d package(s) can be updated:"],
-        "set.updates.howto":       ["tr": "Güncellemek için Terminal'de:  brew upgrade", "en": "To update, in Terminal:  brew upgrade"],
 
         // ── Menü çubuğu ──
         "menu.startAll":  ["tr": "Tümünü Başlat", "en": "Start All"],
@@ -737,7 +714,6 @@ enum L10n {
         "dom.depsNone":      ["tr": "Kurulu veritabanı/önbellek servisi yok", "en": "No installed database/cache services"],
         "dom.fieldName":     ["tr": "Alan Adı", "en": "Domain"],
         "dom.webServerLabel": ["tr": "Web Sunucusu", "en": "Web Server"],
-        "menu.openApp":   ["tr": "Uygulamayı Aç", "en": "Open App"],
         "menu.quit":      ["tr": "Çıkış", "en": "Quit"],
         "menu.running":   ["tr": "çalışıyor", "en": "running"],
         "menu.checking":  ["tr": "Kontrol ediliyor...", "en": "Checking..."],
@@ -756,21 +732,16 @@ enum L10n {
 
         // ── Loglar sekmesi ──
         "logs.title":      ["tr": "Loglar", "en": "Logs"],
-        "logs.auto":       ["tr": "Otomatik", "en": "Auto"],
         "logs.search":     ["tr": "Logda ara...", "en": "Search logs..."],
         "logs.noResult":   ["tr": "'%@' için sonuç bulunamadı", "en": "No results for '%@'"],
         "logs.empty":      ["tr": "Log dosyası boş", "en": "Log file is empty"],
         "logs.needBrew":   ["tr": "Log dosyalarını görüntülemek için Homebrew gerekiyor.", "en": "Homebrew is required to view log files."],
-        "logs.notFound":   ["tr": "Log bulunamadı: %@", "en": "Log not found: %@"],
 
         // ── PHP Eklentileri sekmesi ──
         "ext.title":       ["tr": "PHP Eklentileri", "en": "PHP Extensions"],
         "ext.iniSettings": ["tr": "php.ini Ayarları", "en": "php.ini Settings"],
-        "ext.search":      ["tr": "Eklenti ara...", "en": "Search extensions..."],
         "ext.install":     ["tr": "Kur", "en": "Install"],
-        "ext.installed":   ["tr": "built-in", "en": "built-in"],
         "ext.save":        ["tr": "Kaydet", "en": "Save"],
-        "ext.needPhp":     ["tr": "PHP eklentilerini yönetmek için Homebrew ve PHP gerekiyor.", "en": "Homebrew and PHP are required to manage PHP extensions."],
         "ext.noPhp":       ["tr": "Kurulu PHP sürümü bulunamadı", "en": "No installed PHP version found"],
         "ext.noPhpHint":   ["tr": "Servisler sekmesinden bir PHP sürümü kurabilirsiniz.", "en": "You can install a PHP version from the Services tab."],
         "ext.noPhpShort":  ["tr": "Kurulu PHP yok", "en": "No PHP installed"],
@@ -778,10 +749,8 @@ enum L10n {
 
         // ── Servisler sekmesi ──
         "svc.title":       ["tr": "Servisler", "en": "Services"],
-        "svc.searchPh":    ["tr": "Servis ara...", "en": "Search services..."],
         "svc.install":     ["tr": "Kur", "en": "Install"],
         "svc.uninstall":   ["tr": "Kaldır", "en": "Uninstall"],
-        "svc.installing":  ["tr": "Kuruluyor...", "en": "Installing..."],
         "svc.running":     ["tr": "Çalışıyor", "en": "Running"],
         "svc.stopped":     ["tr": "Durduruldu", "en": "Stopped"],
         "svc.installed":   ["tr": "Kurulu", "en": "Installed"],
@@ -793,13 +762,6 @@ enum L10n {
         "svc.installedState": ["tr": "Kurulu", "en": "Installed"],
         "svc.starting":    ["tr": "Başlatılıyor", "en": "Starting"],
         "svc.stopping":    ["tr": "Durduruluyor", "en": "Stopping"],
-        "svc.needBrew":    ["tr": "Servisleri yönetmek için Homebrew gerekiyor.", "en": "Homebrew is required to manage services."],
-        "svc.category.web":      ["tr": "Web Sunucuları", "en": "Web Servers"],
-        "svc.category.php":      ["tr": "PHP Sürümleri", "en": "PHP Versions"],
-        "svc.category.database": ["tr": "Veritabanları", "en": "Databases"],
-        "svc.category.cache":    ["tr": "Önbellek", "en": "Cache"],
-        "svc.category.runtime":  ["tr": "Çalışma Zamanları", "en": "Runtimes"],
-        "svc.category.tools":    ["tr": "Araçlar", "en": "Tools"],
         "svc.sort":        ["tr": "Sırala", "en": "Sort"],
         "svc.sort.category": ["tr": "Kategori", "en": "Category"],
         "svc.sort.name":   ["tr": "İsim", "en": "Name"],
@@ -877,7 +839,6 @@ enum L10n {
         "backup.exportImport": ["tr": "Dışa / İçe Aktar", "en": "Export / Import"],
         "backup.exportImport.desc": ["tr": "Domain listesini JSON dosyası olarak paylaşın.", "en": "Share the domain list as a JSON file."],
         "backup.confirmTitle": ["tr": "Geri Yükleme Onayı", "en": "Confirm Restore"],
-        "backup.restoreTitle": ["tr": "Geri Yükleme", "en": "Restore"],
 
         // ── Yedek silme onayı ────────────────────────────────────────────────
         "backup.deleteConfirmTitle": ["tr": "Yedeği Sil", "en": "Delete Backup"],
@@ -933,7 +894,6 @@ enum L10n {
         "dom.maxSize":     ["tr": "Maks. Boyut", "en": "Max Size"],
         "dom.newDomain":   ["tr": "Yeni Alan Adı", "en": "New Domain"],
         "svc.yes":         ["tr": "Evet (y)", "en": "Yes (y)"],
-        "svc.passwordLabel": ["tr": "Parola:", "en": "Password:"],
         "common.remove":   ["tr": "Kaldır", "en": "Remove"],
         "common.start":    ["tr": "Başlat", "en": "Start"],
         "common.create":   ["tr": "Oluştur", "en": "Create"],
@@ -990,7 +950,6 @@ enum L10n {
         "dom.notRunning":  ["tr": "Çalışmıyor", "en": "Not running"],
         "dom.pidTip":      ["tr": "Çalışan süreç PID: %@", "en": "Running process PID: %@"],
         "dom.configExists": ["tr": "BRAMPP config mevcut", "en": "BRAMPP config present"],
-        "dom.start":       ["tr": "Başlat", "en": "Start"],
         "dom.openApache":  ["tr": "Apache üzerinden aç (:80 / :443)", "en": "Open via Apache (:80 / :443)"],
         "dom.openNginx":   ["tr": "Nginx üzerinden aç (:8080 / :8443)", "en": "Open via Nginx (:8080 / :8443)"],
         "dom.finder":      ["tr": "Finder'da Aç", "en": "Reveal in Finder"],
@@ -1005,7 +964,6 @@ enum L10n {
         "dom.rename.title": ["tr": "Domaini Yeniden Adlandır", "en": "Rename Domain"],
         "dom.rename.ssl":  ["tr": "SSL sertifikası yeni ad için yeniden üretilecek (mkcert).", "en": "The SSL certificate will be regenerated for the new name (mkcert)."],
         "dom.rename.applying": ["tr": "Uygulanıyor…", "en": "Applying…"],
-        "dom.loading":     ["tr": "Yükleniyor...", "en": "Loading..."],
         "dom.env.empty":   ["tr": "Henüz değişken eklenmemiş", "en": "No variables added yet"],
         "dom.env.add":     ["tr": "Değişken Ekle", "en": "Add Variable"],
         // Geçersiz anahtar start.sh'a hiç yazılmaz — kaydetmeden önce uyarılır
@@ -1032,7 +990,6 @@ enum L10n {
         "dom.node.note":   ["tr": "Kaydedilince start.sh yeni sürümün PATH'i ile yeniden üretilir; çalışan uygulama yeniden başlatılır.", "en": "On save, start.sh is regenerated with the new version's PATH; a running app is restarted."],
         "dom.dotnet.note": ["tr": "Kaydedilince .csproj hedef framework'ü güncellenir ve proje yeniden derlenir.", "en": "On save, the .csproj target framework is updated and the project is rebuilt."],
         "dom.python.settings": ["tr": "Python Ayarları", "en": "Python Settings"],
-        "dom.runCmd":      ["tr": "Çalıştırma Komutu", "en": "Run Command"],
         "dom.proxy":       ["tr": "Proxy Ayarları", "en": "Proxy Settings"],
         "dom.filePaths":   ["tr": "Dosya Yolları", "en": "File Paths"],
         "dom.docRootPh":   ["tr": "Özel yol — boş bırakılırsa varsayılan", "en": "Custom path — leave blank for default"],
@@ -1041,7 +998,6 @@ enum L10n {
         "dom.siteFolder":  ["tr": "Site Klasörü", "en": "Site Folder"],
         "dom.logFile":     ["tr": "Log Dosyası", "en": "Log File"],
         "dom.hyConfig":    ["tr": "BRAMPP Config", "en": "BRAMPP Config"],
-        "dom.selectJSON":  ["tr": "JSON Config Dosyası Seç", "en": "Select JSON Config File"],
         "dom.selectDocRoot": ["tr": "Document Root Klasörü Seç", "en": "Select Document Root Folder"],
         "dom.selectHYConfig": ["tr": "BRAMPP Config Dosyası Seç", "en": "Select BRAMPP Config File"],
         "dom.websocket":   ["tr": "WebSocket Desteği", "en": "WebSocket Support"],
@@ -1058,8 +1014,6 @@ enum L10n {
         "dom.docRootHint": ["tr": "Seçilen klasör kullanılır — mevcut dosyalar korunur, klasör boşsa örnek proje dosyası eklenir.", "en": "The selected folder is used — existing files are preserved; if empty, a sample project file is added."],
         "dom.appPortHint": ["tr": "Nginx bu porta yönlendirme yapar", "en": "Nginx proxies to this port"],
         "dom.python.venvHint": ["tr": "Öneri: Projeyi oluşturduktan sonra proje dizininde 'python -m venv venv' çalıştırın.", "en": "Tip: After creating the project, run 'python -m venv venv' in the project directory."],
-        "dom.nginxRec":    ["tr": "HTTP :8080  ·  HTTPS :8443  —  Node.js ve .NET için önerilir", "en": "HTTP :8080  ·  HTTPS :8443  —  recommended for Node.js and .NET"],
-        "dom.createSSL":   ["tr": "SSL Sertifikası Oluştur", "en": "Create SSL Certificate"],
         "dom.redirectOn2": ["tr": "HTTP trafiği otomatik olarak HTTPS'e yönlendirilir", "en": "HTTP traffic is automatically redirected to HTTPS"],
         "dom.sslWarn":     ["tr": "Tarayıcınızda SSL uyarısı göreceksiniz. CA'yı 'Servisler' sekmesinden kurabilirsiniz.", "en": "You'll see an SSL warning in your browser. Install the CA from the 'Services' tab."],
         "dom.creating":    ["tr": "Oluşturuluyor...", "en": "Creating..."],
@@ -1070,7 +1024,6 @@ enum L10n {
         "dom.rename.desc": ["tr": "'%@' domaininin adını değiştirir. Vhost, SSL sertifikası, hosts girişi ve (varsayılan konumdaysa) site klasörü yeni ada taşınır. Çalışan uygulama yeni adla yeniden başlatılır.", "en": "Renames the domain '%@'. The vhost, SSL certificate, hosts entry and (if in the default location) the site folder are moved to the new name. A running app is restarted with the new name."],
         "dom.venvNotFound": ["tr": "venv/, .venv/ veya env/ bulunamadı — brew python kullanılacak", "en": "venv/, .venv/ or env/ not found — brew python will be used"],
         "dom.venvAutoDetect": ["tr": "venv/, .venv/ veya env/ dizini proje oluşturulunca otomatik tespit edilir", "en": "venv/, .venv/ or env/ is auto-detected once the project is created"],
-        "dom.docRootDefaultEdit": ["tr": "Varsayılan: %@  ·  Kaydedilince VHost config yeniden oluşturulur.", "en": "Default: %@  ·  VHost config is regenerated on save."],
         "dom.grpcNginx":   ["tr": "gRPC Nginx ile kullanılabilir", "en": "gRPC is available with Nginx"],
         "dom.portTemplate": ["tr": "{PORT} otomatik olarak port numarasıyla değiştirilir — portu sonradan değiştirseniz bile komut güncel kalır.", "en": "{PORT} is automatically replaced with the port number — the command stays correct even if you change the port later."],
         "dom.createSSLTitle": ["tr": "SSL Sertifikası Oluştur", "en": "Create SSL Certificate"],
@@ -1079,8 +1032,6 @@ enum L10n {
         "dom.docRootDefault": ["tr": "Varsayılan: %@  ·  Kaydedilince VHost config yeniden oluşturulur.", "en": "Default: %@  ·  VHost config is regenerated on save."],
         "dom.loadedOk":    ["tr": "%@ başarıyla yüklendi. Kaydetmek için 'Kaydet' butonuna basın.", "en": "%@ loaded successfully. Press 'Save' to apply."],
         "dom.selectJSONConfig": ["tr": "JSON Config Dosyası Seç", "en": "Select JSON Config File"],
-        "dom.loadFailed":  ["tr": "Config yüklenemedi: %@", "en": "Failed to load config: %@"],
-        "dom.jsonLoadFailed": ["tr": "JSON yüklenemedi: %@", "en": "Failed to load JSON: %@"],
         "dom.buildRunHint": ["tr": "Varsayılan: %@  ·  Domain oluşturulduktan sonra ayarlardan çalıştırın.", "en": "Default: %@  ·  Run from settings after creating the domain."],
 
         // ── Kurulum Sihirbazı ──
@@ -1093,7 +1044,6 @@ enum L10n {
         "wiz.welcomeDesc": ["tr": "Bu sihirbaz local development ortamınızı kurmanıza yardımcı olacak.", "en": "This wizard will help you set up your local development environment."],
         "wiz.pkgTitle":    ["tr": "Paket Kontrolü ve Kurulum", "en": "Package Check & Install"],
         "wiz.pkgDesc":     ["tr": "Her paketin durumunu kontrol edip, eksik olanları kurabilirsiniz.", "en": "Check the status of each package and install any that are missing."],
-        "wiz.notInstalled": ["tr": "Kurulu değil", "en": "Not installed"],
         "wiz.configTitle": ["tr": "Yapılandırma", "en": "Configuration"],
         "wiz.configDesc":  ["tr": "Aşağıdaki başlıkları açarak hangi adımların tamamlandığını ve hangi yapılandırmaların eksik olduğunu kontrol edin.", "en": "Expand the sections below to check which steps are complete and which configurations are missing."],
         "wiz.optional":    ["tr": "İsteğe bağlı", "en": "Optional"],
