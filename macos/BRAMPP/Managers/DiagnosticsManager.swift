@@ -136,6 +136,26 @@ final class DiagnosticsManager: BaseManager {
                                                  exitOK: r.isSuccess))
         }
 
+        // ── Apache/Nginx port çakışması ─────────────────────────────────────
+        // BRAMPP'ın şeması: Apache 80/443, Nginx 8080/8443. İkisinin aynı anda
+        // çalışabilmesi bu ayrıma dayanıyor. Homebrew'un stok httpd-ssl.conf'u
+        // `Listen 8443` ile geldiğinden Apache nginx'in portuna oturabiliyor ve
+        // ikinci başlayan servis "Address already in use" ile düşüyor — kullanıcıya
+        // görünen tek şey "nginx başlamıyor" oluyor, sebebi Apache'de olduğu hâlde.
+        let aHTTPS = WebServerPorts.apacheHTTPS()
+        let nHTTPS = WebServerPorts.nginxHTTPS()
+        let aHTTP  = WebServerPorts.apacheHTTP()
+        let nHTTP  = WebServerPorts.nginxHTTP()
+        for (label, a, n) in [("HTTPS", aHTTPS, nHTTPS), ("HTTP", aHTTP, nHTTP)] where a == n {
+            out.append(.init(id: "portclash-\(label)", title: "Apache ve Nginx aynı portta",
+                             level: .fail,
+                             detail: "ikisi de \(label) için \(a) numaralı portu kullanıyor",
+                             remedy: "Aynı anda yalnızca biri çalışabilir; ikinci başlayan "
+                                   + "\"Address already in use\" ile düşer. BRAMPP'ın şeması "
+                                   + "Apache 80/443, Nginx 8080/8443'tür — Servisler → Apache "
+                                   + "Portları'ndan düzeltin."))
+        }
+
         // ── mkcert kök sertifikası ──────────────────────────────────────────
         let caDir = await Shell.bashAsync("\(PathConfig.mkcert) -CAROOT 2>/dev/null")
             .output.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -633,6 +633,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <li><b>Veritabanı ayar panelinde tek bir alanı değiştirmek, dokunulmamış dört ayarı da sıfırlıyordu.</b> BRAMPP'ın dosyası kullanıcınınkinden sonra okunduğu için yazdığı her satır onunkini eziyordu.</li>
       <li><b>Sertifika güven denetimi her koşulda "geçti" diyordu</b>; sistemdeki tüm sertifikaları sayıyor, aradığı kökü hiç aramıyordu. Sertifika süresi de hiç denetlenmiyordu.</li>
       <li><b>mkcert kurulumu takılan kullanıcı sihirbazı hiç bitiremiyordu</b> — HTTPS isteğe bağlı, grup da öyle işaretlendi.</li>
+      <li><b>Apache, Nginx'in portuna oturabiliyordu — ikisi aynı anda çalışamıyordu.</b> BRAMPP'ın şeması Apache 80/443, Nginx 8080/8443; ikisinin birlikte çalışabilmesi bu ayrıma dayanıyor. Ama Homebrew'un stok <code>httpd-ssl.conf</code>'u <code>Listen 8443</code> ile geliyor ve sihirbaz onu "kullanıcının seçimi" sayıp koruyordu. Sonuç: iki servis de 8443'e bağlanmaya çalışıyor, ikinci başlayan <code>Address already in use</code> ile düşüyor — ekranda görünen tek şey "Nginx başlamıyor" oluyor, sebebi Apache'de olduğu hâlde. Yazılacak port artık çakışmayı denetliyor; gerçekten kullanıcı seçimi olan bir port (ör. 9443) korunuyor. Teşhis paneli de çakışmayı ayrı bir bulgu olarak bildiriyor.</li>
       <li><b>phpMyAdmin ve pgAdmin bağlantıları standart olmayan HTTPS portunda çalışmıyordu.</b></li>
     </ul>
   </div>

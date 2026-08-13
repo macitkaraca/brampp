@@ -55,6 +55,27 @@ enum WebServerPorts {
         return 443
     }
 
+    /// Apache'nin HTTPS config'ine YAZILACAK port — okunan değil, yazılması gereken.
+    ///
+    /// `apacheHTTPS()` gerçeği bildirir: dosyada ne yazıyorsa onu. Ama Homebrew'un stok
+    /// `httpd-ssl.conf`u `Listen 8443` ile geliyor ve BRAMPP'ın şemasında **8443 NGINX'in
+    /// portudur** (Apache 80/443, Nginx 8080/8443). Stok dosyayı olduğu gibi korumak,
+    /// Apache'yi nginx'in portuna oturtuyor: iki servis aynı porta bağlanmaya çalışıyor
+    /// ve ikinci başlayan "Address already in use" ile düşüyor. İkisini aynı anda
+    /// çalıştırabilmek bu uygulamanın satış noktalarından biri, dolayısıyla bu sessiz
+    /// bir çakışma değil, doğrudan bir kırılma.
+    ///
+    /// Kural: mevcut değer nginx'in HTTPS portuyla ÇAKIŞIYORSA 443'e dön; çakışmıyorsa
+    /// kullanıcının seçimine dokunma (birisi bilerek 9443 seçmiş olabilir).
+    static func apacheHTTPSForWrite() -> Int {
+        resolveApacheHTTPSForWrite(current: apacheHTTPS(), nginxHTTPS: nginxHTTPS())
+    }
+
+    /// SAF karar — testten çağrılabilsin diye ayrıldı.
+    static func resolveApacheHTTPSForWrite(current: Int, nginxHTTPS: Int) -> Int {
+        current == nginxHTTPS ? 443 : current
+    }
+
     // MARK: - Nginx
 
     /// nginx.conf içindeki ilk SSL-olmayan listen portu.

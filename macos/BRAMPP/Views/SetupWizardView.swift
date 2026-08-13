@@ -2255,7 +2255,9 @@ struct SetupWizardView: View {
         // Port SABİT 443 DEĞİL: kullanıcı Servisler → Apache Portları'ndan HTTPS portunu
         // değiştirmiş olabilir. `apacheHTTPS()` httpd-ssl.conf'taki mevcut `Listen`i okur
         // (yoksa 443'e düşer) — böylece bu dosyanın yeniden üretilmesi ayarı SIFIRLAMAZ.
-        let httpsPort = WebServerPorts.apacheHTTPS()
+        // YAZILACAK port, okunan değil: stok Homebrew dosyası nginx'in 8443'ünü
+        // taşıyor ve olduğu gibi korunursa iki servis aynı porta bağlanmaya çalışır.
+        let httpsPort = WebServerPorts.apacheHTTPSForWrite()
 
         let config = """
         Listen \(httpsPort)

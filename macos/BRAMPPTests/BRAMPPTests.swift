@@ -3512,4 +3512,22 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertNotNil(detachIdx); XCTAssertNotNil(openIdx)
         XCTAssertTrue(detachIdx! < openIdx!, "ayırma açmadan ÖNCE gelmeli")
     }
+
+    // MARK: - Apache/Nginx port çakışması
+
+    /// Homebrew'un stok httpd-ssl.conf'u `Listen 8443` ile gelir ve BRAMPP'ın şemasında
+    /// 8443 NGINX'indir. Olduğu gibi korunursa iki servis aynı porta bağlanmaya çalışır;
+    /// ikinci başlayan düşer. Yazılacak port bu durumda 443 olmalı.
+    func testApacheHTTPSForWrite_AvoidsNginxPort() {
+        XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 8443, nginxHTTPS: 8443), 443,
+                       "nginx'in portuyla çakışan değer 443'e dönmeli")
+    }
+
+    /// Kullanıcının BİLEREK seçtiği port korunmalı — çakışma yoksa dokunulmaz.
+    func testApacheHTTPSForWrite_KeepsADeliberateChoice() {
+        XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 8443), 9443)
+        XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 443,  nginxHTTPS: 8443), 443)
+        // Nginx de taşınmış olabilir: çakışma nginx'in GERÇEK portuna göre ölçülür.
+        XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 9443), 443)
+    }
 }

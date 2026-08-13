@@ -633,6 +633,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
       <li><b>Changing one field in a database settings panel reset the four nobody had touched.</b> BRAMPP's file is read after the user's, so every line it wrote overrode theirs.</li>
       <li><b>The certificate trust check passed unconditionally</b>, counting every certificate on the system without looking for the one it was checking. Expiry was never checked either.</li>
       <li><b>Anyone whose mkcert install would not complete could not finish the wizard</b> — HTTPS is optional and the group is now marked as such.</li>
+      <li><b>Apache could take Nginx's port, so the two could not run together.</b> BRAMPP's scheme is Apache on 80/443 and Nginx on 8080/8443, and running both at once depends on that split. Homebrew's stock <code>httpd-ssl.conf</code> ships <code>Listen 8443</code>, though, and the wizard preserved it as if it were the user's choice. Both services then bind 8443 and whichever starts second fails with <code>Address already in use</code> — all the user sees is "Nginx will not start", while the cause is in Apache. The port written now checks for the clash, while a port that really is a deliberate choice (9443, say) is left alone. Diagnostics reports the clash as its own finding.</li>
       <li><b>phpMyAdmin and pgAdmin links did not work on a non-standard HTTPS port.</b></li>
     </ul>
   </div>
