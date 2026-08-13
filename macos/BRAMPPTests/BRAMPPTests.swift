@@ -1512,6 +1512,44 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertFalse(UpdateChecker.isNewer("1.2.0", than: "1.2"))
     }
 
+    /// **2.0'dan sonra iki haneli merdiven: 2.01 … 2.09, 2.10, 2.11.**
+    ///
+    /// Sürüm 1.9'dan 2.0'a geçti ve sonrası iki haneli sayaç olarak sürüyor. Bu
+    /// merdivenin sayısal karşılaştırmayla artan kaldığı burada sabitlenir —
+    /// "2.09'dan sonra ne gelecek" sorusunun yanıtı 2.10'dur ve testi bu söyler.
+    func testVersionLadder_TwoDigitMinorStaysMonotonic() {
+        let ladder = ["2.0", "2.01", "2.02", "2.03", "2.04", "2.05",
+                      "2.06", "2.07", "2.08", "2.09", "2.10", "2.11", "2.20", "3.0"]
+        for (i, newer) in ladder.enumerated().dropFirst() {
+            let older = ladder[i - 1]
+            XCTAssertTrue(UpdateChecker.isNewer(newer, than: older),
+                          "\(newer), \(older) sürümünden yeni sayılmalı")
+            XCTAssertFalse(UpdateChecker.isNewer(older, than: newer),
+                           "\(older), \(newer) sürümünden yeni SAYILMAMALI")
+        }
+    }
+
+    /// **"2.1" YAYINLANAMAZ — 2.01 ile aynı sayıya çözülür.**
+    ///
+    /// Karşılaştırma bileşenleri sayıya çevirir, yani "01" ile "1" ayırt edilemez.
+    /// İki haneli sayaca geçildikten sonra tek haneli bir ara sürüm yazmak sessiz
+    /// ve tam bir teslimat kaybı olurdu: 2.02 ve sonrasındaki hiç kimseye
+    /// "yeni sürüm var" denmez, hata da verilmez — güncelleme sadece hiç gelmez.
+    /// Onuncu ara sürümün adı **2.10**'dur.
+    ///
+    /// Test davranışı DÜZELTMEZ, sınırı yazıya geçirir: burada `isNewer`ı "01" ile
+    /// "1"i ayıracak şekilde değiştirmek, sayısal karşılaştırmanın kendisini
+    /// (1.10 > 1.9) bozardı — asıl tuzak oydu.
+    func testVersionLadder_SingleDigitMinorCollidesAndMustNotBePublished() {
+        XCTAssertFalse(UpdateChecker.isNewer("2.1", than: "2.01"),
+                       "2.1 ile 2.01 aynı sayıdır — 2.1 yayınlanırsa güncelleme hiç ulaşmaz")
+        XCTAssertFalse(UpdateChecker.isNewer("2.01", than: "2.1"))
+        // Ve asıl zarar: 2.09'daki kullanıcı için "2.1" GERİ adımdır.
+        XCTAssertFalse(UpdateChecker.isNewer("2.1", than: "2.09"),
+                       "2.09'dan sonra gelen sürümün adı 2.10 olmalı, 2.1 değil")
+        XCTAssertTrue(UpdateChecker.isNewer("2.10", than: "2.09"))
+    }
+
     /// Uçtan uca: yayındaki etiketle mevcut sürüm karşılaştırıldığında
     /// "güncelleme yok" çıkmalı (ikisi de aynı sürüm serisinden).
     func testUpdateChecker_SameVersionIsNotAnUpdate() {
