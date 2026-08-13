@@ -54,15 +54,6 @@ struct BRAMPPApp: App {
                 }
             }
 
-            // "Güncellemeleri Denetle…" — macOS'ta kullanıcıların aradığı yer
-            // Hakkında'nın hemen altıdır. ELLE denetim: atlanan sürüm ve erteleme
-            // dinlenmez, sonuç her hâlükârda gösterilir.
-            CommandGroup(after: .appInfo) {
-                Button(localizer.t("menu.checkUpdates")) {
-                    NotificationCenter.default.post(name: .showUpdateCheck, object: nil)
-                }
-            }
-
             CommandGroup(replacing: .appVisibility) {
                 Button {
                     NSApp.hide(nil)
@@ -399,6 +390,32 @@ class AppState: ObservableObject {
     /// - Parameter force: kullanıcı ELLE istedi mi? Öyleyse atlanan sürüm ve
     ///   erteleme dinlenmez — insan sordu, yanıtı görmeli.
     @discardableResult
+    /// ELLE denetim — Ayarlar → Güncellemeler bunu DOĞRUDAN çağırır.
+    ///
+    /// Eskiden araya bir `NotificationCenter` sıçraması vardı: gözlemci uygulama
+    /// temsilcisinin `menuCancellables` kümesinde yaşıyordu ve ateşlenmiyordu —
+    /// bildirim gönderiliyor, kimse duymuyordu — konsolda gönderim satırı vardı,
+    /// alım satırı yoktu. Sıçramanın gerekçesi gözlemcinin bir GÖRÜNÜMDE yaşamasıydı;
+    /// çağıranın elinde `appState` olduğu için o gerekçe kalmadı ve dolaylılık
+    /// yalnızca kırılacak bir halka bırakıyordu.
+    @MainActor
+    func runManualUpdateCheck() async {
+        // Pencere denetimle BİRLİKTE açılır. Sonuç ancak ağ turu bitince beliriyordu
+        // ve aradaki saniyeler kullanıcı için "hiçbir şey olmadı" demekti.
+        UpdatePromptWindowController.shared.presentChecking()
+        // Elle denetimde SESSİZ KALINMAZ: yeni sürüm yoksa da bir yanıt gerekir.
+        switch await performUpdateCheck(force: true) {
+        case .updateAvailable, .currentBlocked:
+            // Asıl bildirim açıldı; durum penceresi çekilir — ikisi aynı anda
+            // durursa kullanıcı hangisine bakacağını bilemez.
+            UpdatePromptWindowController.shared.dismissChecking()
+        case .upToDate(let current):
+            UpdatePromptWindowController.shared.showCheckResult(.upToDate(current))
+        case .failed:
+            UpdatePromptWindowController.shared.showCheckResult(.failed)
+        }
+    }
+
     func performUpdateCheck(force: Bool) async -> UpdateChecker.Result {
         let channel = AppSettings.load().updateChannel
         consoleStore.log(key: "log.app.updateCheckStarted", args: [channel], type: .info)
@@ -618,7 +635,6 @@ extension Notification.Name {
     static let showAddDomainSheet = Notification.Name("showAddDomainSheet")
     static let showHelpSheet      = Notification.Name("showHelpSheet")
     /// Menüden "Güncellemeleri Denetle…" seçildi (ELLE denetim: atlama/erteleme dinlenmez)
-    static let showUpdateCheck    = Notification.Name("showUpdateCheck")
     /// Atlanan sürüm / erteleme değişti — AÇIK duran Ayarlar penceresi tazelensin
     static let updateStateChanged = Notification.Name("updateStateChanged")
 }
@@ -841,49 +857,8 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] _ in self?.systemIsPoweringOff = true }
             .store(in: &menuCancellables)
 
-        observeUpdateCheckRequests()
     }
 
-    /// Menüden gelen ELLE güncelleme denetimi — gözlemci UYGULAMA DÜZEYİNDE.
-    ///
-    /// **NEDEN RootView'DA DEĞİL.** Gözlemci oradaydı ve RootView, WindowGroup
-    /// penceresi VARSA vardır. `hideWindowOnClose` ile kırmızı X'e basmak pencereyi
-    /// `orderOut` eder; menü çubuğundan yaşayan kullanıcı ana pencereyi hiç açmaz;
-    /// pencere büsbütün kapatılmış da olabilir. Bu hâllerin hepsinde
-    /// "Güncellemeleri Denetle…" SESSİZCE hiçbir şey yapmıyordu — menü öğesinin
-    /// bozuk olduğunu düşündüren tam olarak o sessizlikti.
-    ///
-    /// Sonuç penceresi zaten ayrı bir AppKit penceresi (gerekçe:
-    /// Views/UpdatePromptWindow.swift), yani ana pencereye ihtiyacı yok — gözlemcinin
-    /// bir görünüme bağlı olmasının hiçbir gerekçesi kalmamıştı.
-    private func observeUpdateCheckRequests() {
-        NotificationCenter.default.publisher(for: .showUpdateCheck)
-            .receive(on: DispatchQueue.main)
-            .sink { _ in
-                // Referans TETİKLENME ANINDA okunur: `applicationDidFinishLaunching`
-                // AppState'in yaratılmasından önce koşabilir.
-                guard let appState = BRAMPPAppDelegate.shared?.appStateRef else { return }
-                Task { @MainActor in
-                    // Pencere denetimle BİRLİKTE açılır. Sonuç ancak ağ turu bitince
-                    // beliriyordu ve aradaki saniyeler kullanıcı için "hiçbir şey
-                    // olmadı" demekti — menü öğesini bozuk gösteren buydu.
-                    UpdatePromptWindowController.shared.presentChecking()
-                    let result = await appState.performUpdateCheck(force: true)
-                    // Elle denetimde SESSİZ KALINMAZ: yeni sürüm yoksa da bir yanıt
-                    // gerekir, yoksa menü öğesi bozukmuş gibi görünür.
-                    switch result {
-                    case .updateAvailable, .currentBlocked:
-                        // Asıl bildirim açıldı; durum penceresi çekilir.
-                        UpdatePromptWindowController.shared.dismissChecking()
-                    case .upToDate(let current):
-                        UpdatePromptWindowController.shared.showCheckResult(.upToDate(current))
-                    case .failed:
-                        UpdatePromptWindowController.shared.showCheckResult(.failed)
-                    }
-                }
-            }
-            .store(in: &menuCancellables)
-    }
 
     /// macOS menü çubuğunu verilen dile ("tr"/"en") çevirir.
     ///
@@ -932,8 +907,7 @@ class BRAMPPAppDelegate: NSObject, NSApplicationDelegate {
         let appKeys = ["menu.about", "menu.hide", "menu.hideOthers", "menu.showAll",
                        "menu.quitApp", "menu.quitNoStop", "menu.services", "menu.startAll",
                        "menu.stopAll", "menu.restartApache", "common.refresh",
-                       "menu.refreshLight", "menu.domain", "menu.newDomain",
-                       "menu.checkUpdates"]
+                       "menu.refreshLight", "menu.domain", "menu.newDomain"]
         for key in appKeys {
             if let en = L10n.catalog[key]?["en"], let tr = L10n.catalog[key]?["tr"] {
                 pairs.append((en, tr))

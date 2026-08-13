@@ -28,11 +28,9 @@ struct RootView: View {
             BRAMPPAppDelegate.shared?.presentMainWindow()
             showHelp = true
         }
-        // NOT: Menüden gelen ELLE güncelleme denetimi (.showUpdateCheck) BURADA
-        // DİNLENMEZ. Gözlemci BRAMPPAppDelegate'te — bu görünüm WindowGroup penceresi
-        // yokken (hideWindowOnClose, menü çubuğundan yaşamak) hiç var olmaz ve menü
-        // öğesi sessizce işlevsiz kalıyordu. Gerekçenin tamamı:
-        // BRAMPPApp.swift → observeUpdateCheckRequests().
+        // NOT: ELLE güncelleme denetimi BURADAN GEÇMEZ ve bir bildirimle de taşınmaz.
+        // Tek giriş Ayarlar → Güncellemeler'deki düğme; o da `AppState`in üzerindeki
+        // `runManualUpdateCheck()`i doğrudan çağırır. Gerekçesi orada yazılı.
         .sheet(isPresented: $showHelp) { HelpView() }
     }
 }

@@ -726,7 +726,6 @@ enum L10n {
         "menu.services":     ["tr": "Servisler", "en": "Services"],
         "menu.restartApache": ["tr": "Apache Yeniden Başlat", "en": "Restart Apache"],
         "menu.refreshLight": ["tr": "Hafif Yenile", "en": "Light Refresh"],
-        "menu.checkUpdates": ["tr": "Güncellemeleri Denetle…", "en": "Check for Updates…"],
         "menu.domain":       ["tr": "Alan Adı", "en": "Domain"],
         "menu.newDomain":    ["tr": "Yeni Alan Adı Ekle…", "en": "Add New Domain…"],
         "menu.dockStopQuit": ["tr": "Servisleri Durdur ve Kapat", "en": "Stop Services and Quit"],

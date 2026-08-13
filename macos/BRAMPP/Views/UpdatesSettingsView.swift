@@ -250,16 +250,16 @@ struct UpdatesSettingsView: View {
 
     /// Elle denetim: atlama/erteleme DİNLENMEZ — insan sordu, yanıtı görmeli.
     private func checkNow() {
-        // TEK yol: menüdeki öğeyle aynı bildirimi gönderir. İki ayrı denetim akışı,
-        // birinde düzeltilen bir davranışın diğerinde eski kalmasıyla biterdi —
-        // durum penceresi de yalnızca birinde açılırdı.
+        // BURASI TEK GİRİŞ. Uygulama menüsünde de bir "Güncellemeleri Denetle…"
+        // öğesi vardı; kaldırıldı. Aynı işin iki kapısı, birinde düzeltilen bir
+        // davranışın diğerinde eski kalmasıyla biterdi.
         checking = true
-        NotificationCenter.default.post(name: .showUpdateCheck, object: nil)
-        // Pencereyi ve denetimi uygulama düzeyindeki gözlemci yönetir; burada
-        // yalnızca Ayarlar satırının bayat kalmaması için kısa bir bekleyip tazeleme
-        // var. Denetimin kendisini İKİNCİ kez çalıştırmıyoruz.
         Task {
-            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            // GERÇEKTEN beklenir. Eskiden burada 2,5 saniyelik sabit bir uyku vardı
+            // (denetim ayrı bir yoldan koştuğu için sonucu beklenemiyordu): yavaş
+            // ağda düğme denetim bitmeden eski hâline dönüyor, hızlı ağda ise bitmiş
+            // bir denetim için boşuna "Denetleniyor…" yazıyordu.
+            await appState.runManualUpdateCheck()
             checking = false
             reload()
         }
