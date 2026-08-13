@@ -3622,6 +3622,85 @@ final class BRAMPPTests: XCTestCase {
         }
     }
 
+    /// **Katalogdaki her metnin bir isteyeni olmalı** — ters yön.
+    ///
+    /// Var olan denetim tek yönlüydü: kodun istediği anahtar katalogda var mı? Ters yön
+    /// hiç bakılmıyordu ve 39 çeviri çifti, hiçbir kod yolunun isteyemeyeceği hâlde
+    /// katalogda birikmişti. Ölü metnin bedeli yalnızca yer değil: her biri iki dilde
+    /// bakım ister ve bir sonraki okuyucuya var olmayan bir ekranı anlatır.
+    ///
+    /// **ASIL TUZAK — anahtarlar çalışma zamanında BİRLEŞTİRİLEBİLİR.** Düz arama
+    /// bunları ölü sanır. Aşağıdaki aileler bilerek muaf; muafiyeti genişletmeden önce
+    /// anahtarı gerçekten üreten satırı bul.
+    func testCatalog_EveryStringHasSomethingThatAsksForIt() throws {
+        // Çalışma zamanında üretilen aileler — her birinin ürettiği yer yazılı.
+        let assembled: [NSRegularExpression] = try [
+            #"^v\d"#,                            // ServicesTabView:241, PHPExtensionsTabView:288 — t("v\(version)")
+            #"^set\.mcp\.scope\..*Desc$"#,        // SettingsView:488 — scope.rawValue + "Desc"
+            #"^set\.upd\.channel\."#,             // UpdateManifest:13 — "set.upd.channel.\(rawValue)"
+        ].map { try NSRegularExpression(pattern: $0) }
+
+        // BİLEREK bağlanmamış, silinmemiş. İkisi de kendi servisinin ne olduğunu
+        // anlatan TEK kullanıcı metni; bağlamak mı düşürmek mi — ürün kararı.
+        let deliberatelyUnwired: Set<String> = ["svc.mailpit.hint", "svc.cf.desc"]
+
+        // Kaynak ağacı BİR KEZ taranır. Anahtar başına yeniden taramak, 1200 anahtar ×
+        // 90 dosyada testi 30 saniyeye çıkarıyordu.
+        //
+        // Aranan şey dizgi sabitinin KENDİSİ değil, ANAHTAR ŞEKLİ: tırnak, küçük harfle
+        // başlayan noktalı ad, tırnak. Tırnakları çiftleyerek ayrıştırmayı denemek
+        // İÇ İÇE GEÇMİŞ dizgilerde çöküyordu — `Text("• \(loc.t("db.adminerTag"))")`
+        // satırında dış dizginin açılışı iç anahtarın tırnağıyla eşleşiyor ve anahtar
+        // hiç görülmüyordu; dört YAŞAYAN anahtar tam böyle kaybolmuştu. Şekil araması
+        // iç içe girmeyi umursamaz. Baştaki `@`, argüman biçimi içindir
+        // (`args: ["3", "@log.backup.labelApacheVhost"]`).
+        let literal = try NSRegularExpression(pattern: #""@?([a-z][A-Za-z0-9_.-]*)""#)
+        var referenced = Set<String>()
+
+        for (_, text) in try appSourceFiles() {
+            for line in text.components(separatedBy: .newlines) {
+                let ns = line as NSString
+                let matches = literal.matches(in: line, range: NSRange(location: 0, length: ns.length))
+                // Katalog TANIM satırı (`"anahtar": [...]`) kendini "kullanılmış" saymaz.
+                //
+                // İki nokta ARAMAK TEK BAŞINA YETMEZ: üçlü operatör aynı görünür.
+                // `loc.t(kosul ? "a" : "b")` içinde de ilk sabiti bir iki nokta izler ve
+                // bu kural `a`yı ölü ilan ederdi — YAŞAYAN yedi anahtar tam böyle
+                // kaybolmuştu. Ayırt eden şey KONUM: tanımda sabit satırın başındadır,
+                // üçlüde önünde her zaman çağrının kendisi durur.
+                var skipFirst = false
+                if let first = matches.first {
+                    let before = ns.substring(to: first.range.lowerBound)
+                        .trimmingCharacters(in: .whitespaces)
+                    let after = ns.substring(from: first.range.upperBound)
+                        .trimmingCharacters(in: .whitespaces)
+                    skipFirst = before.isEmpty && after.hasPrefix(":")
+                }
+                for (i, m) in matches.enumerated() where !(i == 0 && skipFirst) {
+                    var s = ns.substring(with: m.range(at: 1))
+                    // Argüman biçimi: `args: ["3", "@log.backup.labelApacheVhost"]`
+                    if s.hasPrefix("@") { s.removeFirst() }
+                    referenced.insert(s)
+                }
+            }
+        }
+
+        var orphans: [String] = []
+        for key in L10n.catalog.keys.sorted() {
+            if deliberatelyUnwired.contains(key) || referenced.contains(key) { continue }
+            let range = NSRange(location: 0, length: (key as NSString).length)
+            if assembled.contains(where: { $0.firstMatch(in: key, range: range) != nil }) { continue }
+            orphans.append(key)
+        }
+
+        XCTAssertTrue(orphans.isEmpty, """
+                      Katalogda hiçbir kodun isteyemeyeceği \(orphans.count) metin var: \
+                      \(orphans.joined(separator: ", ")). Ya kullanın ya silin. \
+                      Anahtar çalışma zamanında birleştiriliyorsa onu üreten satırı bulun \
+                      ve bu testteki `assembled` listesine gerekçesiyle ekleyin.
+                      """)
+    }
+
     /// **Her bildirimin hem göndereni hem dinleyeni olmalı.**
     ///
     /// Yukarıdaki hatanın ALTINDA ikincisi vardı: menü öğesi düzeltildikten sonra bile
