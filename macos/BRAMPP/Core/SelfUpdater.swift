@@ -118,10 +118,19 @@ enum SelfUpdater {
             exit 1
         fi
 
-        # 3) Yeni sürümü başlat.
+        # 3) EMNİYET: uygulama ayırmayı yapamadan çıktıysa bağlı kalan kalıbı burada
+        #    kurtarırız. Bağlı kalan bir birim her açılışta "volume is read only"
+        #    hatası ürettiriyordu, çünkü temizlik onu silmeye çalışıyordu.
+        for m in \(Shell.quote(PathConfig.updates))/mount-*; do
+            [ -d "$m" ] || continue
+            hdiutil detach "$m" -force >/dev/null 2>&1
+            rmdir "$m" >/dev/null 2>&1
+        done
+
+        # 4) Yeni sürümü başlat.
         open \(target)
 
-        # 4) GERÇEKTEN açıldı mı? `pgrep -f` deseni DÜZENLİ İFADE sayar; yolda `+`
+        # 5) GERÇEKTEN açıldı mı? `pgrep -f` deseni DÜZENLİ İFADE sayar; yolda `+`
         #    gibi bir metakarakter varsa eşleşme tutmaz ve BAŞARILI bir güncelleme
         #    geri alınırdı. `grep -F` deseni birebir metin alır.
         seen=0
@@ -130,7 +139,7 @@ enum SelfUpdater {
             sleep 0.5
         done
 
-        # 5) AÇIK KALDI mı? İlk görünme yetmez: açılışta çöken bir sürüm de bir an
+        # 6) AÇIK KALDI mı? İlk görünme yetmez: açılışta çöken bir sürüm de bir an
         #    süreç olarak görünür. Görünmesiyle yetinip eski paketi silseydik, her
         #    açılışta düşen bir sürüm kullanıcıyı geri dönülemez biçimde uygulamasız
         #    bırakırdı — üstelik uygulama açılmadığı için uygulama içi güncelleme yolu
@@ -237,11 +246,16 @@ enum SelfUpdater {
         ], timeout: 120)
         guard attach.isSuccess else { return .failure(.mountFailed) }
 
-        defer {
-            Task.detached {
-                _ = await Shell.runAsync("/usr/bin/hdiutil",
-                                         arguments: ["detach", mountPoint, "-force"], timeout: 60)
-            }
+        /// Kalıbı ayırır. `defer` + `Task.detached` İŞE YARAMIYORDU: ayrılmış görevin
+        /// çalışacağının garantisi yok ve `commitAndQuit` hemen ardından uygulamadan
+        /// çıkıyor. Sonuç, güncellemeden sonra bağlı kalan bir birim — bir sonraki
+        /// açılışta `pruneOldStaging` onu silmeye çalışıp
+        /// "volume … is read only" hatası veriyordu, her açılışta.
+        /// Bu yüzden ayırma SENKRON: her çıkış yolunda beklenerek yapılır.
+        func detachImage() async {
+            _ = await Shell.runAsync("/usr/bin/hdiutil",
+                                     arguments: ["detach", mountPoint, "-force"], timeout: 60)
+            _ = FileHelper.remove(mountPoint)
         }
 
         let sourceApp = "\(mountPoint)/\(targetURL.lastPathComponent)"
@@ -254,6 +268,7 @@ enum SelfUpdater {
                                         arguments: [sourceApp, stagedPath], timeout: 300)
         guard copy.isSuccess else {
             _ = FileHelper.remove(stagedPath)
+            await detachImage()
             return .failure(.copyFailed(copy.error.isEmpty ? copy.output : copy.error))
         }
 
@@ -270,6 +285,7 @@ enum SelfUpdater {
         guard UpdateVerifier.isCodesignVerified(exitCode: verify.exitCode,
                                                 stderr: verify.error) else {
             _ = FileHelper.remove(stagedPath)
+            await detachImage()
             return .failure(.signatureFailed)
         }
 
@@ -282,6 +298,7 @@ enum SelfUpdater {
                   inCodesignOutput: details.output + "\n" + details.error),
               team == ownTeam else {
             _ = FileHelper.remove(stagedPath)
+            await detachImage()
             return .failure(.teamMismatch)
         }
 
@@ -292,6 +309,7 @@ enum SelfUpdater {
         guard UpdateVerifier.isNotarizedAccepted(exitCode: assess.exitCode,
                                                  output: assess.output + "\n" + assess.error) else {
             _ = FileHelper.remove(stagedPath)
+            await detachImage()
             return .failure(.notarizationFailed)
         }
 
@@ -304,9 +322,11 @@ enum SelfUpdater {
                                 binaryName: binaryName)
         guard FileHelper.write(script, to: scriptPath) else {
             _ = FileHelper.remove(stagedPath)
+            await detachImage()
             return .failure(.scriptWriteFailed)
         }
 
+        await detachImage()
         return .success(Prepared(scriptPath: scriptPath, stagedPath: stagedPath,
                                  targetPath: targetURL.path, logPath: logPath))
     }

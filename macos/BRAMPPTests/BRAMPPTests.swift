@@ -3496,4 +3496,20 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertTrue(out.contains("listen = 127.0.0.1:"))
         XCTAssertFalse(out.contains("/tmp/s.sock"))
     }
+
+    /// Bağlı kalan bir disk kalıbı, her açılışta "volume is read only" hatası
+    /// ürettiriyordu: temizlik onu silmeye çalışıyor, silemiyor. Uygulama ayırmayı
+    /// yapamadan çıkarsa betik kurtarmalı — o, çıkıştan SONRA çalışan tek şey.
+    func testSelfUpdater_SwapScriptDetachesLeftoverImages() {
+        let s = SelfUpdater.swapScript(parentPID: 1, stagedPath: "/A/.new",
+                                       targetPath: "/A/BRAMPP.app",
+                                       logPath: "/A/log", binaryName: "BRAMPP")
+        XCTAssertTrue(s.contains("hdiutil detach"), "betik bağlı kalmış kalıbı ayırmalı")
+        // Ayırma, uygulamayı AÇMADAN önce olmalı: yeni sürüm açılıp temizliği
+        // çalıştırırsa aynı hatayı yine görürüz.
+        let detachIdx = s.range(of: "hdiutil detach")?.lowerBound
+        let openIdx   = s.range(of: "open '/A/BRAMPP.app'")?.lowerBound
+        XCTAssertNotNil(detachIdx); XCTAssertNotNil(openIdx)
+        XCTAssertTrue(detachIdx! < openIdx!, "ayırma açmadan ÖNCE gelmeli")
+    }
 }
