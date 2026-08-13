@@ -3569,6 +3569,50 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 9443), 443)
     }
 
+    // MARK: - Alan adı silme temizliği
+
+    /// **Silme, alan adının ÜRETEBİLECEĞİ her logu hedefler — seçili sunucununkini değil.**
+    ///
+    /// `errorLogPath`/`accessLogPath` `webServer`e bakıp TEK yol döndürür ve silme yolu
+    /// uzun süre hiç log silmiyordu; her silinen alan adı arkasında dosya bırakıyordu.
+    /// Sunucuya göre seçmek de yetmez, iki nedenle: nginx alan adlarına bir de Apache
+    /// companion vhost'u yazılıyor (yani httpd altında da log doğabilir), ve kullanıcı
+    /// sunucu tercihini sonradan değiştirmiş olabilir — eski sunucunun dosyaları kalır.
+    func testDomainDelete_TargetsLogsOfBothWebServers() {
+        for server in [WebServer.apache, .nginx] {
+            let d = Domain(name: "shop.test", platform: .php, sslEnabled: true, webServer: server)
+            let paths = d.allLogPaths
+
+            XCTAssertEqual(Set(paths).count, 4, "\(server): dört ayrı yol beklenir — \(paths)")
+            for dir in [PathConfig.httpdLogs, PathConfig.nginxLogs] {
+                for kind in ["access", "error"] {
+                    XCTAssertTrue(paths.contains("\(dir)/shop.test-\(kind).log"),
+                                  "\(server) için \(dir)/shop.test-\(kind).log listede yok")
+                }
+            }
+            // Seçili sunucunun kendi yolları da bu kümenin içinde olmalı; ikisi
+            // ayrışırsa silme, arayüzün gösterdiği log dosyasını ıskalar.
+            XCTAssertTrue(paths.contains(d.errorLogPath), "\(server): errorLogPath kapsam dışı")
+            XCTAssertTrue(paths.contains(d.accessLogPath), "\(server): accessLogPath kapsam dışı")
+        }
+    }
+
+    /// Silme onayı NE OLDUĞUNU söylemeli: site klasörü KALIR.
+    ///
+    /// `removeDomain` `sitePath`e bilerek hiç dokunmaz — içinde kullanıcının kendi kodu
+    /// var. Ama uyarı yalnızca "silinecek, geri alınamaz" diyordu ve dosyalarının da
+    /// gittiğini sandıran tam olarak bu sessizlikti.
+    func testDeleteConfirmation_SaysTheSiteFolderSurvives() {
+        for (lang, kept) in [("tr", "kalır"), ("en", "stays")] {
+            let msg = L10n.catalog["dom.deleteMsg"]?[lang] ?? ""
+            XCTAssertFalse(msg.isEmpty, "\(lang): dom.deleteMsg boş")
+            XCTAssertTrue(msg.contains(kept),
+                          "\(lang): uyarı site klasörünün KALDIĞINI söylemeli — \(msg)")
+            XCTAssertEqual(msg.components(separatedBy: "%@").count - 1, 1,
+                           "\(lang): tam bir %@ olmalı (alan adı)")
+        }
+    }
+
     // MARK: - Menü ve bildirim bağlantıları
 
     /// Uygulamanın Swift kaynakları — (yol, metin).

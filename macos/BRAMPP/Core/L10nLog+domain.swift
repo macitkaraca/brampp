@@ -15,6 +15,12 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.dom.shareStopFailedAbort":
+            ["tr": "❌ '%@' silinmedi: açık paylaşım kapatılamadı. Kapatılamayan bir paylaşımın üstüne silme yapılırsa herkese açık adres varsayılan siteyi yayınlamaya başlar. Servisler sekmesinden cloudflared'i durdurup yeniden deneyin.",
+             "en": "❌ '%@' was not deleted: its open share could not be closed. Deleting on top of a share that is still up would leave the public address serving the default site. Stop cloudflared from the Services tab and try again."],
+        "log.dom.hostsRemoveFailed":
+            ["tr": "⚠️ '%@' silindi ama /etc/hosts satırı kaldırılamadı — elle silmeniz gerekebilir",
+             "en": "⚠️ '%@' was deleted but its /etc/hosts line could not be removed — you may need to delete it by hand"],
         "log.dom.shareStoppedWithDomain":
             ["tr": "⚠️ %@ paylaşımı kapatıldı — alan adı değiştiği için herkese açık adres artık bu siteye gitmiyordu",
              "en": "⚠️ Sharing for %@ was stopped — with the domain gone, the public address no longer pointed at this site"],

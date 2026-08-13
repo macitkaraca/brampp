@@ -114,6 +114,20 @@ struct Domain: Identifiable, Hashable {
         }
     }
 
+    /// Bu alan adının ÜRETEBİLECEĞİ bütün log dosyaları — silmede kullanılır.
+    ///
+    /// `errorLogPath`/`accessLogPath` seçili sunucuya göre TEK yol döndürür; temizlik
+    /// için bu yetmiyor. Nginx alan adlarına bir de Apache companion vhost'u yazılıyor
+    /// (DomainManager.removeDomain onu ayrıca siliyor), yani nginx bir alan adı httpd
+    /// altında da log bırakabilir. Sunucu tercihi sonradan değiştiyse eski sunucunun
+    /// dosyaları da diskte durur. Dördünü birden vermek, "hangisi yazıldı" sorusunu
+    /// tahmin etmek zorunda kalmadan hepsini kaldırmayı sağlar.
+    var allLogPaths: [String] {
+        [PathConfig.httpdLogs, PathConfig.nginxLogs].flatMap { dir in
+            ["access", "error"].map { "\(dir)/\(name)-\($0).log" }
+        }
+    }
+
     /// BRAMPP JSON config dosyası (.brampp.json) path'i
     /// Application Support/processes/{name}/.brampp.json — site dizini kirletilmez
     var bramppConfigPath: String { PathConfig.processConfig(domain: name) }

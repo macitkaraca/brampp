@@ -473,10 +473,16 @@ class DomainManager: BaseManager {
     /// Yeniden adlandırmada ESKİ adla çağrılır: tünel kaydı eski adla saklandığı için
     /// yeni adla arayan (arayüz rozeti dahil) onu bir daha bulamaz ve kullanıcı çalışan
     /// tüneli durduramaz hâle gelir.
-    private func stopShareBeforeVHostChange(_ name: String) async {
-        guard let tunnelManager, tunnelManager.tunnel(for: name) != nil else { return }
-        await tunnelManager.stop(domainName: name)
+    /// - Returns: paylaşım artık KAPALI ise `true`. Açık paylaşım yoksa da `true` —
+    ///   çağıran için anlamlı olan "bu adres artık dışarıya açık değil" bilgisidir.
+    @discardableResult
+    private func stopShareBeforeVHostChange(_ name: String) async -> Bool {
+        guard let tunnelManager, tunnelManager.tunnel(for: name) != nil else { return true }
+        // SONUÇ YOK SAYILMAZDI ve başarı KOŞULSUZ loglanıyordu: tünel süreci ölmese bile
+        // "paylaşım kapatıldı" yazıyordu. `stop` tam da bunu ayırt etmek için Bool döner.
+        guard await tunnelManager.stop(domainName: name) else { return false }
         log(key: "log.dom.shareStoppedWithDomain", args: [name], type: .warning)
+        return true
     }
 
     func removeDomain(_ domain: Domain) async {
@@ -488,14 +494,25 @@ class DomainManager: BaseManager {
         // sürebilir — ve o süre boyunca eski görev uyanıp silinen alan adının vhost'unu
         // GERİ YAZARDI. `setDomainEnabled` ile `renameDomain` tam bu nedenle aynı
         // korumayı taşıyor; silme yolunda eksikti.
+        // PAYLAŞIM ÖNCE KAPANIR, kayıt HENÜZ DÜŞMEDEN.
+        //
+        // Sıra eskiden tersti ve sonuç da yok sayılıyordu. Tünel kapanmazsa şu oluyordu:
+        // kayıt siliniyor, vhost siliniyor, ama cloudflared hâlâ koşuyor — yani herkese
+        // açık adres artık bu alan adını değil, VARSAYILAN SİTEYİ yayınlıyor. Üstelik
+        // tünel kaydı alan adına bağlı olduğundan kullanıcı onu arayüzden bir daha
+        // durduramıyor. Kapatılamayan bir paylaşımın üstüne silme yapılmaz.
+        guard await stopShareBeforeVHostChange(domain.name) else {
+            log(key: "log.dom.shareStopFailedAbort", args: [domain.name], type: .error)
+            isLoading = false
+            return
+        }
+
         updateGenerations[domain.id, default: 0] += 1
         // Kayıt da şimdi düşer: `await`ler boyunca domain listede durmaya devam
         // etseydi, o sırada koşan başka bir akış onu hâlâ var sayardı.
         domains.removeAll { $0.id == domain.id }
         updateUsedPorts()
         saveDomains()
-
-        await stopShareBeforeVHostChange(domain.name)
 
         // Çalışan uygulama sürecini durdur (hayalet process kalmasın)
         if [Platform.python, .nodejs, .dotnet].contains(domain.platform) {
@@ -517,10 +534,32 @@ class DomainManager: BaseManager {
             FileHelper.remove(apacheCompanionPath(for: domain.name))
         }
 
-        await removeFromHosts(domain.name)
+        // Web sunucusu logları. Vhost'lar bunları alan adı başına yazıyor ama silme
+        // yolu hiç dokunmuyordu: her silinen alan adı arkasında iki-dört dosya
+        // bırakıyordu ve adı bir daha kullanılmadıkça hiçbir şey onları toplamıyordu.
+        // Dördü birden silinir — gerekçesi Domain.allLogPaths'te.
+        for path in domain.allLogPaths { FileHelper.remove(path) }
+
+        // Tünel izleri. `TunnelManager.stop` log dosyasını BİLEREK bırakır (paylaşım
+        // bitince kullanıcı ne olduğuna bakabilsin diye) ve yalnızca .pid'i siler.
+        // Ama alan adının kendisi gidiyorsa o kaydın bakılacağı bir bağlam kalmaz.
+        FileHelper.remove(PathConfig.tunnelLog(domain: domain.name))
+        FileHelper.remove(PathConfig.tunnelPid(domain: domain.name))
+
+        // SONUÇ YOK SAYILMAZ: başarısızlıkta /etc/hosts'ta bu ada bir satır kalır ve
+        // kayıt artık silindiği için hiçbir akış onu bir daha aramaz — sessizce
+        // kalıcı olur. En azından kullanıcı bunu görmeli.
+        if await removeFromHosts(domain.name) == false {
+            log(key: "log.dom.hostsRemoveFailed", args: [domain.name], type: .error)
+        }
         // autoStart:false — silmede durmuş sunucuyu ayağa kaldırmaya gerek yok.
         // (nginx dalı companion nedeniyle Apache'yi de yeniler; ayrı çağrı gerekmez.)
         await reloadWebServer(for: domain)
+
+        // Nesil sayacı artık boşuna yer tutuyor. EN SONDA düşer: neslini okuyan her
+        // `await` bitmiş olmalı, yoksa uçuştaki bir görev sayacı sıfırdan yeniden
+        // yaratıp kendini geçerli sanardı.
+        updateGenerations.removeValue(forKey: domain.id)
 
         log(key: "log.dom.deleted", args: [domain.name], type: .success)
         isLoading = false

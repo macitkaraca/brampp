@@ -938,7 +938,12 @@ enum L10n {
         "dom.new":         ["tr": "Yeni Alan Adı", "en": "New Domain"],
         "dom.search":      ["tr": "Alan adı ara…", "en": "Search domains…"],
         "dom.deleteTitle": ["tr": "Domain Sil", "en": "Delete Domain"],
-        "dom.deleteMsg":   ["tr": "'%@' silinecek. Bu işlem geri alınamaz.", "en": "'%@' will be deleted. This cannot be undone."],
+        // Site klasörünün KALDIĞI açıkça yazılır. Eskiden yalnızca "silinecek, geri
+        // alınamaz" diyordu ve kullanıcı dosyalarının da gittiğini sanabiliyordu —
+        // oysa removeDomain sitePath'e hiç dokunmaz (bilerek: içinde kullanıcının
+        // kendi kodu var).
+        "dom.deleteMsg":   ["tr": "'%@' silinecek: vhost, sertifika, /etc/hosts girişi ve log dosyaları. Site klasörünüz ve içindekiler yerinde kalır. Bu işlem geri alınamaz.",
+                            "en": "'%@' will be deleted: its vhost, certificate, /etc/hosts entry and log files. Your site folder and everything in it stays. This cannot be undone."],
         "dom.hostsMissing": ["tr": "%d domainin /etc/hosts girişi eksik", "en": "%d domain(s) missing from /etc/hosts"],
         "dom.repair":      ["tr": "Onar", "en": "Repair"],
         "dom.repairing":   ["tr": "Onarılıyor…", "en": "Repairing…"],
