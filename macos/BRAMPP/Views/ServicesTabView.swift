@@ -391,7 +391,7 @@ struct ServiceRowView: View {
     private var phpMyAdminButton: some View {
         if isPhpMyAdminInstalled {
             Button(action: {
-                if let url = URL(string: "https://localhost/phpmyadmin") {
+                if let url = URL(string: WebServerPorts.localhostHTTPS(path: "/phpmyadmin")) {
                     NSWorkspace.shared.open(url)
                 }
             }) {
@@ -453,7 +453,7 @@ struct ServiceRowView: View {
         let nginxConfigured  = NginxConfigManager.isPgAdmin4Configured
         let urlString: String
         if apacheConfigured {
-            urlString = "https://localhost/pgadmin4"
+            urlString = WebServerPorts.localhostHTTPS(path: "/pgadmin4")
         } else if nginxConfigured {
             urlString = "http://localhost:8080/pgadmin4/"
         } else {
@@ -495,7 +495,7 @@ struct ServiceRowView: View {
     private func openAdminer() {
         // Apache yapılandırıldıysa 80/443; değilse Nginx 8080 (DatabaseTabView ile aynı kural)
         let urlString = FileHelper.exists(PathConfig.adminerConf)
-            ? "https://localhost/adminer/"
+            ? WebServerPorts.localhostHTTPS(path: "/adminer/")
             : "http://localhost:8080/adminer/"
         if let url = URL(string: urlString) { NSWorkspace.shared.open(url) }
     }

@@ -24,6 +24,11 @@ struct DatabaseTabView: View {
     @State private var dbErrorMessage: String? = nil
     @State private var pgSettings: [PGSetting] = PGSetting.defaults
     @State private var myCnfSettings: [PGSetting] = PGSetting.mariadbDefaults
+    /// Yüklenirken okunan değerler. Kayıtta YALNIZCA bunlardan farklı olanlar yazılır:
+    /// BRAMPP'ın dosyası ana `my.cnf`ten SONRA include ediliyor, yani buraya yazılan her
+    /// direktif kullanıcının kendi ayarını EZER. Tek bir alanı değiştirip Kaydet'e basmak,
+    /// dokunulmamış dört direktifi de BRAMPP varsayılanına çeviriyordu.
+    @State private var myCnfBaseline: [String: String] = [:]
     @State private var redisSettings: [PGSetting] = PGSetting.redisDefaults
     // Redis canlı durumu — talep üzerine `redis-cli INFO` ile okunur.
     // Otomatik yenileme YOK: sekme açık dururken saniyede bir kabuk çağırmak
@@ -342,7 +347,7 @@ struct DatabaseTabView: View {
         // Apache yapılandırıldıysa 80/443; değilse Nginx 8080
         let urlString: String
         if isAdminerApacheConfigured {
-            urlString = "https://localhost/adminer/"
+            urlString = WebServerPorts.localhostHTTPS(path: "/adminer/")
         } else {
             urlString = "http://localhost:8080/adminer/"
         }
@@ -719,7 +724,7 @@ struct DatabaseTabView: View {
                         Spacer()
                         if isPhpMyAdminInstalled {
                             Button(action: {
-                                if let url = URL(string: "https://localhost/phpmyadmin") {
+                                if let url = URL(string: WebServerPorts.localhostHTTPS(path: "/phpmyadmin")) {
                                     NSWorkspace.shared.open(url)
                                 }
                             }) {
@@ -1341,7 +1346,7 @@ struct DatabaseTabView: View {
         // Apache: https://localhost/pgadmin4, Nginx: http://localhost:8080/pgadmin4/
         let urlString: String
         if isPgAdminApacheConfigured {
-            urlString = "https://localhost/pgadmin4"
+            urlString = WebServerPorts.localhostHTTPS(path: "/pgadmin4")
         } else if isPgAdminNginxConfigured {
             urlString = "http://localhost:8080/pgadmin4/"
         } else {
@@ -1441,8 +1446,23 @@ struct DatabaseTabView: View {
         }
     }
 
+    /// Yazmadan önce zaman damgalı yedek. Bu dosyalar sunucunun BAŞLAMASINI
+    /// engelleyebiliyor ve arayüzdeki tek geri bildirim gecikmeli bir uyarı; kullanıcının
+    /// elinde dönebileceği bir kopya olmadan serbest metin alanı yazdırmak, ortamı
+    /// kurtarmayı terminal işine çeviriyordu.
+    @discardableResult
+    private func backupConfig(_ path: String) -> String? {
+        guard FileHelper.exists(path), let current = FileHelper.readString(path) else { return nil }
+        let backup = path + ".brampp.bak"
+        return FileHelper.write(current, to: backup) ? backup : nil
+    }
+
     private func savePGSettings(version: String) {
         let confPath = PathConfig.pgConf(version: version)
+        if backupConfig(confPath) == nil, FileHelper.exists(confPath) {
+            reportDBError("postgresql.conf yedeklenemedi — dosyaya dokunulmadı")
+            return
+        }
         guard var content = FileHelper.readString(confPath) else {
             consoleStore.log(key: "log.db.pgConfReadFailed", type: .error)
             return
@@ -1484,6 +1504,7 @@ struct DatabaseTabView: View {
 
     /// Ayarlar KENDİ dosyamızdan (my.cnf.d/zz-brampp.cnf) okunur; yoksa varsayılan kalır.
     private func loadMyCnfSettings() {
+        myCnfBaseline = [:]
         guard let content = FileHelper.readString(PathConfig.mariadbOwnConf) else { return }
         for i in 0..<myCnfSettings.count {
             for line in content.components(separatedBy: .newlines) {
@@ -1491,6 +1512,7 @@ struct DatabaseTabView: View {
                 guard !t.hasPrefix("#"), t.hasPrefix(myCnfSettings[i].name) else { continue }
                 if let v = t.components(separatedBy: "=").last?.trimmingCharacters(in: .whitespaces) {
                     myCnfSettings[i].value = v
+                    myCnfBaseline[myCnfSettings[i].name] = v
                 }
             }
         }
@@ -1499,10 +1521,24 @@ struct DatabaseTabView: View {
     /// Tüm ayarları [mariadbd] bölümüyle KENDİ dosyamıza yazar (kullanıcının my.cnf'i korunur).
     private func saveMyCnfSettings() {
         FileHelper.createDirectory(PathConfig.mariadbConfDir)
+        // Yazmadan önce yedek: bu dosya MariaDB'nin başlamasını engelleyebilir.
+        if FileHelper.exists(PathConfig.mariadbOwnConf),
+           let cur = FileHelper.readString(PathConfig.mariadbOwnConf) {
+            _ = FileHelper.write(cur, to: PathConfig.mariadbOwnConf + ".brampp.bak")
+        }
         var lines = ["# BRAMPP tarafından yönetilir — elle düzenlemeyin.", "[mariadbd]"]
         for s in myCnfSettings {
             let v = s.value.trimmingCharacters(in: .whitespaces)
-            if !v.isEmpty { lines.append("\(s.name) = \(v)") }
+            guard !v.isEmpty else { continue }
+            // DEĞİŞMEYEN direktif YAZILMAZ. Bu dosya ana `my.cnf`ten sonra include
+            // edildiği için buraya yazılan her satır kullanıcının kendi ayarını ezer;
+            // tek bir alanı değiştirmek dokunulmamış diğerlerini de BRAMPP
+            // varsayılanına çeviriyordu.
+            guard myCnfBaseline[s.name] != v else { continue }
+            lines.append("\(s.name) = \(v)")
+        }
+        guard lines.count > 2 else {
+            consoleStore.log(key: "log.db.myCnfNoChange", type: .info); return
         }
         if FileHelper.write(lines.joined(separator: "\n") + "\n", to: PathConfig.mariadbOwnConf) {
             consoleStore.log(key: "log.db.myCnfSaved", type: .success)
@@ -1543,6 +1579,10 @@ struct DatabaseTabView: View {
     }
 
     private func saveRedisSettings() {
+        if backupConfig(PathConfig.redisConf) == nil, FileHelper.exists(PathConfig.redisConf) {
+            reportDBError("redis.conf yedeklenemedi — dosyaya dokunulmadı")
+            return
+        }
         guard var content = FileHelper.readString(PathConfig.redisConf) else {
             reportDBError(String(format: loc.t("db.redisReadFailed"), PathConfig.redisConf))
             return

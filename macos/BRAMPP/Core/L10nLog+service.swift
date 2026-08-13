@@ -20,6 +20,9 @@ extension L10n {
         // %@ = php.ini yolu
         // %@ = uzantı adı
         // %@ = süren işin başlığı
+        "log.db.myCnfNoChange":
+            ["tr": "Değişen ayar yok — my.cnf'e dokunulmadı",
+             "en": "Nothing changed — my.cnf was left alone"],
         "log.svc.installBusy":
             ["tr": "Bir işlem zaten sürüyor (%@) — ikincisi başlatılmadı",
              "en": "An operation is already running (%@) — a second one was not started"],

@@ -97,4 +97,16 @@ enum WebServerPorts {
         let isStd = (https && port == 443) || (!https && port == 80)
         return isStd ? "" : ":\(port)"
     }
+
+    /// `https://localhost` — port STANDART DEĞİLSE `:port` eklenir.
+    ///
+    /// Sihirbaz HTTP'yi 80'e çekiyor ama HTTPS'i Homebrew'un stok 8443'ünde bırakıyor.
+    /// Sabit `https://localhost/x` yazan her yer o kurulumda bağlantı reddi alıyordu.
+    /// Yapılandırmayı 443'e ZORLAMAK yanlış olurdu: kullanıcının bilerek değiştirdiği
+    /// portu sıfırlardı. Doğrusu, arayüzü gerçek porta uydurmak.
+    static func localhostHTTPS(path: String = "") -> String {
+        let port = apacheHTTPS()
+        let base = port == 443 ? "https://localhost" : "https://localhost:\(port)"
+        return path.isEmpty ? base : base + (path.hasPrefix("/") ? path : "/" + path)
+    }
 }
