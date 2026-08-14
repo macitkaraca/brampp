@@ -1550,6 +1550,30 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertTrue(UpdateChecker.isNewer("2.10", than: "2.09"))
     }
 
+    /// **Üçlü semver'e geçilecekse ilk güvenli değer `2.4.0`.**
+    ///
+    /// İki haneli sayaç `2.03`'e kadar geldi ve `[2, 3]` diye çözülüyor. Üçlüye geçmek
+    /// akla yatkın görünüyor ama ilk üç aday DAHA ESKİ sayılır: `2.1.0 → [2,1,0]`,
+    /// `2.2.0 → [2,2,0]`, `2.3.0 → [2,3,0]` — üçü de `[2,3]`'ten büyük değil. Yani
+    /// `2.1.0` yayınlansaydı kurulu herkes süresiz olarak "güncelsiniz" görürdü; hiçbir
+    /// yerde hata çıkmaz, güncelleme sadece hiç ulaşmaz.
+    ///
+    /// Test şemayı DEĞİŞTİRMİYOR — `2.04`, `2.05` diye sürmek tamamen geçerli ve
+    /// yukarıdaki merdiven testi onu zaten koruyor. Buradaki sınır yalnızca "üçlüye
+    /// geçersek nereden başlamalıyız" sorusunun yanıtını sabitliyor.
+    func testVersionLadder_FirstSafeSemverAfterTwoDigitCounterIs240() {
+        for stillborn in ["2.1.0", "2.2.0", "2.3.0"] {
+            XCTAssertFalse(UpdateChecker.isNewer(stillborn, than: "2.03"),
+                           "\(stillborn), 2.03'ten yeni SAYILMAZ — yayınlanırsa güncelleme ulaşmaz")
+        }
+        XCTAssertTrue(UpdateChecker.isNewer("2.4.0", than: "2.03"),
+                      "2.4.0 üçlüye geçişin ilk güvenli değeri olmalı")
+        // Ve geçildikten sonra üçlü merdiven kendi içinde tutarlı kalmalı.
+        for (newer, older) in [("2.4.1", "2.4.0"), ("2.5.0", "2.4.9"), ("3.0.0", "2.99.9")] {
+            XCTAssertTrue(UpdateChecker.isNewer(newer, than: older), "\(newer) > \(older)")
+        }
+    }
+
     /// Uçtan uca: yayındaki etiketle mevcut sürüm karşılaştırıldığında
     /// "güncelleme yok" çıkmalı (ikisi de aynı sürüm serisinden).
     func testUpdateChecker_SameVersionIsNotAnUpdate() {
