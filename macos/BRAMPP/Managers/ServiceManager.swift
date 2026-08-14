@@ -2236,6 +2236,49 @@ class ServiceManager: BaseManager {
         }
     }
 
+    /// **php-fpm portunu BRAMPP'ın beklediğine getirir VE servisi yeniden başlatır.**
+    ///
+    /// Çok sürümlü PHP ayrı portlara dayanıyor: vhost'lar `PHPVersion.port` sabitini yazar,
+    /// `www.conf` da ona uymalı. Homebrew stok hâlde her sürüme 9000 verdiğinden, elle
+    /// kurulmuş bir PHP'de bu ikisi ayrışır ve o sürümü kullanan siteler 502 döner.
+    ///
+    /// **YENİDEN BAŞLATMA BU İŞİN PARÇASI, AYRI BİR ADIM DEĞİL.** Dosyayı düzeltip
+    /// daemon'a dokunmamak tam olarak buradaki hataydı: dosya 908X der, süreç 9000'de
+    /// kalır, vhost'lar 908X'e proxy'ler ve hiçbir yerde hata görünmez. Bu yüzden
+    /// düzeltme yalnızca yeniden başlatmayla BİRLİKTE yapılır; servis durmuşsa yeniden
+    /// başlatılacak bir şey yoktur, dosya zaten bir sonraki başlatmada okunur.
+    func reconcilePHPFPMPorts() async {
+        for v in PHPVersion.allCases where PathConfig.isPHPInstalled(version: v.rawValue) {
+            guard let actual = PHPFPMConfigManager.currentListenPort(for: v.rawValue),
+                  actual != v.port else { continue }
+
+            guard PHPFPMConfigManager.normalize(for: v.rawValue) else {
+                log(key: "log.svc.phpPortFixFailed", args: [v.rawValue], type: .error)
+                continue
+            }
+
+            let id = "php@\(v.rawValue)"
+            let running = services.first(where: { $0.id == id })?.status == .running
+            guard running else {
+                log(key: "log.svc.phpPortFixedStopped",
+                    args: [v.rawValue, "\(actual)", "\(v.port)"], type: .info)
+                continue
+            }
+
+            let r = await Shell.brewServicesAsync("restart", service: id)
+            if r.isSuccess {
+                log(key: "log.svc.phpPortReconciled",
+                    args: [v.rawValue, "\(actual)", "\(v.port)"], type: .success)
+            } else {
+                // Dosya düzeltildi ama süreç eski portta kaldı — SESSİZ KALINMAZ, çünkü
+                // bu tam olarak düzeltmeye çalıştığımız ayrışmanın ta kendisi.
+                log(key: "log.svc.phpPortRestartFailed",
+                    args: [v.rawValue, "\(v.port)"], type: .error)
+            }
+        }
+        refreshStatus()
+    }
+
     /// Config dosyasından port oku (Listen veya listen = pattern)
     nonisolated private static func readPort(from path: String, pattern: String) -> Int? {
         guard let content = FileHelper.readString(path) else { return nil }

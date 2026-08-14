@@ -572,6 +572,12 @@ class AppState: ObservableObject {
         domainManager.refreshStatus()
         phpExtensionManager.loadExtensions()
 
+        // php-fpm portlarını BRAMPP'ın şemasına getir. `mayMutate` KORUMASI ALTINDA:
+        // ikincil bir süreç makinenin ortak durumuna dokunmaz. Durum tazelemesinden
+        // SONRA, çünkü hangi sürümün çalıştığını bilmeden yeniden başlatma kararı
+        // verilemez — ve düzeltme yeniden başlatmayla birlikte yapılmak zorunda.
+        if mayMutate { Task { await serviceManager.reconcilePHPFPMPorts() } }
+
         // Dock "Servisleri Durdur ve Kapat" yolunun da çıkış korumasını uygulaması için
         // hazırlık kancasını bağla (auto-refresh durdur + persist kilitle).
         BRAMPPAppDelegate.shared?.quitPreparation = { [weak serviceManager] in

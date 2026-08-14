@@ -162,7 +162,9 @@ final class DiagnosticsManager: BaseManager {
         // hâlde 9000 veriyor ve BRAMPP artık onu sessizce düzeltmiyor (düzeltmek bir
         // DURUM OKUMASINDAN yapılıyordu ve çalışan daemon'un altından dosyayı değiştirip
         // hiçbir şeyi yeniden başlatmıyordu — sonuç 502'ydi). Ayrışma artık burada,
-        // sonucuyla birlikte söyleniyor.
+        // sonucuyla birlikte söyleniyor. Bu bir EMNİYET AĞI: açılışta
+        // `reconcilePHPFPMPorts` düzeltmeyi yeniden başlatmayla BİRLİKTE yapıyor, yani
+        // bu bulgu ancak o düzeltme koşamadığında ya da başarısız olduğunda görünür.
         for v in PHPVersion.allCases where PathConfig.isPHPInstalled(version: v.rawValue) {
             guard let actual = PHPFPMConfigManager.currentListenPort(for: v.rawValue) else { continue }
             let expected = v.port
@@ -173,8 +175,10 @@ final class DiagnosticsManager: BaseManager {
                              detail: "www.conf \(actual) diyor, BRAMPP \(expected) bekliyor",
                              remedy: "VHost'lar \(expected) numaralı porta yönlendiriyor; PHP-FPM ise "
                                    + "\(actual) portunda dinliyor, yani bu sürümü kullanan siteler "
-                                   + "502 döner. Servisler → PHP \(v.rawValue) → Yeniden Başlat "
-                                   + "dosyayı düzeltip servisi yeni portla ayağa kaldırır."))
+                                   + "502 döner. BRAMPP bunu açılışta kendiliğinden düzeltir — burada "
+                                   + "görünüyorsa düzeltme yapılamamış demektir (www.conf yazılamadı, "
+                                   + "servis yeniden başlatılamadı ya da bu kopya makinenin ortak "
+                                   + "durumuna dokunmuyor). Konsolda sebebi yazar."))
         }
 
         // ── mkcert kök sertifikası ──────────────────────────────────────────

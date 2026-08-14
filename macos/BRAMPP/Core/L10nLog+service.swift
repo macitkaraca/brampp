@@ -23,6 +23,20 @@ extension L10n {
         "log.db.myCnfNoChange":
             ["tr": "Değişen ayar yok — my.cnf'e dokunulmadı",
              "en": "Nothing changed — my.cnf was left alone"],
+        // %@1 = PHP sürümü, %@2 = eski port, %@3 = yeni port
+        "log.svc.phpPortReconciled":
+            ["tr": "PHP %@ portu %@ → %@ olarak düzeltildi ve servis yeniden başlatıldı",
+             "en": "PHP %@'s port was corrected from %@ to %@ and the service restarted"],
+        "log.svc.phpPortFixedStopped":
+            ["tr": "PHP %@ portu %@ → %@ olarak düzeltildi — servis durmuş, başlatıldığında geçerli olur",
+             "en": "PHP %@'s port was corrected from %@ to %@ — the service is stopped, it takes effect when you start it"],
+        "log.svc.phpPortFixFailed":
+            ["tr": "❌ PHP %@ için www.conf yazılamadı — port düzeltilemedi",
+             "en": "❌ Could not write www.conf for PHP %@ — the port was not corrected"],
+        // %@1 = PHP sürümü, %@2 = yeni port
+        "log.svc.phpPortRestartFailed":
+            ["tr": "❌ PHP %@ www.conf'ta %@ portuna alındı ama servis yeniden başlatılamadı — süreç hâlâ eski portta, siteler 502 dönebilir",
+             "en": "❌ PHP %@ was moved to port %@ in www.conf but the service could not be restarted — the process is still on the old port and sites may return 502"],
         "log.svc.installBusy":
             ["tr": "Bir işlem zaten sürüyor (%@) — ikincisi başlatılmadı",
              "en": "An operation is already running (%@) — a second one was not started"],
