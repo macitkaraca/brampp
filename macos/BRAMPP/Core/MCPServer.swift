@@ -765,6 +765,26 @@ final class MCPServer: ObservableObject {
             .filter { $0.isPermitted(in: settings) }
             .map(\.json)
     }
+    /// **İzin tablosu: araç adı → (alan, yazma gerektirir mi).**
+    ///
+    /// Bu tablo ürünün güvenlik sınırı: 127.0.0.1:8765'e bağlanan bir yapay zekâ
+    /// istemcisiyle yıkıcı araçlar arasındaki TEK engel. 23 girdinin `scope`/`needsWrite`
+    /// çifti elle yazılıyor ve hiçbir seviyede doğrulaması yoktu — bir bayrağı ters
+    /// çevirmek, yıkıcı bir aracı salt-okunur bir alanda sessizce görünür kılardı.
+    ///
+    /// Testlere ve ileride `spec/mcp-tools.json` üretimine açık. `ToolSpec`in kendisi
+    /// private kalır: dışarıya sızması gereken şey şema değil, KARAR.
+    static func permissionTable() -> [(name: String, scope: MCPScope, needsWrite: Bool)] {
+        toolSpecs().map { ($0.name, $0.scope, $0.needsWrite) }
+    }
+
+    /// İki katmanlı geçidin ADLA sorulabilen hâli — `tools/list` süzmesiyle
+    /// `tools/call` denetimi aynı yanıtı vermek ZORUNDA, testi de bunu sabitler.
+    static func isToolPermitted(_ name: String, in settings: AppSettings) -> Bool {
+        guard let spec = toolSpecs().first(where: { $0.name == name }) else { return false }
+        return spec.isPermitted(in: settings)
+    }
+
     /// Kurulum sayfası ve Ayarlar için: tüm araçların adları.
     static func allToolNames() -> [String] { toolSpecs().map(\.name) }
 

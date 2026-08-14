@@ -3628,6 +3628,117 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - MCP izin tablosu
+
+    /// Beklenen tablo. **Bu liste ürünün güvenlik sınırıdır** — 127.0.0.1:8765'e
+    /// bağlanan bir yapay zekâ istemcisiyle yıkıcı araçlar arasındaki tek engel.
+    /// Değiştirmek bilinçli bir karar olmalı, o yüzden burada birebir yazılı.
+    private static let expectedMCPTable: [(String, MCPScope, Bool)] = [
+        ("list_domains",       .domains,   false),
+        ("create_domain",      .domains,   true),
+        ("update_domain",      .domains,   true),
+        ("set_domain_enabled", .domains,   true),
+        ("health_check",       .domains,   false),
+        ("start_app",          .domains,   true),
+        ("stop_app",           .domains,   true),
+        ("app_status",         .domains,   false),
+        ("service_status",     .services,  false),
+        ("start_service",      .services,  true),
+        ("stop_service",       .services,  true),
+        ("install_service",    .services,  true),
+        ("restart_service",    .services,  true),
+        ("db_list",            .databases, false),
+        ("db_create",          .databases, true),
+        ("db_export",          .databases, true),
+        ("db_import",          .databases, true),
+        ("db_query",           .databases, false),   // allow_write ayrı denetlenir
+        ("read_log",           .logs,      false),
+        ("read_domain_log",    .logs,      false),
+        ("list_shares",        .sharing,   false),
+        ("start_share",        .sharing,   true),
+        ("stop_share",         .sharing,   true),
+    ]
+
+    /// **Her aracın alanı ve yazma gereksinimi sabitlenir.**
+    ///
+    /// 23 girdinin `scope`/`needsWrite` çifti elle yazılıyor ve hiçbir seviyede
+    /// doğrulaması yoktu. Bir bayrağı ters çevirmek — ya da yeni bir aracı yanlış
+    /// alana koymak — yıkıcı bir aracı salt-okunur bir izinde SESSİZCE görünür kılardı;
+    /// ne derleyici ne çalışma zamanı bir şey söylerdi.
+    func testMCPPermissionTable_MatchesTheDeclaredBoundary() {
+        let actual = MCPServer.permissionTable()
+        XCTAssertEqual(actual.count, Self.expectedMCPTable.count,
+                       "araç sayısı değişti — tablo bilinçli olarak güncellenmeli")
+
+        let actualByName = Dictionary(uniqueKeysWithValues: actual.map { ($0.name, $0) })
+        for (name, scope, needsWrite) in Self.expectedMCPTable {
+            guard let a = actualByName[name] else {
+                XCTFail("\(name) araç listesinden kayboldu"); continue
+            }
+            XCTAssertEqual(a.scope, scope, "\(name) alanı değişmiş")
+            XCTAssertEqual(a.needsWrite, needsWrite, "\(name) yazma gereksinimi değişmiş")
+        }
+        // Listede olmayan yeni bir araç da sessizce geçmemeli.
+        for a in actual where !Self.expectedMCPTable.contains(where: { $0.0 == a.name }) {
+            XCTFail("\(a.name) tabloda yok — yeni araç eklendiyse izni bilinçli seçilmeli")
+        }
+    }
+
+    /// **Geçit, her alan × her düzey için doğru yanıtı vermeli.**
+    ///
+    /// `tools/list` süzmesiyle `tools/call` denetimi AYNI kararı vermek zorunda; ikisi
+    /// ayrışırsa araç listede görünmez ama çağrıldığında çalışır (ya da tersi).
+    func testMCPGate_ReadWriteNoneBehaveAsDeclared() {
+        for level in [MCPPermission.none, .read, .write] {
+            for (name, scope, needsWrite) in Self.expectedMCPTable {
+                var s = AppSettings()
+                switch scope {
+                case .domains:   s.mcpPermDomains   = level.rawValue
+                case .services:  s.mcpPermServices  = level.rawValue
+                case .databases: s.mcpPermDatabases = level.rawValue
+                case .logs:      s.mcpPermLogs      = level.rawValue
+                case .sharing:   s.mcpPermSharing   = level.rawValue
+                }
+                let expected = needsWrite ? (level == .write) : (level != .none)
+                XCTAssertEqual(MCPServer.isToolPermitted(name, in: s), expected,
+                               "\(name) — \(scope.rawValue) alanı \(level.rawValue) iken "
+                             + "\(expected ? "izinli" : "yasak") olmalıydı")
+            }
+        }
+    }
+
+    /// **Bozuk bir izin değeri en kısıtlayıcı düzeye düşer.**
+    ///
+    /// Ayar dosyası elle düzenlenip geçersiz bir değer yazılırsa erişim AÇILMAMALI.
+    func testMCPPermission_UnknownValueClosesTheDoor() {
+        for raw in ["", "yes", "READ", "admin", "true"] {
+            XCTAssertEqual(MCPPermission.parse(raw), .none, "'\(raw)' kapalıya düşmeli")
+        }
+        XCTAssertEqual(MCPPermission.parse("read"), .read)
+        XCTAssertEqual(MCPPermission.parse("write"), .write)
+    }
+
+    /// **Yükselen kullanıcı da paylaşımı kapalı bulmalı — ÇÖZÜMLEME yolundan.**
+    ///
+    /// Var olan bir kurulumda `settings.json` `mcpPermSharing` alanını içermez, çünkü
+    /// alan sonradan eklendi. Varsayılanı yalnızca `AppSettings()` üzerinden sınamak
+    /// bu yolu hiç denemez — oysa yükselen HER kullanıcı buradan geçer. Alan eksikken
+    /// çözümleme "kapalı" vermezse, tünel açan araçlar sessizce izinli hâle gelirdi.
+    func testMCPSharing_DefaultsToNoAccessWhenSettingsPredateTheField() throws {
+        let json = """
+        {"mcpPermDomains":"write","mcpPermServices":"write",
+         "mcpPermDatabases":"read","mcpPermLogs":"read"}
+        """
+        let s = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        XCTAssertEqual(MCPPermission.parse(s.mcpPermSharing), MCPPermission.none,
+                       "alan yokken paylaşım KAPALI olmalı")
+        // Diğer alanların okunduğu da doğrulanır — yoksa test her şeyi nil sanıp geçerdi.
+        XCTAssertEqual(MCPPermission.parse(s.mcpPermDomains), .write)
+        XCTAssertFalse(MCPServer.isToolPermitted("start_share", in: s))
+        XCTAssertFalse(MCPServer.isToolPermitted("list_shares", in: s))
+        XCTAssertTrue(MCPServer.isToolPermitted("create_domain", in: s))
+    }
+
     // MARK: - nginx.conf yedekleri
 
     /// **En eski yedek asla silinmez** — kullanıcının BRAMPP öncesi nginx.conf'u odur.
