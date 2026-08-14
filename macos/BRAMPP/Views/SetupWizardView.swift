@@ -1413,7 +1413,10 @@ struct SetupWizardView: View {
                 checkCommand: "(command -v mkcert >/dev/null 2>&1 || test -f \(PathConfig.mkcert)) && echo 'ok' || echo 'fail'",
                 installCommand: "\(Shell.brewBin) install mkcert nss",
                 status: .checking,
-                isRequired: true
+                // İSTEĞE BAĞLI — mkcert grubuyla AYNI karar. Paket zorunlu kaldığı
+                // sürece `canProceed` paket adımında takılıyordu, yani grubun isteğe
+                // bağlı olması hiçbir şey ifade etmiyordu: kullanıcı o adımı geçemiyordu.
+                isRequired: false
             ),
             SetupStatus(
                 id: "php83",
@@ -2180,10 +2183,15 @@ struct SetupWizardView: View {
             return
         }
 
-        if !mkcertCheckItems.allSatisfy(\.isComplete) {
-            consoleOutput.append("⚠️ Önce mkcert yapılandırmasını tamamlayın")
-            refreshConfigView()
-            return
+        // mkcert EKSİKSE DURULMAZ. Bu dönüş, "HTTPS isteğe bağlıdır" kararını fiilen
+        // geçersiz kılıyordu: CA kurulumunda takılan kullanıcı (kayıp rootCA-key.pem,
+        // anahtarlık reddi) localhost ortamını HİÇ kuramıyor, dolayısıyla çalışan bir
+        // HTTP kurulumuna da geçemiyordu. Zarif yol zaten otuz satır aşağıda duruyordu
+        // ve ona hiç ulaşılamıyordu.
+        let sslAvailable = mkcertCheckItems.allSatisfy(\.isComplete)
+        if !sslAvailable {
+            consoleOutput.append("ℹ️ mkcert hazır değil — localhost YALNIZCA HTTP olarak kurulacak")
+            consoleOutput.append("ℹ️ Sonradan SSL sekmesinden mkcert'i kurup bu adımı tekrarlayabilirsiniz")
         }
 
         PathConfig.createRequiredDirectories()
@@ -2208,8 +2216,16 @@ struct SetupWizardView: View {
         Task {
             // Sertifika üretim sonucunu kontrol et — başarısızsa ölü cert yollu SSL vhost
             // yazma (Apache SSL başlatılamaz) ve yanlış "başarılı" raporlama.
-            let certOK = await mkcertManager.generateCertificate(for: "localhost") { message, _ in
-                consoleOutput.append(message)
+            // mkcert yoksa üretmeyi denemek anlamsız: kullanıcıya anlamayacağı bir
+            // hata gösterir ve sonuç zaten aynı yere, HTTP-only dalına gider.
+            // `&&` kullanılamaz: sağ tarafı autoclosure ve `await` kabul etmiyor.
+            let certOK: Bool
+            if sslAvailable {
+                certOK = await mkcertManager.generateCertificate(for: "localhost") { message, _ in
+                    consoleOutput.append(message)
+                }
+            } else {
+                certOK = false
             }
             let certExists = FileHelper.exists("\(PathConfig.localhostSSLDir)/cert.pem")
                           && FileHelper.exists("\(PathConfig.localhostSSLDir)/key.pem")
