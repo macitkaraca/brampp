@@ -3569,6 +3569,41 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 9443), 443)
     }
 
+    /// **Paylaşım kapatma denemesinin sonucu HİÇBİR çağrı yerinde atılamaz.**
+    ///
+    /// `stopShareBeforeVHostChange` yalnızca cloudflared SIGKILL'den sağ çıktığında `false`
+    /// döner — yani herkese açık adres HÂLÂ YAYINDA. Üstüne vhost silinirse o adres
+    /// varsayılan siteyi sunmaya başlar; localhost kökü, phpMyAdmin ve Adminer dâhil.
+    /// `Require local` de korumaz, çünkü istek loopback'ten geliyor.
+    ///
+    /// Üç çağıran var ve koruma uzun süre yalnızca birinde vardı. Bu test dördüncüsü
+    /// eklendiğinde aynı sessiz açığın tekrarlanmasını engeller.
+    func testShareStop_ResultIsNeverDiscarded() throws {
+        let files = try appSourceFiles()
+        var checked = 0
+
+        for (path, text) in files {
+            let lines = text.components(separatedBy: .newlines)
+            for (i, line) in lines.enumerated() where line.contains("stopShareBeforeVHostChange(") {
+                let t = line.trimmingCharacters(in: .whitespaces)
+                if t.hasPrefix("///") || t.hasPrefix("//") { continue }
+                if t.contains("func stopShareBeforeVHostChange") { continue }   // tanım
+                checked += 1
+                // `guard` aynı satırda ya da hemen üstünde olabilir (satır kaydırma).
+                let context = (i > 0 ? lines[i - 1] : "") + " " + line
+                XCTAssertTrue(context.contains("guard"), """
+                              \(path):\(i + 1) — paylaşım kapatmanın sonucu atılıyor. \
+                              `false` demek tünelin HÂLÂ AYAKTA olduğu demek; vhost'u yine de \
+                              silmek herkese açık adresi varsayılan siteye düşürür. \
+                              `guard await stopShareBeforeVHostChange(...) else { … }` kullanın.
+                              """)
+            }
+        }
+        XCTAssertGreaterThanOrEqual(checked, 3,
+                                    "Üç çağrı yeri bekleniyordu, \(checked) bulundu — "
+                                  + "yeniden adlandırıldıysa test güncellensin")
+    }
+
     // MARK: - PHP-FPM portu
 
     /// `listen` portu okunurken YALNIZCA ilk havuz sayılır ve komşu direktifler karışmaz.

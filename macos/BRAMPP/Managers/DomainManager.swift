@@ -731,8 +731,15 @@ class DomainManager: BaseManager {
             log(key: "log.dom.enabled", args: [domain.name], type: .success)
         } else {
             log(key: "log.dom.disabling", args: [domain.name], type: .command)
-            // Devre dışı bırakmak da vhost'u siliyor — silmeyle aynı tehlike.
-            await stopShareBeforeVHostChange(domain.name)
+            // Devre dışı bırakmak da vhost'u siliyor — silmeyle AYNI tehlike, o yüzden
+            // AYNI koruma. Sonuç yok sayılıyordu: cloudflared SIGKILL'den sağ çıktığında
+            // bile vhost siliniyor, herkese açık adres yayında kalıp varsayılan siteyi
+            // (phpMyAdmin ve Adminer dâhil) sunmaya başlıyordu.
+            guard await stopShareBeforeVHostChange(domain.name) else {
+                log(key: "log.dom.shareStopFailedDisable", args: [domain.name], type: .error)
+                isLoading = false
+                return
+            }
             // Çalışan backend'i durdur (arka planda ghost süreç kalmasın)
             if [Platform.nodejs, .python, .dotnet].contains(domain.platform) {
                 await NativeProcessManager.stop(domain: domain)
@@ -794,8 +801,15 @@ class DomainManager: BaseManager {
         }
 
         // Doğrulamalar geçtikten SONRA, dosyalara dokunmadan ÖNCE: buradan sonrası
-        // artık geri dönülmeyecek bir yeniden adlandırma.
-        await stopShareBeforeVHostChange(oldName)
+        // artık geri dönülmeyecek bir yeniden adlandırma. Tam bu yüzden paylaşımın
+        // kapandığından EMİN olunmadan başlanmaz: yeniden adlandırma vhost'u ESKİ adla
+        // siler, tünel ise eski ada bağlıdır — kapanmadıysa hem herkese açık adres
+        // varsayılan siteye düşer hem de kullanıcı onu arayüzden bir daha bulamaz.
+        guard await stopShareBeforeVHostChange(oldName) else {
+            log(key: "log.dom.shareStopFailedRename", args: [oldName], type: .error)
+            isLoading = false
+            return .failure(Localizer.shared.t("dom.rename.shareStopFailed"))
+        }
 
         // CASE-ONLY rename (Api.local → api.local): macOS varsayılan dosya sistemi
         // büyük/küçük harfe DUYARSIZ olduğundan tüm yollar AYNI dosyaya çözülür.

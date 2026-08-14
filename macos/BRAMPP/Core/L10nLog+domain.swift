@@ -15,6 +15,12 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.dom.shareStopFailedDisable":
+            ["tr": "❌ '%@' devre dışı bırakılmadı: açık paylaşım kapatılamadı. Vhost silinseydi herkese açık adres varsayılan siteyi yayınlamaya başlardı.",
+             "en": "❌ '%@' was not disabled: its open share could not be closed. Removing the vhost would leave the public address serving the default site."],
+        "log.dom.shareStopFailedRename":
+            ["tr": "❌ '%@' yeniden adlandırılmadı: açık paylaşım kapatılamadı. Tünel eski ada bağlı — ad değişseydi ne yayın durur ne de arayüzden bulunabilirdi.",
+             "en": "❌ '%@' was not renamed: its open share could not be closed. The tunnel is keyed to the old name — after a rename it would neither stop nor be findable in the UI."],
         "log.dom.shareStopFailedAbort":
             ["tr": "❌ '%@' silinmedi: açık paylaşım kapatılamadı. Kapatılamayan bir paylaşımın üstüne silme yapılırsa herkese açık adres varsayılan siteyi yayınlamaya başlar. Servisler sekmesinden cloudflared'i durdurup yeniden deneyin.",
              "en": "❌ '%@' was not deleted: its open share could not be closed. Deleting on top of a share that is still up would leave the public address serving the default site. Stop cloudflared from the Services tab and try again."],

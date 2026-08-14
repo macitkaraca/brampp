@@ -955,6 +955,8 @@ enum L10n {
         "dom.enable":      ["tr": "Etkinleştir", "en": "Enable"],
         "dom.delete":      ["tr": "Sil", "en": "Delete"],
         "dom.appLog":      ["tr": "Uygulama Log", "en": "App Log"],
+        "dom.rename.shareStopFailed": ["tr": "Açık paylaşım kapatılamadığı için ad değiştirilmedi. Servisler sekmesinden cloudflared'i durdurup yeniden deneyin.",
+                                      "en": "The name was not changed because its open share could not be closed. Stop cloudflared from the Services tab and try again."],
         "dom.rename.title": ["tr": "Domaini Yeniden Adlandır", "en": "Rename Domain"],
         "dom.rename.ssl":  ["tr": "SSL sertifikası yeni ad için yeniden üretilecek (mkcert).", "en": "The SSL certificate will be regenerated for the new name (mkcert)."],
         "dom.rename.applying": ["tr": "Uygulanıyor…", "en": "Applying…"],
