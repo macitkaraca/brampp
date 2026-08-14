@@ -123,4 +123,30 @@ enum PHPFPMConfigManager {
 
         return lines.joined(separator: "\n")
     }
+
+    /// İLK havuzun `listen` portunu okur. Saf metin — dosya sistemine dokunmaz.
+    ///
+    /// `normalized` ile AYNI bölüm kuralını izler: yalnızca ilk havuz sayılır, çünkü
+    /// çok havuzlu bir `www.conf`ta sonraki bölümlerin portu başka bir havuza aittir ve
+    /// onu BRAMPP'ın beklediğiyle karşılaştırmak yanlış bir uyuşmazlık raporu üretirdi.
+    /// Yorum satırları atlanır: `;listen = 127.0.0.1:9000` bir ayar değil, bir örnektir.
+    static func listenPort(in input: String) -> Int? {
+        var section = 0
+        for raw in input.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix(";") || line.hasPrefix("#") { continue }
+            if line.hasPrefix("[") { section += 1; if section > 1 { return nil }; continue }
+            guard line.hasPrefix("listen"), let eq = line.firstIndex(of: "=") else { continue }
+            // "listen.owner" gibi komşu direktifler `listen` ile başlar ama port taşımaz.
+            guard line[..<eq].trimmingCharacters(in: .whitespaces) == "listen" else { continue }
+            let value = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+            return Int(value.split(separator: ":").last.map(String.init) ?? "")
+        }
+        return nil
+    }
+
+    /// Diskteki `www.conf`un ilk havuz portu — dosya yoksa ya da okunamıyorsa `nil`.
+    static func currentListenPort(for version: String) -> Int? {
+        FileHelper.readString(PathConfig.phpFpmConf(version: version)).flatMap(listenPort(in:))
+    }
 }

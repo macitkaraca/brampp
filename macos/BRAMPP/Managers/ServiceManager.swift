@@ -439,6 +439,18 @@ class ServiceManager: BaseManager {
                 }
             }
 
+            // php-fpm yapılandırması BAŞLATMADAN HEMEN ÖNCE düzeltilir — daemon'un onu
+            // okuyacağı tek an burası. `start` yalnızca servis GERÇEKTEN durmuşken düzeltir:
+            // zaten çalışan bir servise `start` demek brew'da no-op'tur, dosyayı orada
+            // değiştirmek yine "dosya yeni portu diyor, süreç eskisinde" durumunu yaratırdı.
+            if service.category == .php, service.id.hasPrefix("php@"),
+               action == "restart" || service.status != .running {
+                let ver = service.id.replacingOccurrences(of: "php@", with: "")
+                if FileHelper.exists(PathConfig.phpFpmConf(version: ver)) {
+                    _ = PHPFPMConfigManager.normalize(for: ver)
+                }
+            }
+
             let r        = await Shell.brewServicesAsync(brewAction, service: brewName)
             let combined = (r.output + " " + r.error).trimmingCharacters(in: .whitespaces)
 
@@ -2189,10 +2201,18 @@ class ServiceManager: BaseManager {
                 if s.id == "httpd"  { port = Self.readApacheHTTPPort() }
                 if s.id == "nginx"  { port = Self.readNginxHTTPPort()  }
                 if s.category == .php, s.id.hasPrefix("php@") {
-                    let ver = s.id.replacingOccurrences(of: "php@", with: "")
-                    let confPath = PathConfig.phpFpmConf(version: ver)
-                    if FileHelper.exists(confPath) { _ = PHPFPMConfigManager.normalize(for: ver) }
-                    port = Self.readPort(from: confPath, pattern: "listen")
+                    // OKUMA YAZMAZ. Burada eskiden `PHPFPMConfigManager.normalize` çağrılıyordu:
+                    // bir DURUM TAZELEMESİ, açılışta, çalışan daemon'un altından www.conf'u
+                    // 9000'den 908X'e çeviriyor ve hiçbir şeyi yeniden başlatmıyordu. Elle
+                    // brew php kurmuş kullanıcıda dosya 908X, süreç hâlâ 9000, vhost'lar
+                    // 908X'e proxy'liyor → bütün PHP siteleri 502. Üstelik satır yeşil
+                    // kalıyordu, çünkü `alreadyRunning` port doğrulamasını atlıyor.
+                    //
+                    // Düzeltme dosyaya BAŞLATMA yolunda uygulanıyor (controlService), yani
+                    // daemon'un onu gerçekten okuyacağı anda. Uyuşmazlık varsa teşhis
+                    // panelinde bildiriliyor — sessizce düzeltilmiyor.
+                    port = Self.readPort(from: PathConfig.phpFpmConf(version:
+                             s.id.replacingOccurrences(of: "php@", with: "")), pattern: "listen")
                 }
                 if s.id.hasPrefix("postgresql@") {
                     let ver = s.id.replacingOccurrences(of: "postgresql@", with: "")

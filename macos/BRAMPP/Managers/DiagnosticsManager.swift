@@ -156,6 +156,27 @@ final class DiagnosticsManager: BaseManager {
                                    + "Portları'ndan düzeltin."))
         }
 
+        // ── PHP-FPM portu: dosya ile BRAMPP'ın beklentisi ayrışmış mı ───────
+        // Çok sürümlü PHP ayrı portlara dayanıyor: vhost'lar `PHPVersion.port` SABİTİNİ
+        // yazıyor, `www.conf` da ona uydurulmalı. Ama dosya kullanıcının; Homebrew stok
+        // hâlde 9000 veriyor ve BRAMPP artık onu sessizce düzeltmiyor (düzeltmek bir
+        // DURUM OKUMASINDAN yapılıyordu ve çalışan daemon'un altından dosyayı değiştirip
+        // hiçbir şeyi yeniden başlatmıyordu — sonuç 502'ydi). Ayrışma artık burada,
+        // sonucuyla birlikte söyleniyor.
+        for v in PHPVersion.allCases where PathConfig.isPHPInstalled(version: v.rawValue) {
+            guard let actual = PHPFPMConfigManager.currentListenPort(for: v.rawValue) else { continue }
+            let expected = v.port
+            guard actual != expected else { continue }
+            out.append(.init(id: "phpport-\(v.rawValue)",
+                             title: "PHP \(v.rawValue) portu ayrışmış",
+                             level: .fail,
+                             detail: "www.conf \(actual) diyor, BRAMPP \(expected) bekliyor",
+                             remedy: "VHost'lar \(expected) numaralı porta yönlendiriyor; PHP-FPM ise "
+                                   + "\(actual) portunda dinliyor, yani bu sürümü kullanan siteler "
+                                   + "502 döner. Servisler → PHP \(v.rawValue) → Yeniden Başlat "
+                                   + "dosyayı düzeltip servisi yeni portla ayağa kaldırır."))
+        }
+
         // ── mkcert kök sertifikası ──────────────────────────────────────────
         let caDir = await Shell.bashAsync("\(PathConfig.mkcert) -CAROOT 2>/dev/null")
             .output.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -3569,6 +3569,82 @@ final class BRAMPPTests: XCTestCase {
         XCTAssertEqual(WebServerPorts.resolveApacheHTTPSForWrite(current: 9443, nginxHTTPS: 9443), 443)
     }
 
+    // MARK: - PHP-FPM portu
+
+    /// `listen` portu okunurken YALNIZCA ilk havuz sayılır ve komşu direktifler karışmaz.
+    func testPHPFPMListenPort_ReadsFirstPoolOnly() {
+        // Düz durum
+        XCTAssertEqual(PHPFPMConfigManager.listenPort(in: """
+        [www]
+        user = _www
+        listen = 127.0.0.1:9083
+        """), 9083)
+
+        // `listen.owner` da "listen" ile başlar ama port taşımaz — ilk eşleşme o olmamalı.
+        XCTAssertEqual(PHPFPMConfigManager.listenPort(in: """
+        [www]
+        listen.owner = _www
+        listen.group = _www
+        listen = 127.0.0.1:9084
+        """), 9084)
+
+        // Yorumlanmış satır bir AYAR DEĞİL, örnektir. Homebrew'un stok dosyası bunlarla dolu.
+        XCTAssertEqual(PHPFPMConfigManager.listenPort(in: """
+        [www]
+        ;listen = 127.0.0.1:9000
+        listen = 127.0.0.1:9085
+        """), 9085)
+
+        // İKİNCİ havuzun portu bu havuza ait değil — okunmaz, uydurulmaz.
+        XCTAssertNil(PHPFPMConfigManager.listenPort(in: """
+        [www]
+        user = _www
+        [site2]
+        listen = 127.0.0.1:9099
+        """))
+
+        XCTAssertNil(PHPFPMConfigManager.listenPort(in: "[www]\nuser = _www"))
+    }
+
+    /// **Durum okuması yapılandırma dosyasına YAZMAZ.**
+    ///
+    /// Gerçek bir hatanın testi. `updatePortsFromConfig` bir port OKUMASIDIR ve içinde
+    /// `PHPFPMConfigManager.normalize` çağrılıyordu: açılıştaki durum tazelemesi, çalışan
+    /// daemon'un altından `www.conf`u 9000'den 908X'e çeviriyor ve hiçbir şeyi yeniden
+    /// başlatmıyordu. Elle brew php kurmuş kullanıcıda dosya yeni portu, süreç eskisini
+    /// söylüyor; vhost'lar yeni porta proxy'liyor ve bütün PHP siteleri 502 dönüyordu.
+    /// Satır da yeşil kalıyordu, çünkü `alreadyRunning` port doğrulamasını atlıyor.
+    ///
+    /// Düzeltme başlatma yolunda — daemon'un dosyayı gerçekten okuyacağı an. Bu test
+    /// yazımın okuma yoluna geri sızmasını engeller.
+    func testStatusRead_DoesNotWriteConfigFiles() throws {
+        let files = try appSourceFiles()
+        guard let (_, text) = files.first(where: { $0.path.hasSuffix("ServiceManager.swift") }) else {
+            throw XCTSkip("ServiceManager.swift okunamadı")
+        }
+        guard let start = text.range(of: "func updatePortsFromConfig") else {
+            throw XCTSkip("updatePortsFromConfig bulunamadı — yeniden adlandırıldıysa test güncellensin")
+        }
+        // Gövde: sonraki `\n    }` kapanışına kadar (tür düzeyi girinti).
+        let rest = text[start.upperBound...]
+        let raw = rest.range(of: "\n    }\n").map { String(rest[..<$0.lowerBound]) } ?? String(rest)
+
+        // YORUMLAR SAYILMAZ. Gövdedeki açıklama bu adların NEDEN burada olmadığını
+        // anlatıyor ve onları birebir yazıyor; düz arama kendi gerekçesini ihlal sanardı.
+        let body = raw.components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+
+        for yazan in ["normalize", "FileHelper.write", "ConfigFileEditor.patch", "FileHelper.remove"] {
+            XCTAssertFalse(body.contains(yazan), """
+                           updatePortsFromConfig bir OKUMA yolu ama `\(yazan)` içeriyor. \
+                           Yapılandırma dosyasına yazmak, daemon'un onu okuyacağı ana \
+                           (başlatma/yeniden başlatma) ait — orada yazılırsa dosya ile \
+                           çalışan süreç ayrışır ve siteler 502 döner.
+                           """)
+        }
+    }
+
     // MARK: - Alan adı silme temizliği
 
     /// **Silme, alan adının ÜRETEBİLECEĞİ her logu hedefler — seçili sunucununkini değil.**
