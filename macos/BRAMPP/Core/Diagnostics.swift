@@ -137,6 +137,29 @@ enum Diagnostics {
     ///
     /// Yalnızca gerçek yönerge satırları sayılır; yorumlar atlanır — şablonun kendi
     /// açıklaması `Alias` kelimesini geçiriyor ve sayılsaydı her dosya bozuk görünürdü.
+    /// Bir Apache SSL yapılandırmasının GÖSTERDİĞİ sertifika yolları.
+    ///
+    /// Saf metin — dosya sistemine dokunmaz. Yorumlanmış satırlar atlanır: stok
+    /// `httpd-ssl.conf` üç `SSLCertificateFile` satırı taşır ve ikisi örnektir.
+    ///
+    /// Neden gerekli: `brew install httpd` bu dosyayı VERİR ama gösterdiği
+    /// `server.crt`/`server.key` çiftini VERMEZ. "Dosya var mı" diye bakıp SSL
+    /// include'ını açmak, temiz bir makinede configtest'i düşürüyor ve kurulum
+    /// sihirbazı hiç tamamlanamıyordu.
+    static func sslCertificatePaths(in content: String) -> [String] {
+        var out: [String] = []
+        for raw in content.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.hasPrefix("#"),
+                  line.hasPrefix("SSLCertificateFile") || line.hasPrefix("SSLCertificateKeyFile")
+            else { continue }
+            let value = line.drop(while: { !$0.isWhitespace }).trimmingCharacters(in: .whitespaces)
+            let path = value.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+            if !path.isEmpty { out.append(path) }
+        }
+        return out
+    }
+
     static func aliasOrderIsWrong(_ content: String, prefix: String) -> Bool {
         var bare = -1, slashed = -1
         for (i, raw) in content.components(separatedBy: .newlines).enumerated() {

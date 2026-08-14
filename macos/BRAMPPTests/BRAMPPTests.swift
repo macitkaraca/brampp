@@ -3628,6 +3628,52 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - Temiz makinede kurulum
+
+    /// **Stok `httpd-ssl.conf`un gösterdiği sertifikalar Homebrew tarafından VERİLMEZ.**
+    ///
+    /// Bu, uygulamanın tasarlandığı makinede kurulamamasının sebebiydi ve izole bir
+    /// yapılandırmayla yeniden üretildi:
+    ///
+    ///     SSLCertificateFile: file '/opt/homebrew/etc/httpd/server.crt' does not exist
+    ///
+    /// Zincir: brew dosyayı verir → BRAMPP "dosya var" diye include'ı açar →
+    /// `configtest` düşer → yazılanlar geri alınır → Apache grubu tamamlanmaz →
+    /// grup zorunlu olduğundan "Tamamla" hiç etkinleşmez.
+    ///
+    /// Yorumlanmış satırların atlanması testin ikinci yarısı: stok dosya üç
+    /// `SSLCertificateFile` satırı taşır ve ikisi örnektir; onları da "gerekli" saymak
+    /// BRAMPP'ın KENDİ geçerli dosyasını bile kullanılamaz ilan ederdi.
+    func testApacheSSLConf_ReportsOnlyTheCertificatesItActuallyUses() {
+        // Homebrew'un stok dosyasının biçimi — iki etkin satır, dördü yorumlu.
+        let stock = """
+        SSLCertificateFile "/opt/homebrew/etc/httpd/server.crt"
+        #SSLCertificateFile "/opt/homebrew/etc/httpd/server-dsa.crt"
+        #SSLCertificateFile "/opt/homebrew/etc/httpd/server-ecc.crt"
+        SSLCertificateKeyFile "/opt/homebrew/etc/httpd/server.key"
+        #SSLCertificateKeyFile "/opt/homebrew/etc/httpd/server-dsa.key"
+        """
+        XCTAssertEqual(Diagnostics.sslCertificatePaths(in: stock),
+                       ["/opt/homebrew/etc/httpd/server.crt",
+                        "/opt/homebrew/etc/httpd/server.key"],
+                       "yalnızca yorumlanmamış satırlar sayılmalı")
+
+        // BRAMPP'ın kendi yazdığı dosya — mkcert yolları, tırnaklı.
+        let ours = """
+        <VirtualHost _default_:443>
+            SSLEngine on
+            SSLCertificateFile "/Users/x/Library/Application Support/BRAMPP/ssl/localhost/cert.pem"
+            SSLCertificateKeyFile "/Users/x/Library/Application Support/BRAMPP/ssl/localhost/key.pem"
+        </VirtualHost>
+        """
+        let paths = Diagnostics.sslCertificatePaths(in: ours)
+        XCTAssertEqual(paths.count, 2)
+        XCTAssertTrue(paths[0].hasSuffix("/ssl/localhost/cert.pem"), "boşluklu yol bölünmemeli: \(paths[0])")
+
+        // SSL bloğu olmayan bir dosya hiçbir sertifika göstermez — yüklenmesi zararsızdır.
+        XCTAssertTrue(Diagnostics.sslCertificatePaths(in: "Listen 8443\n# yorum").isEmpty)
+    }
+
     // MARK: - PHP-FPM portu
 
     /// `listen` portu okunurken YALNIZCA ilk havuz sayılır ve komşu direktifler karışmaz.

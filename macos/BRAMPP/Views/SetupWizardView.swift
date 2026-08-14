@@ -1760,15 +1760,17 @@ struct SetupWizardView: View {
             ensureApacheIncludeEnabled(VHostTemplates.phpmyadminIncludeConfig(), in: PathConfig.httpdConf)
         ]
 
-        // SSL include SADECE httpd-ssl.conf gerçekten varsa eklenir — aksi halde Apache
-        // "Could not open configuration file" ile başlatılamaz. Dinamik brew yolu (Intel/ARM).
-        // Dosya yoksa localhost SSL adımı onu yazınca include o adımda eklenir.
-        if FileManager.default.fileExists(atPath: PathConfig.httpdSSLConf) {
+        // SSL include yalnızca httpd-ssl.conf GERÇEKTEN YÜKLENEBİLİRSE eklenir —
+        // gerekçenin tamamı `apacheSSLConfIsUsable()` üzerinde. Kısaca: dosyanın var
+        // olması yetmiyordu, çünkü brew onu gösterdiği sertifika olmadan veriyor.
+        // Kullanılabilir değilse include, localhost SSL adımında BRAMPP kendi dosyasını
+        // mkcert sertifikalarıyla yazdıktan sonra eklenir.
+        if apacheSSLConfIsUsable() {
             includeResults.append(
                 ensureApacheIncludeEnabled("Include \"\(PathConfig.httpdSSLConf)\"", in: PathConfig.httpdConf)
             )
         } else {
-            consoleOutput.append("ℹ️ httpd-ssl.conf henüz yok — SSL include, localhost SSL adımında eklenecek")
+            consoleOutput.append("ℹ️ httpd-ssl.conf henüz kullanılabilir değil — SSL include, localhost SSL adımında eklenecek")
         }
 
         let moduleResults = apacheModuleDefinitions.map {
@@ -2080,6 +2082,30 @@ struct SetupWizardView: View {
         return FileHelper.write(content, to: configPath, encoding: enc)
     }
     
+    /// **httpd-ssl.conf GERÇEKTEN yüklenebilir mi?** Var olması yetmez.
+    ///
+    /// `brew install httpd` bu dosyayı VERİR ama gösterdiği `server.crt`/`server.key`
+    /// çiftini VERMEZ. Dosyanın varlığına bakıp include'ı açmak, temiz bir makinede
+    /// Apache'yi şu hatayla düşürüyordu:
+    ///
+    ///     SSLCertificateFile: file '/opt/homebrew/etc/httpd/server.crt' does not exist
+    ///
+    /// Sonuç zincirleme: configtest geçmez → yazılanlar geri alınır → Apache grubu
+    /// hiç tamamlanmaz → grup zorunlu olduğu için sihirbazın "Tamamla" düğmesi asla
+    /// etkinleşmez. Yani uygulama, tasarlandığı makinede kurulamaz hâldeydi.
+    ///
+    /// BRAMPP kendi `httpd-ssl.conf`unu localhost SSL adımında mkcert sertifikalarıyla
+    /// yazıyor; o adıma kadar include AÇILMAMALI. Burada dosyanın gösterdiği her
+    /// sertifika yolunun diskte olup olmadığına bakılır — hem BRAMPP'ın kendi dosyası
+    /// hem kullanıcının elle yazdığı bir dosya için doğru yanıtı verir.
+    private func apacheSSLConfIsUsable() -> Bool {
+        guard let content = FileHelper.readString(PathConfig.httpdSSLConf) else { return false }
+        let referenced = Diagnostics.sslCertificatePaths(in: content)
+        // Hiç sertifika göstermiyorsa SSL bloğu da yoktur — yüklenmesinde sakınca yok.
+        guard !referenced.isEmpty else { return true }
+        return referenced.allSatisfy { FileHelper.exists($0) }
+    }
+
     private var apacheModuleDefinitions: [(name: String, path: String)] {
         [
             ("ssl_module", "lib/httpd/modules/mod_ssl.so"),
