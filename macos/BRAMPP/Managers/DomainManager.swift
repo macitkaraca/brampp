@@ -1139,6 +1139,20 @@ class DomainManager: BaseManager {
         // Yazımdan ÖNCE config zaten geçerli miydi? (Değilse, bozulmayı bize atfetmeyiz.)
         let wasValid = await webServerConfigValid(domain.webServer)
 
+        // **KAYIT HÂLÂ DURUYOR MU?** Bu denetim yazımın HEMEN ÖNÜNDE olmak zorunda.
+        //
+        // Çağıranlar nesli yazımın ETRAFINDA denetliyordu, içinde değil — ve yukarıdaki
+        // `await` (apachectl configtest / nginx -t) saniyeler sürebiliyor. O pencerede
+        // `removeDomain` baştan sona koşabilir: kaydı düşürür, vhost'u siler, SSL dizinini
+        // de siler. Sonra bu yazım düşer ve artık var olmayan bir sertifikayı gösteren
+        // ÖKSÜZ bir vhost yaratır. `configtest` kalıcı olarak düşer, Apache hiç başlamaz
+        // ve makinedeki BÜTÜN siteler gider. Üstelik çağırandaki yazım-sonrası nesil
+        // koruması hata logunu da bastırdığı için sessizce olur.
+        guard domains.contains(where: { $0.id == domain.id }) else {
+            log(key: "log.dom.vhostWriteAborted", args: [domain.name], type: .warning)
+            return .failed
+        }
+
         guard FileHelper.write(VHostTemplates.generate(for: domain), to: domain.vhostConfigPath) else {
             log(key: "log.dom.vhostWriteFailed", args: [domain.webServer.displayName], type: .error)
             return .failed

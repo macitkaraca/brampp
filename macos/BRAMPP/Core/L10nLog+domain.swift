@@ -15,6 +15,9 @@ extension L10n {
     static let logCatalog_domain: [String: [String: String]] = [
 
         // ── Bağımlılık servisleri ───────────────────────────────────────────
+        "log.dom.vhostWriteAborted":
+            ["tr": "'%@' vhost yazımı iptal edildi — doğrulama sürerken alan adı silinmiş. Silinen bir alan adının vhost'unu geri yazmak, olmayan bir sertifikayı gösteren öksüz bir dosya bırakır ve web sunucusu hiç başlamaz.",
+             "en": "The vhost write for '%@' was abandoned — the domain was deleted while validation ran. Rewriting it would leave an orphan pointing at a certificate that no longer exists, and the web server would not start at all."],
         "log.dom.shareStopFailedDisable":
             ["tr": "❌ '%@' devre dışı bırakılmadı: açık paylaşım kapatılamadı. Vhost silinseydi herkese açık adres varsayılan siteyi yayınlamaya başlardı.",
              "en": "❌ '%@' was not disabled: its open share could not be closed. Removing the vhost would leave the public address serving the default site."],
