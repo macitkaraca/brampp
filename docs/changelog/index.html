@@ -613,7 +613,28 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="v203">
+<section id="v204">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">August 14, 2026</span>
+      <h2>2.04</h2>
+      <p class="lede">BRAMPP could not be installed on the machine it was designed for. This release goes through the setup wizard end to end.</p>
+    </div>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Setup could never be completed on a clean Mac.</b> <code>brew install httpd</code> ships <code>extra/httpd-ssl.conf</code> but not the <code>server.crt</code> it points at. BRAMPP enabled the SSL include because the file existed, <code>configtest</code> failed with <code>SSLCertificateFile: file does not exist</code>, the write was rolled back, the Apache group never completed — and because that group is required, the Finish button never enabled. The check is no longer whether the file exists but whether <b>every certificate it references is on disk</b>; the include stays off until BRAMPP writes its own SSL config with mkcert certificates.</li>
+      <li><b>Installs froze in the wizard with an empty console.</b> Packages ran without a PTY, so a question brew asked never reached the console at all — brew does not end a prompt line with a newline, and the buffer holds the trailing segment. The user saw a frozen screen, a progress bar that stopped moving and no way to cancel. Installs now go through the same flow as the rest of the app: <b>live output, the download percentage, an answerable prompt bar and its auto-confirm countdown.</b></li>
+      <li><b>mkcert was described as optional and could not be skipped.</b> The package was still marked required, so the packages step could not be passed, and localhost setup refused to proceed without it. A user stuck on the CA — a lost <code>rootCA-key.pem</code>, a declined keychain prompt — could neither finish the wizard nor reach a working HTTP setup. Without mkcert, localhost is now configured over <b>HTTP</b> and SSL can be added later.</li>
+      <li><b>The wizard's other writer to <code>httpd.conf</code> had no protection.</b> No backup, no <code>configtest</code>, no rollback — and what it writes rearranges every PHP handler block in the file, including ones belonging to vhosts. On a hand-rolled configuration that was unrecoverable. Now: back up, write, validate, roll back on failure.</li>
+      <li><b>Installing a package without Homebrew</b> reported an opaque <code>command not found</code>; it now says Homebrew is what is missing.</li>
+      <li><b>A status refresh rewrote PHP-FPM configuration.</b> On launch, under the running process, <code>www.conf</code> was changed from 9000 to 908X with nothing restarted: the file said one port, the process was bound to another, and vhosts proxied to the file's — every PHP site returning 502. For someone who set up brew php by hand this read as "I installed BRAMPP and it broke my working PHP". Reads no longer write, and the correction now happens <b>together with the restart</b>.</li>
+      <li><b>A vhost was removed even when its open share could not be closed</b>, on disable and on rename. The public address kept serving, now showing the default site — phpMyAdmin and Adminer included. All three call sites are guarded.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v203">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -637,7 +658,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v202">
+<section id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -661,7 +682,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v201">
+<section class="band" id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 August 2026</span>
@@ -687,7 +708,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v20">
+<section id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -717,7 +738,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v19">
+<section class="band" id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -749,7 +770,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v18">
+<section id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -775,7 +796,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v17">
+<section class="band" id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -793,7 +814,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v16">
+<section id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -831,7 +852,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v15">
+<section class="band" id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -853,7 +874,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v14">
+<section id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -885,7 +906,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v13">
+<section class="band" id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -920,7 +941,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v12">
+<section id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 August 2026</span>
@@ -945,7 +966,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v11">
+<section class="band" id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 July 2026</span>

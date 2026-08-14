@@ -5,7 +5,28 @@
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
-<section id="v203">
+<section id="v204">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">14 Ağustos 2026</span>
+      <h2>2.04</h2>
+      <p class="lede">BRAMPP, tasarlandığı makinede kurulamıyordu. Bu sürüm kurulum sihirbazını baştan sona gözden geçiriyor.</p>
+    </div>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b>Temiz bir Mac'te kurulum hiç tamamlanamıyordu.</b> <code>brew install httpd</code> <code>extra/httpd-ssl.conf</code> dosyasını verir ama onun gösterdiği <code>server.crt</code> sertifikasını VERMEZ. BRAMPP "dosya var" diye SSL include'ını açıyor, <code>configtest</code> <code>SSLCertificateFile: file does not exist</code> ile düşüyor, yazılanlar geri alınıyor, Apache grubu tamamlanmıyor — ve o grup zorunlu olduğu için "Tamamla" düğmesi hiç etkinleşmiyordu. Artık dosyanın var olması değil, <b>gösterdiği her sertifikanın diskte olması</b> aranıyor; BRAMPP kendi SSL dosyasını mkcert sertifikalarıyla yazana kadar include kapalı kalıyor.</li>
+      <li><b>Sihirbazda kurulum donuyordu ve konsol boş kalıyordu.</b> Paketler PTY'siz çalıştırıldığından brew'un sorduğu onay sorusu konsola HİÇ ulaşmıyordu (brew istem satırını yeni satırla bitirmez, tampon eksik parçayı tutar). Kullanıcı donmuş bir ekran, ilerlemeyen bir çubuk ve iptal düğmesi olmayan bir pencere görüyordu. Kurulum artık uygulamanın diğer sekmelerindeki akıştan geçiyor: <b>canlı çıktı, indirme yüzdesi, cevaplanabilir istem çubuğu ve otomatik onay geri sayımı.</b></li>
+      <li><b>mkcert "isteğe bağlı" deniyordu ama atlanamıyordu.</b> Paket zorunlu işaretli olduğu için paket adımı geçilemiyor, localhost kurulumu da mkcert olmadan hiç ilerlemiyordu. CA kurulumunda takılan kullanıcı (kayıp <code>rootCA-key.pem</code>, anahtarlık reddi) ne sihirbazı bitirebiliyor ne de çalışan bir HTTP ortamına geçebiliyordu. Artık mkcert yoksa localhost <b>HTTP olarak</b> kuruluyor ve SSL sonradan eklenebiliyor.</li>
+      <li><b>Sihirbazın ikinci <code>httpd.conf</code> yazıcısı korumasızdı.</b> Yedek yok, <code>configtest</code> yok, geri alma yok — üstelik yazdığı şey dosyadaki her PHP handler bloğunu (vhost'lara ait olanlar dâhil) yeniden düzenliyor. Elle kurulmuş bir yapılandırmada geri dönüşü yoktu. Artık yedek → yaz → doğrula → geçmezse geri al.</li>
+      <li><b>Homebrew kurulu değilken paket kurmak</b> anlaşılmaz bir <code>command not found</code> hatası veriyordu; artık eksik olanın Homebrew olduğu söyleniyor.</li>
+      <li><b>Durum tazelemesi PHP-FPM yapılandırmasını yeniden yazıyordu.</b> Açılışta, çalışan sürecin altından <code>www.conf</code> 9000'den 908X'e çevriliyor ve hiçbir şey yeniden başlatılmıyordu: dosya bir portu, süreç başkasını söylüyor, vhost'lar dosyadakine yönlendiriyor — bütün PHP siteleri 502. Elle brew php kurmuş kullanıcı için bu "BRAMPP'ı kurdum, çalışan PHP'm bozuldu" demekti. Okuma artık yazmıyor; düzeltme <b>yeniden başlatmayla birlikte</b> yapılıyor.</li>
+      <li><b>Açık paylaşım kapatılamadığında vhost yine de siliniyordu</b> — devre dışı bırakma ve yeniden adlandırmada. Herkese açık adres yayında kalıp varsayılan siteyi (phpMyAdmin ve Adminer dâhil) sunmaya başlıyordu. Üç çağrı yerinin üçü de artık korumalı.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v203">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -29,7 +50,7 @@
   </div>
 </section>
 
-<section class="band" id="v202">
+<section id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -53,7 +74,7 @@
   </div>
 </section>
 
-<section id="v201">
+<section class="band" id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 Ağustos 2026</span>
@@ -79,7 +100,7 @@
   </div>
 </section>
 
-<section class="band" id="v20">
+<section id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -109,7 +130,7 @@
   </div>
 </section>
 
-<section id="v19">
+<section class="band" id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -141,7 +162,7 @@
   </div>
 </section>
 
-<section class="band" id="v18">
+<section id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -167,7 +188,7 @@
   </div>
 </section>
 
-<section id="v17">
+<section class="band" id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -185,7 +206,7 @@
   </div>
 </section>
 
-<section class="band" id="v16">
+<section id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -223,7 +244,7 @@
   </div>
 </section>
 
-<section id="v15">
+<section class="band" id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -245,7 +266,7 @@
   </div>
 </section>
 
-<section class="band" id="v14">
+<section id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -277,7 +298,7 @@
   </div>
 </section>
 
-<section id="v13">
+<section class="band" id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -312,7 +333,7 @@
   </div>
 </section>
 
-<section class="band" id="v12">
+<section id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 Ağustos 2026</span>
@@ -337,7 +358,7 @@
   </div>
 </section>
 
-<section id="v11">
+<section class="band" id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 Temmuz 2026</span>
