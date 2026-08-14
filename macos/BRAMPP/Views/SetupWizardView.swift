@@ -1877,6 +1877,47 @@ struct SetupWizardView: View {
         return updatedLines.joined(separator: "\n")
     }
 
+    /// **Paylaşılan Apache yapılandırmasına yazar ve Apache kabul etmezse GERİ ALIR.**
+    ///
+    /// Kalıp `configureApacheEnvironment` içinde doğru kurulmuştu ama yalnızca orada:
+    /// yedek → yaz → `configtest` → geçmezse yedekten dön. `setupLocalhostEnvironment`
+    /// aynı dosyaya üçünün hiçbiri olmadan yazıyordu — ve yazdığı şey masum değil:
+    /// dosyadaki HER `<FilesMatch \.php$>` bloğunu siliyor (vhost'lara ait olanlar dâhil)
+    /// ve ikinci bir `DocumentRoot` ekliyor. Elle kurulmuş bir yapılandırmada bu, geri
+    /// dönüşü olmayan bir kayıptı.
+    ///
+    /// - Parameter mutate: dosyayı değiştiren kapanış; `false` dönerse yazım yapılmamış
+    ///   sayılır ve `configtest` boşuna koşturulmaz.
+    /// - Returns: değişiklik kalıcı olduysa `true`.
+    @discardableResult
+    private func guardedHttpdWrite(_ label: String, _ mutate: () -> Bool) -> Bool {
+        guard let before = FileHelper.readString(PathConfig.httpdConf) else {
+            consoleOutput.append("❌ httpd.conf okunamadı — \(label) için dosyaya DOKUNULMADI")
+            return false
+        }
+        let backup = PathConfig.httpdConf + ".brampp.bak"
+        guard FileHelper.write(before, to: backup) else {
+            consoleOutput.append("❌ httpd.conf yedeklenemedi — \(label) için dosyaya DOKUNULMADI")
+            return false
+        }
+
+        guard mutate() else { return false }
+
+        // Yazımın BAŞARILI olması, Apache'nin sonucu kabul ettiği anlamına gelmez.
+        let test = Shell.bash("apachectl configtest 2>&1")
+        guard Diagnostics.configVerdict(server: "Apache", output: test.output,
+                                        exitOK: test.isSuccess).level != .fail else {
+            if FileHelper.write(before, to: PathConfig.httpdConf) {
+                consoleOutput.append("❌ \(label): configtest geçmedi — httpd.conf YEDEKTEN geri alındı")
+                consoleOutput.append(test.output.split(separator: "\n").prefix(3).joined(separator: "\n"))
+            } else {
+                consoleOutput.append("❌ \(label): configtest geçmedi ve geri alma da başarısız — yedek: \(backup)")
+            }
+            return false
+        }
+        return true
+    }
+
     /// httpd.conf ÖZGÜN kodlamasıyla geri yazılır; okunamıyorsa DOKUNULMAZ.
     @discardableResult
     private func normalizeLocalhostMainMapping() -> Bool {
@@ -2118,7 +2159,14 @@ struct SetupWizardView: View {
         PathConfig.createRequiredDirectories()
         FileHelper.createDirectory(PathConfig.localhostDir)
         FileHelper.createDirectory(PathConfig.localhostSSLDir)
-        _ = normalizeLocalhostMainMapping()
+
+        // KORUMALI. Buradaki yazım httpd.conf'taki bütün PHP handler bloklarını yeniden
+        // düzenliyor; bozarsa Apache hiç başlamaz ve makinedeki her site birden gider.
+        guard guardedHttpdWrite("localhost eşlemesi", { normalizeLocalhostMainMapping() }) else {
+            consoleOutput.append("⚠️ localhost ortamı hazırlanamadı — httpd.conf değiştirilmedi")
+            refreshConfigView()
+            return
+        }
 
         let indexPath = "\(PathConfig.localhostDir)/index.php"
         if !FileManager.default.fileExists(atPath: indexPath) {
