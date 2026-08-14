@@ -92,10 +92,28 @@ enum NginxConfigManager {
 
         // Bu fonksiyon rutin işlemlerde de (Adminer kur-kaldır, varsayılan PHP
         // değişimi) çalışır ve dosyayı SIFIRDAN yazar. Kullanıcının elle eklediği her şey
-        // uçmadan önce zaman damgalı bir kopya bırakılır.
-        backupMainConfig()
+        // uçar; o yüzden YEDEK ALINAMADIYSA YAZILMAZ. Eskiden yedeğin sonucu atılıyor ve
+        // yazım yine de yapılıyordu — yani korumanın başarısız olduğu durumda tam olarak
+        // korumak istediği şey kayboluyordu.
+        let previous = FileHelper.readString(PathConfig.nginxConf)
+        guard backupMainConfig() else { return false }
 
-        return FileHelper.write(config, to: PathConfig.nginxConf)
+        guard FileHelper.write(config, to: PathConfig.nginxConf) else { return false }
+
+        // YAZIM BAŞARILI ≠ NGINX KABUL ETTİ. Doğrulama yoktu: bozuk bir nginx.conf
+        // yalnızca bu işlemi değil, sonraki her başlatmayı da düşürür ve kullanıcı
+        // hangi satırın bozduğunu elle arar. Apache tarafında bu koruma zaten vardı.
+        let test = Shell.bash("\(Shell.brewPrefix)/bin/nginx -t 2>&1")
+        if Diagnostics.configVerdict(server: "Nginx", output: test.output,
+                                     exitOK: test.isSuccess).level == .fail {
+            // Geri dönülecek bir içerik varsa dön. Yoksa (dosya yeni yaratılıyordu)
+            // bozuk hâli bırakmaktansa silmek daha az zarar verir: nginx eksik
+            // dosyayla açık bir hata verir, bozuk dosyayla belirsiz bir hata.
+            if let previous { _ = FileHelper.write(previous, to: PathConfig.nginxConf) }
+            else { FileHelper.remove(PathConfig.nginxConf) }
+            return false
+        }
+        return true
     }
 
     // MARK: - Yedekleme
@@ -105,8 +123,10 @@ enum NginxConfigManager {
     private static let backupPrefix = "nginx.conf.brampp-bak-"
     private static let keepBackups  = 5
 
-    private static func backupMainConfig() {
-        guard FileHelper.exists(PathConfig.nginxConf) else { return }
+    @discardableResult
+    private static func backupMainConfig() -> Bool {
+        // Dosya henüz yoksa yedeklenecek bir şey de yok — bu bir BAŞARISIZLIK DEĞİL.
+        guard FileHelper.exists(PathConfig.nginxConf) else { return true }
 
         let fmt = DateFormatter()
         fmt.locale     = Locale(identifier: "en_US_POSIX")
@@ -116,20 +136,33 @@ enum NginxConfigManager {
 
         let target = "\(PathConfig.nginxBase)/\(backupPrefix)\(stamp)"
         // Aynı saniyede iki yazım olursa üzerine yazılmasın diye var olanı koru
-        guard !FileHelper.exists(target) else { return }
-        guard FileHelper.copy(from: PathConfig.nginxConf, to: target) else { return }
+        guard !FileHelper.exists(target) else { return true }
+        guard FileHelper.copy(from: PathConfig.nginxConf, to: target) else { return false }
 
         pruneBackups()
+        return true
     }
 
     /// Yedekler sınırsız birikmesin — ad zaman damgası içerdiğinden alfabetik sıralama
     /// kronolojik sıralamayla aynıdır.
+    /// Hangi yedekler silinecek? Saf karar — dosya sistemine dokunmaz.
+    ///
+    /// **EN ESKİSİ ASLA SİLİNMEZ.** O yedek, kullanıcının BRAMPP'a hiç dokunmamış
+    /// `nginx.conf`u: geri dönülmek istendiğinde asıl aranan dosya odur. Ad zaman
+    /// damgası taşıdığından alfabetik sıralama kronolojiktir ve eski kod
+    /// `dropLast(keep)` yapıyordu — yani en eskiden başlayarak siliyordu. Altı rutin
+    /// işlemden (Adminer kur-kaldır, varsayılan PHP değişimi…) sonra o dosya gidiyordu.
+    static func backupsToPrune(_ sortedNames: [String], keep: Int) -> [String] {
+        guard sortedNames.count > keep else { return [] }
+        // İlki korunur; kalanın en yenileri `keep` kadar tutulur.
+        return Array(sortedNames.dropFirst().dropLast(keep))
+    }
+
     private static func pruneBackups() {
         let all = FileHelper.contentsOfDirectory(PathConfig.nginxBase)
             .filter { $0.hasPrefix(backupPrefix) }
             .sorted()
-        guard all.count > keepBackups else { return }
-        for name in all.dropLast(keepBackups) {
+        for name in backupsToPrune(all, keep: keepBackups) {
             FileHelper.remove("\(PathConfig.nginxBase)/\(name)")
         }
     }

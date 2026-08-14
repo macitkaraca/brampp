@@ -3628,6 +3628,37 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - nginx.conf yedekleri
+
+    /// **En eski yedek asla silinmez** — kullanıcının BRAMPP öncesi nginx.conf'u odur.
+    ///
+    /// `rewriteMainConfig` rutin işlemlerde de koşuyor (Adminer kur-kaldır, varsayılan
+    /// PHP değişimi) ve her seferinde bir yedek bırakıyor. Eski budama en eskiden
+    /// başlayarak siliyordu: altı işlemden sonra geri dönülecek ASIL dosya gidiyordu ve
+    /// geriye yalnızca BRAMPP'ın kendi ürettiği beş sürüm kalıyordu.
+    func testNginxBackups_NeverPruneTheOldest() {
+        let names = (1...9).map { "nginx.conf.brampp-bak-2026081\($0)-120000" }   // kronolojik
+        let prune = NginxConfigManager.backupsToPrune(names, keep: 5)
+
+        XCTAssertFalse(prune.contains(names[0]), "en eski yedek KORUNMALI — \(prune)")
+        for kept in names.suffix(5) {
+            XCTAssertFalse(prune.contains(kept), "en yeni beş korunmalı: \(kept)")
+        }
+        // 9 dosya: 1 en eski + 5 en yeni korunur → 3 silinir
+        XCTAssertEqual(Set(prune), Set(names[1...3]))
+
+        // Sınır: eşik aşılmadıysa hiçbir şey silinmez
+        XCTAssertTrue(NginxConfigManager.backupsToPrune(Array(names.prefix(5)), keep: 5).isEmpty)
+        XCTAssertTrue(NginxConfigManager.backupsToPrune([], keep: 5).isEmpty)
+        // ALTI dosya: en eski (1) + en yeni beş (5) = altısı da korunur, hiçbiri gitmez.
+        // "En eskiyi koru" kuralı, saklanan gerçek sayıyı sessizce keep+1'e çıkarır.
+        XCTAssertTrue(NginxConfigManager.backupsToPrune(Array(names.prefix(6)), keep: 5).isEmpty,
+                      "altı dosyada budama olmamalı — koruma keep+1 demek")
+        // YEDİ dosyada ilk budama: en eskinin hemen ardındaki gider.
+        let seven = Array(names.prefix(7))
+        XCTAssertEqual(NginxConfigManager.backupsToPrune(seven, keep: 5), [seven[1]])
+    }
+
     // MARK: - Temiz makinede kurulum
 
     /// **Stok `httpd-ssl.conf`un gösterdiği sertifikalar Homebrew tarafından VERİLMEZ.**
