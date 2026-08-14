@@ -615,11 +615,22 @@ final class MCPServer: ObservableObject {
             "engine": property("string", "Varsayılan: mysql", allowed: dbEngines),
             "create_if_missing": property("boolean", "Hedef veritabanı yoksa oluştur — varsayılan: true")
         ]
+        let dbTablesProperties: [String: Any] = [
+            "database": property("string", "Tabloları listelenecek veritabanı — db_list ile adları öğrenin"),
+            "engine": property("string", "Varsayılan: mysql", allowed: dbEngines),
+            "max_rows": property("integer", "En çok kaç tablo — varsayılan 500")
+        ]
+        let dbDescribeProperties: [String: Any] = [
+            "database": property("string", "Veritabanı adı"),
+            "table": property("string", "Tablo adı — db_tables ile öğrenin"),
+            "engine": property("string", "Varsayılan: mysql", allowed: dbEngines)
+        ]
         let dbQueryProperties: [String: Any] = [
             "sql": property("string", "Çalıştırılacak tek SQL ifadesi"),
             "engine": property("string", "Varsayılan: mysql", allowed: dbEngines),
             "database": property("string", "Bağlanılacak veritabanı — verilmezse mysql'de veritabanı seçilmez, postgres'te 'postgres' kullanılır"),
-            "allow_write": property("boolean", "Veri değiştiren ifadelere izin ver — varsayılan: false. true için veritabanları alanında YAZMA izni gerekir."),
+            "allow_write": property("boolean", "INSERT / UPDATE / REPLACE / MERGE'e izin ver — varsayılan: false. Veritabanları alanında YAZMA izni gerekir."),
+            "allow_destructive": property("boolean", "DELETE / DROP / TRUNCATE / ALTER / CREATE / GRANT gibi veri veya ŞEMA kaybettirebilecek ifadelere izin ver — varsayılan: false. allow_write ile BİRLİKTE gönderilmelidir."),
             "max_rows": property("integer", "En çok kaç satır döndürülsün — varsayılan 100, en çok 1000")
         ]
 
@@ -715,6 +726,16 @@ final class MCPServer: ObservableObject {
                      description: "Bir .sql dökümünü hedef veritabanına uygular. Hedef yoksa create_if_missing=true ile oluşturulur. DİKKAT: döküm DROP/CREATE TABLE içeriyorsa mevcut veriler değişir — önce db_export ile yedek alın.",
                      schema: schema(dbImportProperties, required: ["name", "path"]),
                      scope: .databases, needsWrite: true, destructive: true),
+            ToolSpec("db_tables",
+                     title: "Tabloları Listele",
+                     description: "Bir veritabanındaki tabloları satır sayısı, yaklaşık boyut ve depolama motoruyla birlikte listeler. Şemayı keşfetmenin ilk adımı — tablo adlarını TAHMİN ETMEYİN, buradan alın.",
+                     schema: schema(dbTablesProperties, required: ["database"]),
+                     scope: .databases, needsWrite: false),
+            ToolSpec("db_describe",
+                     title: "Tabloyu Tanımla",
+                     description: "Bir tablonun sütunlarını sırayla döndürür: ad, tip, NULL kabul edip etmediği, anahtar, varsayılan değer ve ek nitelikler (auto_increment gibi). Sorgu yazmadan ÖNCE sütun adlarını buradan doğrulayın.",
+                     schema: schema(dbDescribeProperties, required: ["database", "table"]),
+                     scope: .databases, needsWrite: false),
             ToolSpec("db_query",
                      title: "SQL Sorgusu Çalıştır",
                      description: "Tek bir SQL ifadesi çalıştırır. Varsayılan olarak YALNIZCA okuma (SELECT/SHOW/DESCRIBE/EXPLAIN/WITH) kabul edilir; gövdesinde veri değiştiren komut (INSERT/UPDATE/DELETE/DROP/… veya INTO OUTFILE) geçen sorgular — veri değiştiren CTE'ler dâhil — ve dosya sistemine erişen fonksiyonlar (LOAD_FILE, pg_read_file, lo_import/lo_export, pg_ls_*, DBMS_*) reddedilir. Veri değiştirmek için allow_write=true gerekir.",
@@ -868,6 +889,8 @@ final class MCPServer: ObservableObject {
         case "db_export":          return await toolDBExport(arguments)
         case "db_import":          return await toolDBImport(arguments)
         case "db_query":           return await toolDBQuery(arguments)
+        case "db_tables":          return await toolDBTables(arguments)
+        case "db_describe":        return await toolDBDescribe(arguments)
         default:                   return .invalidParams("Bilinmeyen araç: \(name)")
         }
     }
@@ -1762,6 +1785,29 @@ final class MCPServer: ObservableObject {
     /// `WITH d AS (DELETE FROM users RETURNING *) SELECT count(*) FROM d` gibi
     /// veri değiştiren CTE'ler (PostgreSQL tam destekler, MySQL 8 / MariaDB 10.6+
     /// WITH ... UPDATE|DELETE destekler) önek denetiminden geçip veri silerdi.
+    /// **Bir SQL ifadesinin ayrıcalık sınıfı.**
+    ///
+    /// Eskiden tek bir `allow_write` anahtarı vardı ve açıldığında HİÇBİR denetim
+    /// kalmıyordu: `INSERT` ile `DROP DATABASE` aynı izne bağlıydı, üstelik çoklu ifade
+    /// reddi bile yalnızca salt-okunur dalda olduğundan `allow_write: true` ile
+    /// `"DROP DATABASE a; DROP DATABASE b"` çalışıyordu.
+    ///
+    /// Bir satır güncellemek ile bir veritabanını düşürmek aynı istek değildir; ayrım
+    /// bu yüzden var. Aynı ayrım referans MySQL MCP sunucularında da yapılıyor
+    /// (`ALLOW_INSERT_OPERATION` / `ALLOW_UPDATE_OPERATION` / `ALLOW_DELETE_OPERATION`,
+    /// ve `ALLOW_DDL` ayrı bir bayrak).
+    enum SQLClass: String {
+        /// Veri okur, hiçbir şeyi değiştirmez.
+        case read
+        /// Var olan tabloların SATIRLARINI değiştirir — geri alınabilir, sıradan iş.
+        case write
+        /// Veri veya ŞEMA kaybettirebilir: DELETE, DROP, TRUNCATE, ALTER, izin değişimi.
+        case dangerous
+    }
+
+    /// Satır değiştiren ama şema/veri KAYBETTİRMEYEN komutlar.
+    private static let writeSQLKeywords = ["INSERT", "UPDATE", "REPLACE", "MERGE"]
+
     private static let forbiddenSQLKeywords = [
         "INSERT", "UPDATE", "DELETE", "MERGE", "REPLACE", "CREATE", "DROP", "ALTER",
         "TRUNCATE", "RENAME", "GRANT", "REVOKE", "CALL", "DO", "HANDLER", "LOAD",
@@ -1852,6 +1898,65 @@ final class MCPServer: ObservableObject {
 
     /// Sadeleştirilmiş gövdede yasaklı bir komut varsa adını döner (yoksa `nil`).
     /// Eşleşme kelime sınırıyla ve harf-duyarsız yapılır: `updated_at` UPDATE sayılmaz.
+    /// **Bir ifadeyi ayrıcalık sınıfına ayırır.** Saf metin — bağlantı açmaz.
+    ///
+    /// `readOnlySQLViolation` ile AYNI sadeleştirmeyi kullanır (yorumlar soyulmuş gövde),
+    /// yoksa `SELECT 'drop'` gibi zararsız bir sorgu tehlikeli sayılırdı.
+    ///
+    /// - Returns: `(sınıf, tetikleyen kelime)`. Okuma için kelime `nil`.
+    static func classifySQL(_ scanBody: String) -> (SQLClass, String?) {
+        let stmt = scanBody.trimmingCharacters(in: CharacterSet(charactersIn: "; \t\n\r"))
+
+        // Dosya sistemine ulaşan fonksiyonlar ve INTO OUTFILE HER ZAMAN tehlikelidir:
+        // yazma izni istemek diskten dosya okuma hakkı vermez. Bu denetim eskiden
+        // yalnızca salt-okunur dalda koşuyordu.
+        for pattern in forbiddenSQLPatterns {
+            if let r = stmt.range(of: pattern, options: [.regularExpression, .caseInsensitive]) {
+                return (.dangerous, String(stmt[r]))
+            }
+        }
+        if stmt.range(of: "\\bINTO\\s+(OUT|DUMP)FILE\\b",
+                      options: [.regularExpression, .caseInsensitive]) != nil {
+            return (.dangerous, "INTO OUTFILE")
+        }
+
+        // SINIF BAŞ KELİMEDEN OKUNUR, gövde taramasından değil.
+        //
+        // Gövdede kelime aramak `UPDATE … SET …` üzerinde çöküyordu: `SET` oturum
+        // durumunu değiştirdiği için tehlikeli listesinde, ama UPDATE'te söz diziminin
+        // parçası. Sıradan bir güncelleme "veri kaybettirebilir" diye sınıflanıyordu.
+        let head = stmt.uppercased()
+        func basliyorMu(_ kw: String) -> Bool {
+            head == kw || head.hasPrefix("\(kw) ") || head.hasPrefix("\(kw)\n")
+                || head.hasPrefix("\(kw)\t") || head.hasPrefix("\(kw)(")
+        }
+
+        if let kw = writeSQLKeywords.first(where: basliyorMu) {
+            // Baş kelime sıradan yazma — ama gövdede ŞEMA/VERİ kaybettiren bir komut
+            // varsa sınıf yükselir: "INSERT INTO a SELECT … ; DROP TABLE b".
+            // `SET` yükseltmez, çünkü UPDATE/INSERT söz dizimine aittir.
+            for kaybettiren in forbiddenSQLKeywords
+                where !writeSQLKeywords.contains(kaybettiren) && kaybettiren != "SET" {
+                if stmt.range(of: "\\b\(kaybettiren)\\b",
+                              options: [.regularExpression, .caseInsensitive]) != nil {
+                    return (.dangerous, kaybettiren)
+                }
+            }
+            return (.write, kw)
+        }
+
+        // Bilinen bir okuma öneki mi? Öyleyse gövdede gizli bir yazma var mı bakılır
+        // (veri değiştiren CTE'ler: "WITH d AS (DELETE …) SELECT …").
+        if readOnlySQLPrefixes.contains(where: basliyorMu) {
+            if let keyword = readOnlySQLViolation(stmt) { return (.dangerous, keyword) }
+            return (.read, nil)
+        }
+
+        // Tanınmayan ya da açıkça yıkıcı bir baş kelime.
+        let kw = forbiddenSQLKeywords.first(where: basliyorMu)
+        return (.dangerous, kw ?? String(head.prefix(while: { $0.isLetter })))
+    }
+
     static func readOnlySQLViolation(_ scanBody: String) -> String? {
         // MySQL'de "SELECT … INTO OUTFILE '/tmp/x'" SELECT önekiyle geçip DOSYA YAZAR
         if scanBody.range(of: "\\bINTO\\s+(OUT|DUMP)FILE\\b",
@@ -1891,6 +1996,76 @@ final class MCPServer: ObservableObject {
         return nil
     }
 
+    /// **Veritabanındaki tabloları listeler** — satır sayısı ve boyutla birlikte.
+    ///
+    /// `db_query` ile `SHOW TABLES` yazılabilirdi ama bu, bir yapay zekânın en sık
+    /// ihtiyaç duyduğu işlemi ham SQL'e bırakmak demekti: motor başına farklı sorgu,
+    /// farklı çıktı biçimi ve satır sayısını ayrıca sorma zorunluluğu. Referans MySQL
+    /// MCP sunucuları şema keşfini birinci sınıf bir yetenek olarak sunuyor.
+    ///
+    /// Salt-okunur — `db_query`nin varsayılanıyla aynı izin düzeyi.
+    private func toolDBTables(_ arguments: [String: Any]) async -> ToolOutcome {
+        let engine: DBEngine
+        switch resolveEngine(arguments) {
+        case .failure(let outcome): return outcome
+        case .success(let e):       engine = e
+        }
+        guard let db = (arguments["database"] as? String)?
+                .trimmingCharacters(in: .whitespaces), !db.isEmpty else {
+            return .invalidParams("database gerekli — hangi veritabanının tabloları listelensin? "
+                                  + "Adları db_list ile öğrenin.")
+        }
+        guard Self.isSafeIdentifier(db) else {
+            return .failure("Geçersiz veritabanı adı: '\(db)' — yalnızca harf, rakam ve alt çizgi")
+        }
+        // Sorgu SABİT; kullanıcı metni yalnızca DOĞRULANMIŞ tanımlayıcı olarak girer.
+        let sql: String
+        switch engine {
+        case .mysql:
+            sql = "SELECT TABLE_NAME, TABLE_ROWS, ROUND(DATA_LENGTH/1024) AS DATA_KB, ENGINE "
+                + "FROM information_schema.TABLES WHERE TABLE_SCHEMA = '\(db)' ORDER BY TABLE_NAME"
+        case .postgres:
+            sql = "SELECT tablename, NULL, NULL, NULL FROM pg_tables "
+                + "WHERE schemaname = 'public' ORDER BY tablename"
+        }
+        return await toolDBQuery(["sql": sql, "engine": engine.rawValue,
+                                  "database": db,
+                                  "max_rows": arguments["max_rows"] ?? 500])
+    }
+
+    /// **Bir tablonun sütunlarını, tiplerini ve anahtarlarını döndürür.**
+    ///
+    /// Salt-okunur. Tablo adı da tanımlayıcı olarak doğrulanır — sorgu sabittir.
+    private func toolDBDescribe(_ arguments: [String: Any]) async -> ToolOutcome {
+        let engine: DBEngine
+        switch resolveEngine(arguments) {
+        case .failure(let outcome): return outcome
+        case .success(let e):       engine = e
+        }
+        guard let db = (arguments["database"] as? String)?
+                .trimmingCharacters(in: .whitespaces), !db.isEmpty,
+              let table = (arguments["table"] as? String)?
+                .trimmingCharacters(in: .whitespaces), !table.isEmpty else {
+            return .invalidParams("database ve table gerekli — tablo adlarını db_tables ile öğrenin.")
+        }
+        guard Self.isSafeIdentifier(db), Self.isSafeIdentifier(table) else {
+            return .failure("Geçersiz ad — yalnızca harf, rakam ve alt çizgi kullanın")
+        }
+        let sql: String
+        switch engine {
+        case .mysql:
+            sql = "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA "
+                + "FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '\(db)' "
+                + "AND TABLE_NAME = '\(table)' ORDER BY ORDINAL_POSITION"
+        case .postgres:
+            sql = "SELECT column_name, data_type, is_nullable, '', column_default, '' "
+                + "FROM information_schema.columns WHERE table_name = '\(table)' "
+                + "ORDER BY ordinal_position"
+        }
+        return await toolDBQuery(["sql": sql, "engine": engine.rawValue,
+                                  "database": db, "max_rows": 500])
+    }
+
     private func toolDBQuery(_ arguments: [String: Any]) async -> ToolOutcome {
         let engine: DBEngine
         switch resolveEngine(arguments) {
@@ -1903,40 +2078,59 @@ final class MCPServer: ObservableObject {
         let sql = rawSQL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !sql.isEmpty else { return .invalidParams("'sql' boş olamaz") }
 
-        let allowWrite = arguments["allow_write"] as? Bool ?? false
-        if allowWrite {
-            // Yazma yalnızca listelenmiş bir izin DEĞİL, ayrıca ALAN İZNİ ister:
-            // db_query'nin künyesi okuma düzeyindedir, yazma düzeyi burada aranır.
-            if let denial = Self.writeDenial(forToolNamed: "db_query") { return .failure(denial) }
-        } else {
-            // Denetim, yorumları ve dizge içeriklerini boşluğa çevrilmiş gövde üzerinde yapılır:
-            // "SELECT 1 -- \n; DROP TABLE x" gibi yorumla gizlenmiş kaçışlar böylece görünür kalır.
-            let scan = Self.sqlScanBody(sql)
+        let allowWrite     = arguments["allow_write"] as? Bool ?? false
+        let allowDangerous = arguments["allow_destructive"] as? Bool ?? false
 
-            // Gövdesi ";" ile ayrılmış birden fazla komut içeren sorgular reddedilir —
-            // "SELECT 1; DROP TABLE x" kalıbı salt-okunur önek denetimini aşardı.
-            // (Sondaki noktalı virgül tek ifadenin parçasıdır, sayılmaz.)
-            let body = scan.trimmingCharacters(in: CharacterSet(charactersIn: "; \t\n\r"))
-            guard !body.contains(";") else {
-                return .failure("Çoklu SQL ifadesi reddedildi — tek bir sorgu gönderin "
-                                + "(veya veri değiştirmek için allow_write: true kullanın)")
-            }
-            let head = body.uppercased()
+        // Denetim, yorumları ve dizge içeriklerini boşluğa çevrilmiş gövde üzerinde yapılır:
+        // "SELECT 1 -- \n; DROP TABLE x" gibi yorumla gizlenmiş kaçışlar böylece görünür kalır.
+        let scan = Self.sqlScanBody(sql)
+        let stmt = scan.trimmingCharacters(in: CharacterSet(charactersIn: "; \t\n\r"))
+
+        // ÇOKLU İFADE HER DALDA REDDEDİLİR. Bu denetim eskiden yalnızca salt-okunur
+        // daldaydı, yani `allow_write: true` ile "DROP DATABASE a; DROP DATABASE b"
+        // çalışıyordu — yazma izni istemek, arkasına istediğini zincirleme hakkı değildir.
+        guard !stmt.contains(";") else {
+            return .failure("Çoklu SQL ifadesi reddedildi — tek bir sorgu gönderin. "
+                            + "Birden çok işlem için tek tek çağırın; böylece her biri "
+                            + "kendi izin denetiminden geçer.")
+        }
+
+        let (sqlClass, keyword) = Self.classifySQL(stmt)
+
+        switch sqlClass {
+        case .read:
+            // Sınıflandırma "okuma" dese de ifadenin BİLİNEN bir okuma önekiyle başlaması
+            // aranır: tanımadığımız bir komut, içinde yasak kelime geçmiyor diye
+            // çalıştırılmaz.
+            let head = stmt.uppercased()
             guard Self.readOnlySQLPrefixes.contains(where: {
                 head == $0 || head.hasPrefix("\($0) ") || head.hasPrefix("\($0)\n")
                     || head.hasPrefix("\($0)\t") || head.hasPrefix("\($0)(")
             }) else {
-                return .failure("Yalnızca okuma sorgularına izin verilir "
-                                + "(\(Self.readOnlySQLPrefixes.joined(separator: ", "))). "
-                                + "Veri değiştirmek için allow_write: true gönderin.")
+                return .failure("Tanınmayan sorgu — okuma için "
+                                + "\(Self.readOnlySQLPrefixes.joined(separator: ", ")) ile başlayın. "
+                                + "Veri değiştiriyorsanız allow_write: true gönderin.")
             }
-            // İzin verilen önekten SONRA gövdede yazma komutu aranır (WITH … DELETE kaçışı)
-            if let keyword = Self.readOnlySQLViolation(body) {
-                return .failure("Salt-okunur sorgu '\(keyword)' ifadesi nedeniyle reddedildi — "
-                                + "sorgu veri değiştirebilir veya dosya sistemine erişebilir. "
-                                + "Bunu gerçekten yapmak istiyorsanız allow_write: true gönderin "
+
+        case .write:
+            // INSERT / UPDATE / REPLACE / MERGE — satır değiştirir, şema kaybettirmez.
+            guard allowWrite else {
+                return .failure("'\(keyword ?? "")' veri değiştirir — allow_write: true gönderin "
                                 + "(veritabanları alanında YAZMA izni gerekir).")
             }
+            if let denial = Self.writeDenial(forToolNamed: "db_query") { return .failure(denial) }
+
+        case .dangerous:
+            // DELETE / DROP / TRUNCATE / ALTER / CREATE / GRANT ve dosya sistemine
+            // ulaşan fonksiyonlar. AYRI bir onay ister: bir satır güncellemek ile bir
+            // tabloyu düşürmek aynı istek değildir ve aynı bayrağa bağlanamaz.
+            guard allowWrite, allowDangerous else {
+                return .failure("'\(keyword ?? "")' veri veya şema kaybettirebilir. "
+                                + "Bunu gerçekten istiyorsanız allow_write: true İLE BİRLİKTE "
+                                + "allow_destructive: true gönderin (veritabanları alanında "
+                                + "YAZMA izni gerekir). Önce db_export ile yedek almanız önerilir.")
+            }
+            if let denial = Self.writeDenial(forToolNamed: "db_query") { return .failure(denial) }
         }
 
         let requestedRows = arguments["max_rows"] as? Int ?? 100

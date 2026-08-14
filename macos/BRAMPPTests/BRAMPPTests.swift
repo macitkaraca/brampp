@@ -3628,6 +3628,57 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - SQL ayrıcalık sınıflandırması
+
+    /// **Bir satır güncellemek ile bir tabloyu düşürmek aynı izne bağlanamaz.**
+    ///
+    /// Eskiden tek bir `allow_write` anahtarı vardı ve açıldığında hiçbir denetim
+    /// kalmıyordu — `INSERT` ile `DROP DATABASE` aynı bayrağa bağlıydı. Referans MySQL
+    /// MCP sunucuları da bu ayrımı yapıyor (INSERT/UPDATE ayrı, DELETE ve DDL ayrı).
+    func testSQLClass_SeparatesRoutineWritesFromDataLoss() {
+        func sinifi(_ sql: String) -> MCPServer.SQLClass {
+            MCPServer.classifySQL(MCPServer.sqlScanBody(sql)).0
+        }
+
+        // Okuma
+        for sql in ["SELECT * FROM users",
+                    "SHOW TABLES",
+                    "DESCRIBE users",
+                    "EXPLAIN SELECT 1",
+                    "SHOW CREATE TABLE users",          // CREATE geçer ama saf okumadır
+                    "SHOW CHARACTER SET"] {             // SET geçer ama saf okumadır
+            XCTAssertEqual(sinifi(sql), .read, "okuma sayılmalı: \(sql)")
+        }
+
+        // Sıradan yazma — allow_write yeter
+        for sql in ["INSERT INTO users (name) VALUES ('a')",
+                    "UPDATE users SET name = 'b' WHERE id = 1",
+                    "REPLACE INTO users (id, name) VALUES (1, 'c')"] {
+            XCTAssertEqual(sinifi(sql), .write, "sıradan yazma sayılmalı: \(sql)")
+        }
+
+        // Veri/şema kaybettirenler — ayrıca allow_destructive ister
+        for sql in ["DELETE FROM users WHERE id = 1",
+                    "DROP TABLE users",
+                    "TRUNCATE TABLE users",
+                    "ALTER TABLE users ADD COLUMN x INT",
+                    "CREATE TABLE t (id INT)",
+                    "GRANT ALL ON *.* TO 'x'@'localhost'"] {
+            XCTAssertEqual(sinifi(sql), .dangerous, "tehlikeli sayılmalı: \(sql)")
+        }
+
+        // Dizge içindeki kelime sınıfı YÜKSELTMEZ — yoksa zararsız sorgular engellenirdi.
+        XCTAssertEqual(sinifi("SELECT * FROM logs WHERE action = 'delete'"), .read)
+        XCTAssertEqual(sinifi("SELECT 'drop table' AS note"), .read)
+
+        // Karışık gövde EN TEHLİKELİ sınıfa düşer: INSERT var diye zayıflatılmaz.
+        XCTAssertEqual(sinifi("INSERT INTO a SELECT * FROM b; DROP TABLE b"), .dangerous)
+
+        // Dosya sistemine ulaşan fonksiyonlar yazma izniyle bile açılmaz.
+        XCTAssertEqual(sinifi("SELECT LOAD_FILE('/etc/passwd')"), .dangerous)
+        XCTAssertEqual(sinifi("SELECT * FROM users INTO OUTFILE '/tmp/x'"), .dangerous)
+    }
+
     // MARK: - MCP izin tablosu
 
     /// Beklenen tablo. **Bu liste ürünün güvenlik sınırıdır** — 127.0.0.1:8765'e
@@ -3651,7 +3702,9 @@ final class BRAMPPTests: XCTestCase {
         ("db_create",          .databases, true),
         ("db_export",          .databases, true),
         ("db_import",          .databases, true),
-        ("db_query",           .databases, false),   // allow_write ayrı denetlenir
+        ("db_query",           .databases, false),   // allow_write / allow_destructive ayrı denetlenir
+        ("db_tables",          .databases, false),
+        ("db_describe",        .databases, false),
         ("read_log",           .logs,      false),
         ("read_domain_log",    .logs,      false),
         ("list_shares",        .sharing,   false),
