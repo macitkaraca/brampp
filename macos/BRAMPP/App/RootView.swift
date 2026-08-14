@@ -19,7 +19,11 @@ struct RootView: View {
                     .environmentObject(appState.tunnelManager)
                     .environmentObject(appState.diagnosticsManager)
             } else {
+                // ServiceManager sihirbaza da GEREKLİ: paket kurulumları oradan geçiyor
+                // (PTY, canlı ilerleme, istem çubuğu). Sihirbaz kendi düz `streamBash`
+                // çağrısıyla kurduğunda brew'un sorduğu soru hiç görünmüyordu.
                 SetupWizardView { appState.onSetupCompleted() }
+                    .environmentObject(appState.serviceManager)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showHelpSheet)) { _ in

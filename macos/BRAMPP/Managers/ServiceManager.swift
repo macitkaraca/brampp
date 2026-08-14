@@ -807,6 +807,48 @@ class ServiceManager: BaseManager {
 
     // MARK: - Installation
 
+    /// **`Service` kaydı OLMAYAN bir paketi aynı kurulum akışından geçirir.**
+    ///
+    /// Kurulum sihirbazı içindir. Sihirbaz kendi kurulumlarını düz `streamBash` ile
+    /// çalıştırıyordu: PTY yok, istem işleme yok, zaman aşımı yok. brew bir şey sorduğunda
+    /// istem konsola HİÇ ulaşmıyordu — brew istem satırlarını yeni satırla bitirmiyor,
+    /// `streamBash`in tamponu da eksik parçayı elinde tutuyor — ve sihirbaz boş bir
+    /// konsolla, ilerlemeyen bir çubukla, iptal düğmesi olmadan donuyordu.
+    ///
+    /// Buradan geçen kurulum ServiceManager'ın var olan akışını kullanır: canlı çıktı,
+    /// `\r` ile güncellenen indirme yüzdesi, istem çubuğu ve otomatik onay geri sayımı.
+    /// Arayüz tarafında ek bir şey gerekmez — `InstallationProgressSheet` zaten
+    /// `isInstalling` / `installationLog` / `isAwaitingInput` alanlarını izliyor.
+    ///
+    /// - Returns: kurulum başarılıysa `true`.
+    @discardableResult
+    func installPackage(title: String, command: String) async -> Bool {
+        guard requireBrew(forKey: "log.op.serviceInstall", [title]) else { return false }
+        guard !isInstalling else {
+            log(key: "log.svc.installBusy", args: [installationTitle], type: .warning)
+            return false
+        }
+
+        isInstalling      = true
+        installationTitle = "\(title) Kuruluyor"
+        installationLog   = "🚀 \(title) kurulum başlatılıyor...\n\(command)\n\n"
+        log(key: "log.svc.installing", args: [title], type: .command)
+
+        let r = await streamInstallLog(command)
+        isInstalling = false
+
+        if r.isSuccess {
+            installationLog += "\n✅ Kurulum başarıyla tamamlandı!\n"
+            log(key: "log.svc.installed", args: [title], type: .success)
+        } else {
+            installationLog += "\n❌ Kurulum başarısız (Hata kodu: \(r.exitCode))\n"
+            if !r.error.isEmpty { installationLog += r.error + "\n" }
+            log(key: "log.svc.installFailed", args: [title, r.error], type: .error)
+        }
+        refreshStatus()
+        return r.isSuccess
+    }
+
     func installService(_ service: Service) {
         guard requireBrew(forKey: "log.op.serviceInstall", [service.name]) else { return }
         // Kurulum durumu (isInstalling / installationLog / ptyController) TEKİLDİR.

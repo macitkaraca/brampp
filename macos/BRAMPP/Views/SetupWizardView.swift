@@ -69,6 +69,10 @@ struct SetupCheckItem: Identifiable {
 /// Tamamlandığında `onComplete` closure'ını çağırır.
 struct SetupWizardView: View {
     @EnvironmentObject var loc: Localizer
+    /// Paket kurulumları buradan geçer: PTY, canlı indirme yüzdesi, istem çubuğu.
+    @EnvironmentObject var serviceManager: ServiceManager
+    /// Kurulum başlayınca açılır — ServicesTab ve Veritabanı sekmesiyle AYNI pencere.
+    @State private var showInstallLog = false
 
     var onComplete: () -> Void
 
@@ -127,6 +131,11 @@ struct SetupWizardView: View {
         }
         .sheet(isPresented: $showMkcertLog) {
             MkcertInstallProgressSheet(manager: mkcertManager, isPresented: $showMkcertLog)
+        }
+        // Paket kurulumunun penceresi — Servisler ve Veritabanı sekmeleriyle AYNI görünüm:
+        // canlı çıktı, indirme yüzdesi ve brew bir şey sorduğunda cevaplanabilir istem çubuğu.
+        .sheet(isPresented: $showInstallLog) {
+            InstallationProgressSheet(serviceManager: serviceManager, isPresented: $showInstallLog)
         }
     }
     
@@ -1663,37 +1672,32 @@ struct SetupWizardView: View {
         }
 
         // brew install paketleri — sudo gerektirmez; in-app streaming
-        Task {
-            consoleOutput.append("$ \(item.installCommand)")
-            let r = await Shell.streamBash(
-                item.installCommand,
-                onLine: { line in
-                    let clean = ServiceManager.stripANSI(line)
-                    guard !clean.isEmpty else { return }
-                    consoleOutput.append(clean)
-                },
-                onProgress: { line in
-                    let clean = ServiceManager.stripANSI(line)
-                    guard !clean.isEmpty else { return }
-                    // Son satır bir progress bar ise yerinde güncelle, değilse ekle
-                    if let last = consoleOutput.last, isProgressBar(last) {
-                        consoleOutput[consoleOutput.count - 1] = clean
-                    } else {
-                        consoleOutput.append(clean)
-                    }
-                }
-            )
+        // HOMEBREW OLMADAN BREW KURULUMU YOK. Bu koruma eksikti: Homebrew'suz bir
+        // makinede Apache/PHP/MariaDB'nin Kur düğmesine basmak "brew: command not found"
+        // ile düşüyor ve kullanıcı asıl sorunu — paket yöneticisinin hiç kurulu olmadığını —
+        // hata metninden çıkarmak zorunda kalıyordu.
+        guard Shell.isBrewInstalled else {
+            setupItems[i].status = .error("Önce Homebrew kurulmalı")
+            consoleOutput.append("⚠️ Homebrew kurulu değil — önce yukarıdaki Homebrew adımını tamamlayın")
+            refreshConfigView()
+            return
+        }
 
-            if r.isSuccess {
+        // KURULUM ServiceManager'A DEVREDİLİR. Burada düz `streamBash` çağrılıyordu:
+        // PTY yok, dolayısıyla brew bir onay sorduğunda istem satırı konsola HİÇ
+        // ulaşmıyor (brew istem satırını yeni satırla bitirmez, tampon eksik parçayı
+        // tutar) ve sihirbaz boş konsolla, ilerlemeyen çubukla, iptali olmadan
+        // donuyordu. ServiceManager'ın akışında hepsi var.
+        showInstallLog = true
+        Task {
+            let ok = await serviceManager.installPackage(title: item.name, command: item.installCommand)
+            if ok {
                 setupItems[i].status = .installed
                 consoleOutput.append("✅ \(item.name) kuruldu")
-
             } else {
-                setupItems[i].status = .error(r.error.isEmpty ? "Çıkış kodu: \(r.exitCode)" : r.error)
-                consoleOutput.append("❌ \(item.name) kurulamadı (kod: \(r.exitCode))")
-                if !r.error.isEmpty { consoleOutput.append(r.error) }
+                setupItems[i].status = .error("Kurulum tamamlanamadı — ayrıntı kurulum penceresinde")
+                consoleOutput.append("❌ \(item.name) kurulamadı")
             }
-
             checkAndAutoAdvance()
         }
     }
