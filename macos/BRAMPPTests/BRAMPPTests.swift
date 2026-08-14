@@ -3628,6 +3628,53 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - Alan adı oluşturma sırası
+
+    /// **Kayıt, vhost yazılmadan ÖNCE eklenmeli.**
+    ///
+    /// İki ayrı gerekçe aynı sırayı dayatıyor ve ikisi de sessizce kırılabilir:
+    ///
+    /// 1. Kayıt sonda yazılırsa arada makine, BRAMPP'ın hiç bilmediği bir alan adını
+    ///    sunmaya hazır hâle gelir — dosyalar var, kayıt yok. `addToHosts` yönetici
+    ///    parolası isteyip süresiz beklediğinden bu pencere dakikalar sürer.
+    /// 2. `createVHostConfigLocked` yazımdan hemen önce "bu kayıt hâlâ duruyor mu" diye
+    ///    bakıyor (silinen alan adının vhost'unun geri yazılmasını engellemek için).
+    ///    Kayıt sonda eklenirse OLUŞTURMANIN KENDİ yazımı da iptal edilir.
+    ///
+    /// İkincisi bu projede gerçekten oldu: koruma eklendi, alan adı oluşturma tamamen
+    /// bozuldu ve tek bir test bunu yakalamadı — `addDomain`i uçtan uca koşturan bir test
+    /// yok, çünkü canlı Homebrew gerektiriyor. Sıra, kaynak düzeyinde sabitlenir.
+    func testAddDomain_SavesTheRecordBeforeWritingTheVHost() throws {
+        let files = try appSourceFiles()
+        guard let (_, text) = files.first(where: { $0.path.hasSuffix("DomainManager.swift") }) else {
+            throw XCTSkip("DomainManager.swift okunamadı")
+        }
+        guard let start = text.range(of: "func addDomain") else {
+            throw XCTSkip("addDomain bulunamadı — yeniden adlandırıldıysa test güncellensin")
+        }
+        let rest = String(text[start.upperBound...])
+        // Gövde: fonksiyonun kendi kapanışına kadar (tür düzeyi girinti).
+        let body = rest.range(of: "\n    }\n").map { String(rest[..<$0.lowerBound]) } ?? rest
+
+        guard let appendAt = body.range(of: "domains.append(domain)")?.lowerBound else {
+            return XCTFail("addDomain kaydı hiç eklemiyor?")
+        }
+        guard let vhostAt = body.range(of: "createVHostConfig(for: domain)")?.lowerBound else {
+            return XCTFail("addDomain vhost yazmıyor?")
+        }
+        XCTAssertLessThan(appendAt, vhostAt, """
+                          addDomain kaydı vhost yazımından SONRA ekliyor. \
+                          Bu sırayla createVHostConfigLocked'in varlık denetimi oluşturmanın \
+                          kendi yazımını iptal eder ve alan adı oluşturma tamamen bozulur; \
+                          ayrıca arada dosyaları olan ama kaydı olmayan bir pencere kalır.
+                          """)
+
+        // Yarıda kalan oluşturma kaydı geride bırakmamalı.
+        XCTAssertTrue(body.contains("func abandon()"),
+                      "başarısızlık yollarında kaydı geri alan bir yol yok — "
+                    + "dosyasız bir kayıt kalırdı")
+    }
+
     // MARK: - SQL ayrıcalık sınıflandırması
 
     /// **Bir satır güncellemek ile bir tabloyu düşürmek aynı izne bağlanamaz.**

@@ -421,7 +421,29 @@ class DomainManager: BaseManager {
         isLoading = true
         log(key: "log.dom.creating", args: [domain.name], type: .command)
 
-        guard createSiteFolder(for: domain) else { isLoading = false; return false }
+        // **KAYIT ÖNCE YAZILIR.** Eskiden en sonda yazılıyordu ve arada makine, BRAMPP'ın
+        // hiç bilmediği bir alan adını sunmaya hazır hâle geliyordu: site klasörü,
+        // sertifika, vhost, hosts girişi hepsi vardı ama kayıt yoktu. `addToHosts`
+        // yönetici parolası isteyip süresiz beklediğinden bu pencere dakikalar sürebilir;
+        // orada çıkılırsa geriye hiçbir arayüzde görünmeyen, hiçbir şeyin toplamadığı
+        // dosyalar kalıyordu.
+        //
+        // Sıra ayrıca `createVHostConfigLocked`in "kayıt hâlâ duruyor mu" denetimi için
+        // ZORUNLU: o denetim silinen bir alan adının vhost'unun geri yazılmasını
+        // engelliyor ve kaydı sonda yazmak, oluşturmanın kendi yazımını da engellerdi.
+        domains.append(domain)
+        updateUsedPorts()
+        saveDomains()
+
+        /// Oluşturma yarıda kalırsa kaydı geri al — yoksa dosyasız bir kayıt kalırdı.
+        func abandon() {
+            domains.removeAll { $0.id == domain.id }
+            updateUsedPorts()
+            saveDomains()
+            isLoading = false
+        }
+
+        guard createSiteFolder(for: domain) else { abandon(); return false }
 
         if domain.sslEnabled {
             if !(await createSSLCertificate(for: domain)) {
@@ -432,7 +454,7 @@ class DomainManager: BaseManager {
             }
         }
 
-        guard await createVHostConfig(for: domain) else { isLoading = false; return false }
+        guard await createVHostConfig(for: domain) else { abandon(); return false }
 
         // .brampp.json yaz (backend platformlar için)
         writeConfigFiles(for: domain)
@@ -447,9 +469,14 @@ class DomainManager: BaseManager {
         // Bağlı web sunucusu durmuşsa otomatik başlat + reload (yeni domain hemen erişilebilsin)
         await reloadWebServer(for: domain, autoStart: true)
 
-        domains.append(domain)
-        updateUsedPorts()
-        saveDomains()
+        // Kayıt ZATEN eklendi; burada yalnızca oluşturma sırasında DEĞİŞEN alanlar
+        // işlenir — sertifika üretilemediyse `sslEnabled` yukarıda false'a çekiliyor ve
+        // kayıt bunu yansıtmazsa arayüz HTTPS varmış gibi gösterirdi.
+        if let i = domains.firstIndex(where: { $0.id == domain.id }) {
+            domains[i] = domain
+            updateUsedPorts()
+            saveDomains()
+        }
 
         if hostsOK {
             log(key: "log.dom.created", args: [domain.name], type: .success)
