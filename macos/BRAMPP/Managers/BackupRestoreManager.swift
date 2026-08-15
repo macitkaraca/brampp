@@ -292,10 +292,32 @@ class BackupRestoreManager: BaseManager {
     /// Domain'e AİT OLMAYAN, sistem/servis yapılandırması olan .conf adları.
     /// Bunlar domain listesiyle eşleşmez ama silinirse phpMyAdmin/Adminer ve
     /// localhost tamamen erişilemez hale gelir — uzlaştırma bunlara ASLA dokunmaz.
+    /// Bu ada ait CANLI bir tünel ya da arka plan süreci var mı? Varsa engelin adı.
+    ///
+    /// Saf disk kanıtı: pid dosyası + `kill(pid, 0)`. Ölü bir pid dosyası engel değildir.
+    private static func liveHolder(for name: String) -> String? {
+        func alive(_ pidPath: String) -> Bool {
+            guard let raw = FileHelper.readString(pidPath),
+                  let pid = Int(raw.trimmingCharacters(in: .whitespacesAndNewlines))
+            else { return false }
+            return NativeProcessManager.isAlive(pid)
+        }
+        if alive(PathConfig.tunnelPid(domain: name))  { return "paylaşım (cloudflared)" }
+        if alive(PathConfig.processPid(domain: name)) { return "arka plan uygulaması" }
+        return nil
+    }
+
+    /// Test erişimi — karar testlere açık, uygulaması private kalır.
+    static func isSystemConfForTests(_ stem: String) -> Bool { isSystemConf(stem) }
+
     private static func isSystemConf(_ stem: String) -> Bool {
         let s = stem.lowercased()
         // Sıra öneki taşıyan sistem dosyaları (000-localhost.conf gibi)
         if s.hasPrefix("000-") { return true }
+        // localhost hiçbir zaman domains.json'da DEĞİLDİR ama vhost'u BRAMPP'ın yazdığı
+        // varsayılan sitedir: silinirse eşleşmeyen her istek rastgele bir domain'in
+        // vhost'una düşer. Önek denetimi yalnızca "000-localhost" biçimini yakalıyordu.
+        if s == "localhost" || s.hasPrefix("localhost.") || s.hasPrefix("localhost-") { return true }
         return s.contains("phpmyadmin") || s.contains("adminer")
     }
 
@@ -332,6 +354,26 @@ class BackupRestoreManager: BaseManager {
             for file in FileHelper.contentsOfDirectory(target.dir) where file.hasSuffix(".conf") {
                 let stem = String(file.dropLast(".conf".count))
                 guard !Self.isSystemConf(stem), !known.contains(stem.lowercased()) else { continue }
+
+                // **CANLI BİR ŞEY VARSA DOKUNULMAZ.**
+                //
+                // `removeDomain` açık paylaşım kapatılamadıysa vhost'u silmeyi reddediyor;
+                // bu yol aynı işi hiçbir denetim olmadan yapıyordu. Tünel ayakta kalır,
+                // `Host` başlığını artık var olmayan bir server bloğuna taşır ve istek
+                // VARSAYILAN siteye düşer — localhost kökü, phpMyAdmin ve Adminer dâhil.
+                // `Require local` de korumaz, çünkü istek loopback'ten gelir.
+                //
+                // Arka plan uygulaması da aynı sebeple: kaydı olmayan bir süreci hiçbir
+                // akış bir daha durdurmaz (çıkışta durdurma domains.json'u okur).
+                //
+                // Yönetici sınıfları BAĞLANMAZ — diskteki pid dosyası zaten kanıt, ve
+                // BackupRestoreManager'a TunnelManager bağımlılığı eklemek geri yükleme
+                // yolunu paylaşım yaşam döngüsüne kilitlerdi.
+                if let engel = Self.liveHolder(for: stem) {
+                    log(key: "log.backup.orphanHeldLive", args: [file, engel], type: .warning)
+                    continue
+                }
+
                 let path = "\(target.dir)/\(file)"
                 if FileHelper.remove(path) {
                     removed += 1

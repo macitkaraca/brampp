@@ -1168,6 +1168,10 @@ enum L10n {
             ["tr": "Alan adı listesi okunamadı — yetim vhost temizliği atlandı",
              "en": "Could not read the domain list — orphaned vhost cleanup skipped"],
         // %@1 = tür etiketi (@log.backup.label*), %@2 = dosya adı
+        // %@1 = dosya adı, %@2 = engelin adı
+        "log.backup.orphanHeldLive":
+            ["tr": "%@ KORUNDU — bu alan adı için canlı bir %@ var. Vhost silinseydi herkese açık adres varsayılan siteyi yayınlamaya başlardı; önce Servisler sekmesinden durdurun.",
+             "en": "%@ was KEPT — a live %@ exists for this domain. Removing the vhost would leave the public address serving the default site; stop it from the Services tab first."],
         "log.backup.orphanRemoved":
             ["tr": "Yetim %@ yapılandırması kaldırıldı: %@",
              "en": "Removed orphaned %@ config: %@"],

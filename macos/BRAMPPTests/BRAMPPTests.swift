@@ -3628,6 +3628,50 @@ final class BRAMPPTests: XCTestCase {
                                   + "yeniden adlandırıldıysa test güncellensin")
     }
 
+    // MARK: - Geri yükleme temizleyicisi
+
+    /// **Geri yükleme, silmeden önce canlı bir şey olup olmadığına danışmalı.**
+    ///
+    /// `removeDomain` açık paylaşım kapatılamadıysa vhost'u silmeyi reddediyor; geri
+    /// yükleme yolu aynı işi hiçbir denetim olmadan yapıyordu. Tünel ayakta kalır,
+    /// `Host` başlığını artık var olmayan bir server bloğuna taşır ve istek VARSAYILAN
+    /// siteye düşer — localhost kökü, phpMyAdmin ve Adminer dâhil.
+    ///
+    /// Ayrıca `localhost` hiçbir zaman `domains.json`da değildir ama vhost'u BRAMPP'ın
+    /// yazdığı varsayılan sitedir; önek denetimi yalnızca `000-localhost` biçimini
+    /// yakaladığından düz `localhost.conf` öksüz sayılıp silinebiliyordu.
+    func testRestoreReaper_ConsultsLivenessAndProtectsTheDefaultSite() throws {
+        let files = try appSourceFiles()
+        guard let (_, text) = files.first(where: { $0.path.hasSuffix("BackupRestoreManager.swift") }) else {
+            throw XCTSkip("BackupRestoreManager.swift okunamadı")
+        }
+        guard let start = text.range(of: "func reconcileOrphanConfigs") else {
+            throw XCTSkip("reconcileOrphanConfigs bulunamadı")
+        }
+        let rest = String(text[start.upperBound...])
+        let body = rest.range(of: "\n    }\n").map { String(rest[..<$0.lowerBound]) } ?? rest
+
+        // Silme kararı canlılığa danışmadan verilemez.
+        guard let liveAt = body.range(of: "liveHolder(for:")?.lowerBound else {
+            return XCTFail("reconcileOrphanConfigs canlılığa hiç danışmıyor — "
+                         + "açık bir tünelin altından vhost'u çekebilir")
+        }
+        guard let removeAt = body.range(of: "FileHelper.remove(")?.lowerBound else {
+            return XCTFail("silme çağrısı bulunamadı — test güncellensin")
+        }
+        XCTAssertLessThan(liveAt, removeAt,
+                          "canlılık denetimi SİLMEDEN ÖNCE gelmeli")
+
+        // Varsayılan site korunmalı — düz "localhost" biçimi dâhil.
+        for stem in ["localhost", "LocalHost", "localhost-ssl", "000-localhost"] {
+            XCTAssertTrue(BackupRestoreManager.isSystemConfForTests(stem),
+                          "\(stem) sistem dosyası sayılmalı — silinirse eşleşmeyen her "
+                        + "istek rastgele bir alan adının vhost'una düşer")
+        }
+        // Sıradan bir alan adı sistem dosyası DEĞİLDİR; aksi halde temizleyici hiç iş yapmaz.
+        XCTAssertFalse(BackupRestoreManager.isSystemConfForTests("shop.test"))
+    }
+
     // MARK: - Alan adı oluşturma sırası
 
     /// **Kayıt, vhost yazılmadan ÖNCE eklenmeli.**
