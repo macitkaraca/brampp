@@ -213,6 +213,43 @@ final class DiagnosticsManager: BaseManager {
             }
         }
 
+        // ── Kaydı olmayan vhost dosyaları — YALNIZCA RAPOR ──────────────────
+        //
+        // BUNLARI SİLMİYORUZ, bilerek. Otomatik onaran bir uzlaştırıcı tasarlandı ve
+        // üç bağımsız incelemenin üçü de kırdı. En ağır gerekçe: `Domain` modelinde
+        // ServerAlias/Alias/kimlik doğrulama için alan YOK, dolayısıyla üretilen vhost'u
+        // elle düzenlemek kullanıcının TEK genişletme yolu — ve Ayarlar o klasörü
+        // Finder'da açan bir düğmeyle gösteriyor. "Kaydı yok, öyleyse çöp" demek,
+        // kullanıcının tek uzatma mekanizmasını yedeksiz silmek olurdu.
+        //
+        // Raporlamak bu itirazların hiçbirine maruz değil ve asıl değeri zaten veriyor:
+        // kullanıcı neyin kaldığını görüyor, kararı kendi veriyor.
+        if let data = FileHelper.readData(PathConfig.domainsJson),
+           let list = try? JSONDecoder().decode(DomainList.self, from: data) {
+            let known = Set(list.domains.map { $0.name.lowercased() })
+            var orphans: [String] = []
+            for dir in [PathConfig.vhostsDir, PathConfig.nginxSitesAvailableDir] {
+                for file in FileHelper.contentsOfDirectory(dir) where file.hasSuffix(".conf") {
+                    let stem = String(file.dropLast(".conf".count))
+                    guard !BackupRestoreManager.isSystemManagedConf(stem),
+                          !known.contains(stem.lowercased()) else { continue }
+                    orphans.append(file)
+                }
+            }
+            if !orphans.isEmpty {
+                out.append(.init(id: "orphanvhost", title: "Kaydı olmayan vhost dosyası",
+                                 level: .warn,
+                                 detail: orphans.sorted().prefix(6).joined(separator: ", ")
+                                       + (orphans.count > 6 ? " (+\(orphans.count - 6))" : ""),
+                                 remedy: "Bu dosyalar hâlâ web sunucusuna yükleniyor ama BRAMPP'ta "
+                                       + "karşılık gelen bir alan adı yok — silinmiş bir alan adından "
+                                       + "kalmış ya da elle eklenmiş olabilirler. BRAMPP bunları "
+                                       + "KENDİLİĞİNDEN SİLMEZ: elle eklediğiniz yapılandırmalar da "
+                                       + "aynı dizinde duruyor. Gerekmiyorlarsa Finder'dan silip "
+                                       + "web sunucusunu yeniden başlatın."))
+            }
+        }
+
         // ── /etc/hosts ──────────────────────────────────────────────────────
         if let hosts = FileHelper.readString("/etc/hosts") {
             out.append(.init(id: "hosts", title: "/etc/hosts", level: .pass,

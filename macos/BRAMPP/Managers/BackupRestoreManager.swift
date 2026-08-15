@@ -307,8 +307,9 @@ class BackupRestoreManager: BaseManager {
         return nil
     }
 
-    /// Test erişimi — karar testlere açık, uygulaması private kalır.
-    static func isSystemConfForTests(_ stem: String) -> Bool { isSystemConf(stem) }
+    /// BRAMPP'ın kendi yazdığı, hiçbir alan adı kaydına karşılık GELMEYEN yapılandırma
+    /// dosyası mı? (varsayılan site, phpMyAdmin, Adminer). Teşhis paneli de kullanır.
+    static func isSystemManagedConf(_ stem: String) -> Bool { isSystemConf(stem) }
 
     private static func isSystemConf(_ stem: String) -> Bool {
         let s = stem.lowercased()

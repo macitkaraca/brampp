@@ -3664,12 +3664,12 @@ final class BRAMPPTests: XCTestCase {
 
         // Varsayılan site korunmalı — düz "localhost" biçimi dâhil.
         for stem in ["localhost", "LocalHost", "localhost-ssl", "000-localhost"] {
-            XCTAssertTrue(BackupRestoreManager.isSystemConfForTests(stem),
+            XCTAssertTrue(BackupRestoreManager.isSystemManagedConf(stem),
                           "\(stem) sistem dosyası sayılmalı — silinirse eşleşmeyen her "
                         + "istek rastgele bir alan adının vhost'una düşer")
         }
         // Sıradan bir alan adı sistem dosyası DEĞİLDİR; aksi halde temizleyici hiç iş yapmaz.
-        XCTAssertFalse(BackupRestoreManager.isSystemConfForTests("shop.test"))
+        XCTAssertFalse(BackupRestoreManager.isSystemManagedConf("shop.test"))
     }
 
     // MARK: - Alan adı oluşturma sırası
