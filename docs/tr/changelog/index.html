@@ -613,7 +613,38 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Güncellemenin değip değmeyeceğine karar verenler için yazıldı. Düzeltmeler neyin bozuk olduğunu söylüyor, "çeşitli iyileştirmeler" demiyor — bir hata size bir öğleden sonraya mal olduysa gittiğini bilmeyi hak edersiniz.</p>
 </div>
 
-<section id="v204">
+<section id="v205">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">14 Ağustos 2026</span>
+      <h2>2.05</h2>
+      <p class="lede">Veritabanı araçları yazma işlerini gerçekten yapabiliyor — ama bir satır güncellemekle bir tabloyu düşürmek artık aynı izne bağlı değil. Yanında, alan adı işlemlerinde makineyi tutarsız bırakan dört yol.</p>
+    </div>
+
+    <h3 class="sub-h">Eklendi</h3>
+    <ul class="bullets">
+      <li><b>Şema keşfi: <code>db_tables</code> ve <code>db_describe</code>.</b> Tablolar satır sayısı ve boyutla, sütunlar tip, anahtar ve varsayılanlarıyla listeleniyor. Bir yapay zekâ istemcisinin en sık ihtiyaç duyduğu iki işlem artık ham SQL yazmayı gerektirmiyor — ve sorgu yazmadan önce sütun adlarını doğrulamak, uydurmanın yerini alıyor.</li>
+      <li><b>SQL yazma üç kademeye ayrıldı.</b> Okuma serbest; <code>INSERT</code>/<code>UPDATE</code>/<code>REPLACE</code> için <code>allow_write</code>; <code>DELETE</code>/<code>DROP</code>/<code>TRUNCATE</code>/<code>ALTER</code>/<code>CREATE</code> için ayrıca <code>allow_destructive</code>. Bir satır güncellemek ile bir tabloyu düşürmek aynı istek değil ve aynı anahtara bağlanamaz.</li>
+    </ul>
+
+    <h3 class="sub-h">Düzeltildi</h3>
+    <ul class="bullets">
+      <li><b><code>allow_write</code> açıldığında hiçbir denetim kalmıyordu.</b> Çoklu ifade reddi bile yalnızca salt-okunur daldaydı, yani <code>allow_write</code> ile <code>"DROP DATABASE a; DROP DATABASE b"</code> çalışıyordu. Artık çoklu ifade her kademede reddediliyor ve SQL hiçbir bayrakla dosya sistemine ulaşamıyor — bir veritabanına yazma izni, diski okuma izni değildir.</li>
+      <li><b>Silinen bir alan adının vhost'u geri yazılabiliyordu.</b> Kayıt denetimi yazımın etrafındaydı, içinde değil; aradaki <code>configtest</code> beklemesinde silme baştan sona koşabiliyordu. Sonuç, artık var olmayan bir sertifikayı gösteren öksüz bir vhost: <code>configtest</code> kalıcı olarak düşer ve <b>Apache hiç başlamaz</b> — makinedeki bütün siteler birden gider. Üstelik hata logu bastırıldığı için sessizce.</li>
+      <li><b>Alan adı oluşturulurken kayıt en sonda yazılıyordu.</b> Site klasörü, sertifika, vhost ve <code>/etc/hosts</code> girişi hazırken kayıt yoktu; <code>/etc/hosts</code> yönetici parolası isteyip süresiz beklediğinden bu pencere dakikalar sürebiliyordu. Orada çıkılırsa geriye hiçbir arayüzde görünmeyen, hiçbir şeyin toplamadığı dosyalar kalıyordu.</li>
+      <li><b>Yedekten geri yükleme, canlı bir paylaşımın altından vhost'u çekiyordu.</b> Tünel ayakta kalıp <code>Host</code> başlığını artık var olmayan bir bloğa taşıyor ve istek <b>varsayılan siteye</b> düşüyordu — localhost kökü, phpMyAdmin ve Adminer dâhil. Çalışan bir arka plan uygulaması da kaydı gittiği için bir daha hiç durdurulamıyordu. Artık silmeden önce canlılığa bakılıyor. Ayrıca <code>localhost.conf</code> yanlışlıkla öksüz sayılabiliyordu.</li>
+      <li><b><code>nginx.conf</code> korumasız yazılıyordu.</b> Yedek başarısız olsa bile yazım devam ediyor, <code>nginx -t</code> yapılmıyor ve geri dönüş bulunmuyordu. Dahası budama en eskiden başlayarak sildiğinden, kullanıcının BRAMPP öncesi <code>nginx.conf</code>'u altı rutin işlemden sonra kayboluyordu. En eski yedek artık kalıcı.</li>
+    </ul>
+
+    <h3 class="sub-h">Değişti</h3>
+    <ul class="bullets">
+      <li><b>Teşhis paneli kaydı olmayan vhost dosyalarını bildiriyor</b> — ve bilerek <b>silmiyor</b>. Aynı dizinde elle eklenmiş yapılandırmalar da duruyor; "kaydı yok" ile "çöp" aynı şey değil.</li>
+      <li><b>MCP izin sınırı test altına alındı.</b> 25 aracın alanı ve yazma gereksinimi elle yazılıyordu ve hiçbir doğrulaması yoktu; bir bayrağı ters çevirmek yıkıcı bir aracı salt-okunur bir izinde sessizce kullanılabilir kılardı.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v204">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -634,7 +665,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v203">
+<section id="v203">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -658,7 +689,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v202">
+<section class="band" id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">14 Ağustos 2026</span>
@@ -682,7 +713,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v201">
+<section id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 Ağustos 2026</span>
@@ -708,7 +739,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v20">
+<section class="band" id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -738,7 +769,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v19">
+<section id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -770,7 +801,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v18">
+<section class="band" id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -796,7 +827,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v17">
+<section id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -814,7 +845,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v16">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -852,7 +883,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v15">
+<section id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 Ağustos 2026</span>
@@ -874,7 +905,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v14">
+<section class="band" id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -906,7 +937,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v13">
+<section id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 Ağustos 2026</span>
@@ -941,7 +972,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v12">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 Ağustos 2026</span>
@@ -966,7 +997,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v11">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 Temmuz 2026</span>

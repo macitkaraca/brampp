@@ -613,7 +613,38 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   <p class="lede">Written for people deciding whether an upgrade is worth it. Fixes say what was actually broken, not "various improvements" — if a bug cost you an afternoon, you deserve to know it is gone.</p>
 </div>
 
-<section id="v204">
+<section id="v205">
+  <div class="wrap">
+    <div class="shead">
+      <span class="eyebrow">August 14, 2026</span>
+      <h2>2.05</h2>
+      <p class="lede">The database tools can genuinely write now — but updating a row and dropping a table are no longer the same permission. Alongside that, four ways domain operations could leave the machine inconsistent.</p>
+    </div>
+
+    <h3 class="sub-h">Added</h3>
+    <ul class="bullets">
+      <li><b>Schema discovery: <code>db_tables</code> and <code>db_describe</code>.</b> Tables with row counts and size, columns with types, keys and defaults. The two things an AI client needs most often no longer require writing raw SQL — and checking a column name beats guessing it.</li>
+      <li><b>SQL writing is split into three levels.</b> Reading is open; <code>INSERT</code>/<code>UPDATE</code>/<code>REPLACE</code> need <code>allow_write</code>; <code>DELETE</code>/<code>DROP</code>/<code>TRUNCATE</code>/<code>ALTER</code>/<code>CREATE</code> additionally need <code>allow_destructive</code>. Updating a row and dropping a table are not the same request and cannot share a switch.</li>
+    </ul>
+
+    <h3 class="sub-h">Fixed</h3>
+    <ul class="bullets">
+      <li><b>Turning on <code>allow_write</code> removed every check.</b> Even the multiple-statement rejection lived only in the read-only branch, so <code>allow_write</code> also accepted <code>"DROP DATABASE a; DROP DATABASE b"</code>. Multiple statements are now refused at every level, and SQL cannot reach the filesystem under any flag — write permission on a database is not permission to read the disk.</li>
+      <li><b>A deleted domain's vhost could be written back.</b> The record check sat around the write rather than inside it, and deletion can complete during the <code>configtest</code> wait in between. The result is an orphan vhost pointing at a certificate that no longer exists: <code>configtest</code> fails permanently and <b>Apache will not start at all</b>, taking every site on the machine with it — silently, because the error log was suppressed.</li>
+      <li><b>Creating a domain saved the record last.</b> The site folder, certificate, vhost and <code>/etc/hosts</code> entry all existed before the record did, and the hosts step can sit on an admin password prompt indefinitely. Quit in that window and the files stayed, invisible to the UI and collected by nothing.</li>
+      <li><b>Restoring a backup removed a vhost out from under a live share.</b> The tunnel kept carrying the Host header to a block that no longer existed, so the request fell through to the <b>default site</b> — localhost root, phpMyAdmin and Adminer included. A running background app also became unstoppable once its record was gone. Liveness is now checked before removal, and <code>localhost.conf</code> could previously be mistaken for an orphan.</li>
+      <li><b><code>nginx.conf</code> was rewritten without protection.</b> A failed backup did not stop the write, there was no <code>nginx -t</code> and no rollback. Worse, pruning dropped the oldest first, so the user's pre-BRAMPP <code>nginx.conf</code> disappeared after six routine operations. The oldest backup is now kept permanently.</li>
+    </ul>
+
+    <h3 class="sub-h">Changed</h3>
+    <ul class="bullets">
+      <li><b>Diagnostics reports vhost files with no record</b> — and deliberately does <b>not</b> delete them. Hand-written configuration lives in the same directory; "no record" and "garbage" are not the same thing.</li>
+      <li><b>The MCP permission boundary is under test.</b> The scope and write requirement of all 25 tools were written by hand with nothing asserting them; flipping one flag would silently expose a destructive tool at a read-only permission level.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="v204">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -634,7 +665,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v203">
+<section id="v203">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -658,7 +689,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v202">
+<section class="band" id="v202">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">August 14, 2026</span>
@@ -682,7 +713,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v201">
+<section id="v201">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">13 August 2026</span>
@@ -708,7 +739,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v20">
+<section class="band" id="v20">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -738,7 +769,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v19">
+<section id="v19">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -770,7 +801,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v18">
+<section class="band" id="v18">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -796,7 +827,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v17">
+<section id="v17">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -814,7 +845,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v16">
+<section class="band" id="v16">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -852,7 +883,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v15">
+<section id="v15">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">12 August 2026</span>
@@ -874,7 +905,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v14">
+<section class="band" id="v14">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -906,7 +937,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v13">
+<section id="v13">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">10 August 2026</span>
@@ -941,7 +972,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section id="v12">
+<section class="band" id="v12">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">8 August 2026</span>
@@ -966,7 +997,7 @@ main.page{padding-top:calc(var(--bar-h) + 40px)}
   </div>
 </section>
 
-<section class="band" id="v11">
+<section id="v11">
   <div class="wrap">
     <div class="shead">
       <span class="eyebrow">31 July 2026</span>
